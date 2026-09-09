@@ -8,6 +8,9 @@ import { useCartStore } from "@/store/cart-store";
 import { useOrdersStore } from "@/store/orders-store";
 import { calculateCartTotal } from "@/lib/pricing";
 import { generateOrderNumber } from "@/lib/order-number";
+import { formatOrderWhatsAppMessage } from "@/lib/order-message";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
+import { CONTACT } from "@/config/contact";
 import type { OrderCustomer } from "@/types/order";
 
 export function CheckoutPage() {
@@ -46,6 +49,10 @@ export function CheckoutPage() {
     };
     createOrder(order);
     clearCart();
+
+    const message = formatOrderWhatsAppMessage(order);
+    window.open(buildWhatsAppLink(CONTACT.whatsappNumber, message), "_blank");
+
     navigate(`/pedido-confirmado/${order.id}`, { state: { order } });
   }
 

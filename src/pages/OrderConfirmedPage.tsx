@@ -1,10 +1,13 @@
 import { Link, useLocation, useParams } from "react-router-dom";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, MessageCircle } from "lucide-react";
 import { TopBar } from "@/components/layout/TopBar";
 import { AmbientBackground } from "@/components/layout/AmbientBackground";
 import { Button } from "@/components/ui/Button";
 import { useOrdersStore } from "@/store/orders-store";
 import { formatCurrency } from "@/lib/currency";
+import { formatOrderWhatsAppMessage } from "@/lib/order-message";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
+import { CONTACT } from "@/config/contact";
 import type { Order } from "@/types/order";
 
 export function OrderConfirmedPage() {
@@ -53,6 +56,16 @@ export function OrderConfirmedPage() {
           ))}
           <p className="mt-3 text-base font-extrabold text-forest-950">Total: {formatCurrency(order.total)}</p>
         </div>
+        <a
+          href={buildWhatsAppLink(CONTACT.whatsappNumber, formatOrderWhatsAppMessage(order))}
+          target="_blank"
+          rel="noreferrer"
+          className="w-full"
+        >
+          <Button className="w-full" size="lg">
+            <MessageCircle size={18} /> Reenviar pedido no WhatsApp
+          </Button>
+        </a>
         <Link to="/" className="w-full">
           <Button className="w-full" size="lg" variant="secondary">
             Voltar ao catálogo
