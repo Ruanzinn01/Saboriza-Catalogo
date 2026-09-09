@@ -1,12 +1,9 @@
 import { Instagram, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { BrandEmblem } from "@/components/layout/BrandEmblem";
-import { CONTACT } from "@/config/contact";
 import { getTodayMessage } from "@/data/weekday-messages";
 
 export function Hero() {
-  const instagramLink = `https://instagram.com/${CONTACT.instagramHandle}`;
-
   function scrollToCatalog() {
     document.getElementById("destaques")?.scrollIntoView({ behavior: "smooth" });
   }
@@ -32,11 +29,14 @@ export function Hero() {
             <Button size="lg" onClick={scrollToCatalog}>
               <ShoppingBag size={18} /> Fazer meu pedido
             </Button>
-            <a href={instagramLink} target="_blank" rel="noreferrer">
-              <Button size="lg" variant="outline" className="border-cream-50/30 text-cream-50 hover:bg-cream-50/10">
-                <Instagram size={18} /> Ver nosso Instagram
-              </Button>
-            </a>
+            <Button
+              size="lg"
+              variant="outline"
+              disabled
+              className="cursor-not-allowed border-cream-50/20 text-cream-50/40"
+            >
+              <Instagram size={18} /> Ver nosso Instagram
+            </Button>
           </div>
         </div>
         <div className="flex justify-center lg:justify-end">

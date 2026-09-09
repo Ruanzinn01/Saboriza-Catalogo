@@ -12,7 +12,6 @@ interface FooterProps {
 
 export function Footer({ categories, onSelectCategory }: FooterProps) {
   const whatsappLink = buildWhatsAppLink(CONTACT.whatsappNumber, "Olá! Quero fazer um pedido no catálogo Saboriza.");
-  const instagramLink = `https://instagram.com/${CONTACT.instagramHandle}`;
 
   return (
     <footer className="mt-12 rounded-t-[3rem] bg-linear-to-b from-forest-900 to-forest-950 px-4 pb-8 pt-14 sm:px-6">
@@ -55,14 +54,9 @@ export function Footer({ categories, onSelectCategory }: FooterProps) {
             >
               <MessageCircle size={15} /> {CONTACT.whatsappDisplay}
             </a>
-            <a
-              href={instagramLink}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2 text-sm text-cream-100/60 transition-colors hover:text-cream-50"
-            >
-              <Instagram size={15} /> @{CONTACT.instagramHandle}
-            </a>
+            <span className="flex cursor-not-allowed items-center gap-2 text-sm text-cream-100/30">
+              <Instagram size={15} /> Em breve
+            </span>
           </div>
 
           <div className="flex flex-col gap-3">
