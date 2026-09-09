@@ -31,7 +31,7 @@ export function TopBar({
   const itemCount = useCartStore((state) => calculateItemCount(state.items));
 
   return (
-    <div className="relative mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
+    <div className="relative mx-auto flex max-w-6xl items-center gap-4 px-4 py-2 sm:px-6">
       <Link
         to="/"
         className={cn(

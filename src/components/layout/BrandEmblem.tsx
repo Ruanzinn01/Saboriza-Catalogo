@@ -8,8 +8,8 @@ interface BrandEmblemProps {
 export function BrandEmblem({ size = "lg", className }: BrandEmblemProps) {
   if (size === "sm") {
     return (
-      <span className={cn("flex h-20 items-center", className)}>
-        <img src="/brand/logo-saboriza-transparente.png" alt="Saboriza" className="h-20 w-auto object-contain" />
+      <span className={cn("flex h-14 items-center", className)}>
+        <img src="/brand/logo-saboriza-transparente.png" alt="Saboriza" className="h-14 w-auto object-contain" />
       </span>
     );
   }
