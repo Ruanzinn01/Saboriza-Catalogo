@@ -3,12 +3,17 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { MessageCircle, ShoppingBag } from "lucide-react";
 import { CONTACT } from "@/config/contact";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
+import { useCartStore } from "@/store/cart-store";
+import { calculateItemCount } from "@/lib/pricing";
+import { cn } from "@/lib/cn";
 
 export function WhatsAppFloatingButton() {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasCartItems = useCartStore((state) => calculateItemCount(state.items) > 0);
+  const minimized = hasCartItems && location.pathname === "/";
 
   useEffect(() => {
     if (!open) return;
@@ -78,9 +83,13 @@ export function WhatsAppFloatingButton() {
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-label="Opções de pedido"
-        className="flex items-center gap-2 rounded-full bg-linear-to-b from-forest-500 to-forest-700 px-5 py-3 text-sm font-bold text-cream-50 shadow-2xl shadow-forest-950/40 transition-all hover:from-forest-500 hover:to-forest-600 active:scale-[0.97]"
+        className={cn(
+          "flex items-center gap-2 rounded-full bg-linear-to-b from-forest-500 to-forest-700 font-bold text-cream-50 shadow-2xl shadow-forest-950/40 transition-all hover:from-forest-500 hover:to-forest-600 active:scale-[0.97]",
+          minimized ? "h-12 w-12 justify-center" : "px-5 py-3 text-sm"
+        )}
       >
-        <MessageCircle size={18} /> Pedir pelo WhatsApp
+        <MessageCircle size={18} />
+        {!minimized && "Pedir pelo WhatsApp"}
       </button>
     </div>
   );
