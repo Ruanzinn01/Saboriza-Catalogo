@@ -7,6 +7,7 @@ import { Hero } from "@/components/catalog/Hero";
 import { Footer } from "@/components/layout/Footer";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { SearchOverlay } from "@/components/catalog/SearchOverlay";
+import { FloatingOrderBar } from "@/components/catalog/FloatingOrderBar";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useCartStore } from "@/store/cart-store";
@@ -117,6 +118,7 @@ export function CatalogPage() {
 
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} onSelectCategory={handleSelectCategory} />
+      <FloatingOrderBar onClick={() => setCartOpen(true)} />
     </div>
   );
 }
