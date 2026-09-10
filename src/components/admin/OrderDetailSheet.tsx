@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Copy, Download, MessageCircle, Trash2, UserPlus } from "lucide-react";
+import { Copy, Download, MessageCircle, Search, Trash2, UserCheck, UserPlus } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -37,6 +37,8 @@ export function OrderDetailSheet({ order, onClose }: OrderDetailSheetProps) {
   const [paymentTerms, setPaymentTerms] = useState("");
   const [registeringCustomer, setRegisteringCustomer] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [linkSheetOpen, setLinkSheetOpen] = useState(false);
+  const [linkSearch, setLinkSearch] = useState("");
 
   useEffect(() => {
     if (order) {
@@ -90,6 +92,16 @@ export function OrderDetailSheet({ order, onClose }: OrderDetailSheetProps) {
     setRegisteringCustomer(false);
   }
 
+  async function handleLinkExisting(customerId: string, customerName: string) {
+    if (!order) return;
+    const linked = await linkCustomer(order.id, customerId);
+    if (linked) {
+      toast.success(`Pedido vinculado a ${customerName}`);
+      setLinkSheetOpen(false);
+      setLinkSearch("");
+    }
+  }
+
   async function handleDelete() {
     if (!order) return;
     const ok = await deleteOrder(order.id);
@@ -132,9 +144,14 @@ export function OrderDetailSheet({ order, onClose }: OrderDetailSheetProps) {
                 <UserPlus size={14} /> Cliente cadastrado · Ver cadastro
               </Link>
             ) : (
-              <Button type="button" size="sm" variant="outline" className="mt-2" disabled={registeringCustomer} onClick={() => void handleRegisterCustomer()}>
-                <UserPlus size={16} /> {registeringCustomer ? "Cadastrando..." : "Cadastrar cliente"}
-              </Button>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Button type="button" size="sm" variant="outline" disabled={registeringCustomer} onClick={() => void handleRegisterCustomer()}>
+                  <UserPlus size={16} /> {registeringCustomer ? "Cadastrando..." : "Cadastrar cliente"}
+                </Button>
+                <Button type="button" size="sm" variant="outline" onClick={() => setLinkSheetOpen(true)}>
+                  <UserCheck size={16} /> Vincular a cliente existente
+                </Button>
+              </div>
             )}
           </div>
 
@@ -277,6 +294,48 @@ export function OrderDetailSheet({ order, onClose }: OrderDetailSheetProps) {
           void handleDelete();
         }}
       />
+
+      <Sheet open={linkSheetOpen} onClose={() => setLinkSheetOpen(false)} title="Vincular a cliente existente">
+        <div className="flex flex-col gap-3">
+          <div className="relative">
+            <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-700/40" />
+            <input
+              value={linkSearch}
+              onChange={(e) => setLinkSearch(e.target.value)}
+              placeholder="Buscar por nome, empresa, CNPJ ou telefone..."
+              className="h-11 w-full rounded-xl border border-ink-900/15 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none focus:border-forest-700"
+              autoFocus
+            />
+          </div>
+          <div className="flex flex-col divide-y divide-forest-950/5 overflow-hidden rounded-2xl border border-forest-950/10">
+            {registeredCustomers
+              .filter((customer) => {
+                const query = linkSearch.trim().toLowerCase();
+                if (!query) return true;
+                return [customer.name, customer.companyName, customer.cnpj, customer.phone].some((field) =>
+                  field.toLowerCase().includes(query)
+                );
+              })
+              .slice(0, 20)
+              .map((customer) => (
+                <button
+                  key={customer.id}
+                  type="button"
+                  onClick={() => void handleLinkExisting(customer.id, customer.name)}
+                  className="flex flex-col items-start px-4 py-3 text-left hover:bg-forest-950/5"
+                >
+                  <span className="text-sm font-semibold text-ink-900">{customer.name}</span>
+                  <span className="text-xs text-ink-700/60">
+                    {customer.companyName} · {customer.phone}
+                  </span>
+                </button>
+              ))}
+            {registeredCustomers.length === 0 && (
+              <p className="px-4 py-6 text-center text-sm text-ink-700/60">Nenhum cliente cadastrado ainda.</p>
+            )}
+          </div>
+        </div>
+      </Sheet>
     </>
   );
 }
