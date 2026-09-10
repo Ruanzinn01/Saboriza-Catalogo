@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
+import { useSettingsStore } from "@/store/settings-store";
 import { CatalogPage } from "@/pages/CatalogPage";
 import { CheckoutPage } from "@/pages/CheckoutPage";
 import { OrderConfirmedPage } from "@/pages/OrderConfirmedPage";
@@ -22,6 +23,7 @@ export function App() {
   useEffect(() => {
     useCatalogStore.getState().fetchCatalog();
     useAdminAuthStore.getState().init();
+    useSettingsStore.getState().fetchSettings();
   }, []);
 
   return (

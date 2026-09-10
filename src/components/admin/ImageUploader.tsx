@@ -4,11 +4,14 @@ import { UploadCloud } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/cn";
 
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+
 interface ImageUploaderProps {
   onUploaded: (url: string) => void;
+  pathPrefix?: string;
 }
 
-export function ImageUploader({ onUploaded }: ImageUploaderProps) {
+export function ImageUploader({ onUploaded, pathPrefix = "" }: ImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
 
@@ -18,9 +21,13 @@ export function ImageUploader({ onUploaded }: ImageUploaderProps) {
       toast.error("Selecione um arquivo de imagem");
       return;
     }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      toast.error("Imagem muito grande (máximo 5MB)");
+      return;
+    }
 
     setUploading(true);
-    const path = `${crypto.randomUUID()}-${file.name || "imagem.png"}`;
+    const path = `${pathPrefix}${crypto.randomUUID()}-${file.name || "imagem.png"}`;
     const { error } = await supabase.storage.from("product-images").upload(path, file);
     setUploading(false);
 

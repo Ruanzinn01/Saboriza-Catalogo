@@ -1,4 +1,5 @@
 import type { CartItem } from "./cart";
+import type { CouponDiscountType } from "./coupon";
 
 export type OrderStatus = "NEW" | "IN_REVIEW" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
 
@@ -24,6 +25,11 @@ export interface Order {
   customer: OrderCustomer;
   items: CartItem[];
   total: number;
+  subtotal: number;
   status: OrderStatus;
   paymentTerms: string;
+  couponCode: string;
+  couponType: CouponDiscountType | "";
+  couponValue: number;
+  discountAmount: number;
 }

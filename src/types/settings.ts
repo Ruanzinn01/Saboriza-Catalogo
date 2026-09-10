@@ -6,4 +6,6 @@ export interface Settings {
   businessHours: string;
   legalName: string;
   cnpj: string;
+  ie: string;
+  heroImageUrl: string;
 }

@@ -1,5 +1,6 @@
 import type { CartItem } from "@/types/cart";
 import type { Order } from "@/types/order";
+import type { CouponDiscountType } from "@/types/coupon";
 import type { Database } from "@/types/supabase";
 
 type OrderRow = Database["public"]["Tables"]["orders"]["Row"];
@@ -39,7 +40,12 @@ export function orderFromRow(row: OrderRow, itemRows: OrderItemRow[]): Order {
     },
     items: itemRows.map(cartItemFromOrderItemRow),
     total: row.total_amount,
+    subtotal: row.subtotal_amount,
     status: row.status,
     paymentTerms: row.payment_terms,
+    couponCode: row.coupon_code,
+    couponType: (row.coupon_type as CouponDiscountType | "") || "",
+    couponValue: row.coupon_value,
+    discountAmount: row.discount_amount,
   };
 }

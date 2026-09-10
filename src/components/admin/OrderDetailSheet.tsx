@@ -87,6 +87,30 @@ export function OrderDetailSheet({ order, onClose }: OrderDetailSheetProps) {
             </div>
           </div>
 
+          {order.couponCode && (
+            <div className="rounded-2xl border border-forest-700/20 bg-forest-700/5 p-4 text-sm">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-forest-800/70">Cupom aplicado</p>
+              <div className="flex items-center justify-between text-ink-700/70">
+                <span>Cupom</span>
+                <span className="font-semibold text-ink-900">{order.couponCode}</span>
+              </div>
+              <div className="flex items-center justify-between text-ink-700/70">
+                <span>Tipo</span>
+                <span className="font-semibold text-ink-900">
+                  {order.couponType === "percentage" ? `${order.couponValue}%` : formatCurrency(order.couponValue)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-ink-700/70">
+                <span>Subtotal</span>
+                <span className="font-semibold text-ink-900">{formatCurrency(order.subtotal)}</span>
+              </div>
+              <div className="flex items-center justify-between text-ink-700/70">
+                <span>Desconto</span>
+                <span className="font-semibold text-forest-800">- {formatCurrency(order.discountAmount)}</span>
+              </div>
+            </div>
+          )}
+
           <p className="text-right text-base font-extrabold text-forest-950">Total: {formatCurrency(order.total)}</p>
 
           <div className="flex flex-col gap-3 rounded-2xl border border-forest-950/10 bg-cream-50 p-4">

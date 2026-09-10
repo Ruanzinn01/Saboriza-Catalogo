@@ -47,6 +47,36 @@ export type Database = {
         }
         Relationships: []
       }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -110,6 +140,9 @@ export type Database = {
       orders: {
         Row: {
           company_name: string
+          coupon_code: string
+          coupon_type: string
+          coupon_value: number
           created_at: string
           customer_address: string
           customer_cep: string
@@ -121,17 +154,22 @@ export type Database = {
           customer_neighborhood: string
           customer_state: string
           customer_trade_name: string
+          discount_amount: number
           id: string
           order_number: string
           payment_terms: string
           phone: string
           status: Database["public"]["Enums"]["order_status"]
+          subtotal_amount: number
           total_amount: number
           total_units: number
           updated_at: string
         }
         Insert: {
           company_name?: string
+          coupon_code?: string
+          coupon_type?: string
+          coupon_value?: number
           created_at?: string
           customer_address?: string
           customer_cep?: string
@@ -143,17 +181,22 @@ export type Database = {
           customer_neighborhood?: string
           customer_state?: string
           customer_trade_name?: string
+          discount_amount?: number
           id?: string
           order_number?: string
           payment_terms?: string
           phone: string
           status?: Database["public"]["Enums"]["order_status"]
+          subtotal_amount?: number
           total_amount?: number
           total_units?: number
           updated_at?: string
         }
         Update: {
           company_name?: string
+          coupon_code?: string
+          coupon_type?: string
+          coupon_value?: number
           created_at?: string
           customer_address?: string
           customer_cep?: string
@@ -165,11 +208,13 @@ export type Database = {
           customer_neighborhood?: string
           customer_state?: string
           customer_trade_name?: string
+          discount_amount?: number
           id?: string
           order_number?: string
           payment_terms?: string
           phone?: string
           status?: Database["public"]["Enums"]["order_status"]
+          subtotal_amount?: number
           total_amount?: number
           total_units?: number
           updated_at?: string
@@ -241,7 +286,9 @@ export type Database = {
           cnpj: string
           created_at: string
           factory_name: string
+          hero_image_url: string
           id: string
+          ie: string
           legal_name: string
           updated_at: string
           whatsapp_display: string
@@ -252,7 +299,9 @@ export type Database = {
           cnpj?: string
           created_at?: string
           factory_name?: string
+          hero_image_url?: string
           id?: string
+          ie?: string
           legal_name?: string
           updated_at?: string
           whatsapp_display?: string
@@ -263,7 +312,9 @@ export type Database = {
           cnpj?: string
           created_at?: string
           factory_name?: string
+          hero_image_url?: string
           id?: string
+          ie?: string
           legal_name?: string
           updated_at?: string
           whatsapp_display?: string
@@ -279,6 +330,7 @@ export type Database = {
       create_order: {
         Args: {
           p_company_name: string
+          p_coupon_code?: string
           p_customer_address?: string
           p_customer_cep?: string
           p_customer_city?: string

@@ -17,6 +17,7 @@ export function formatOrderWhatsAppMessage(order: Order) {
     .join("\n\n");
 
   const totalUnits = order.items.reduce((total, item) => total + item.packs * item.packQuantity, 0);
+  const hasDiscount = order.discountAmount > 0;
 
   return [
     "🏭 *NOVO PEDIDO — SABORIZA*",
@@ -29,6 +30,14 @@ export function formatOrderWhatsAppMessage(order: Order) {
     "",
     DIVIDER,
     "",
+    ...(hasDiscount
+      ? [
+          `💰 *SUBTOTAL: ${formatCurrency(order.subtotal)}*`,
+          `🎟️ *CUPOM: ${order.couponCode}*`,
+          `🏷️ *DESCONTO: ${formatCurrency(order.discountAmount)}*`,
+          "",
+        ]
+      : []),
     `💰 *TOTAL: ${formatCurrency(order.total)}*`,
     "",
     `📦 *TOTAL DE UNIDADES: ${totalUnits}*`,

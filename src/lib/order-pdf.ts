@@ -162,6 +162,23 @@ export async function generateOrderPdf(order: Order, settings: Settings): Promis
     ]);
   });
 
+  // Subtotal / desconto (só quando houver cupom aplicado)
+  if (order.discountAmount > 0) {
+    y = drawRow(doc, contentX, y, contentWidth, rowH, [
+      { x: contentX, width: contentWidth - colSubtotalW, value: "Subtotal:", align: "right" },
+      { x: contentX + contentWidth - colSubtotalW, width: colSubtotalW, value: formatCurrency(order.subtotal), align: "right" },
+    ]);
+    y = drawRow(doc, contentX, y, contentWidth, rowH, [
+      { x: contentX, width: contentWidth - colSubtotalW, value: `Desconto (${order.couponCode}):`, align: "right" },
+      {
+        x: contentX + contentWidth - colSubtotalW,
+        width: colSubtotalW,
+        value: `- ${formatCurrency(order.discountAmount)}`,
+        align: "right",
+      },
+    ]);
+  }
+
   // Valor total
   const totalRowH = 8;
   y = drawRow(doc, contentX, y, contentWidth, totalRowH, [

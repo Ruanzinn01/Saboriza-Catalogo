@@ -1,9 +1,15 @@
+import { useState } from "react";
 import { Instagram, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { BrandEmblem } from "@/components/layout/BrandEmblem";
 import { getTodayMessage } from "@/data/weekday-messages";
+import { useSettingsStore } from "@/store/settings-store";
 
 export function Hero() {
+  const heroImageUrl = useSettingsStore((state) => state.settings?.heroImageUrl);
+  const [imageFailed, setImageFailed] = useState(false);
+  const showCustomImage = Boolean(heroImageUrl) && !imageFailed;
+
   function scrollToCatalog() {
     document.getElementById("destaques")?.scrollIntoView({ behavior: "smooth" });
   }
@@ -42,7 +48,18 @@ export function Hero() {
         <div className="flex justify-center lg:justify-end">
           <div className="relative">
             <div className="absolute -inset-10 rounded-full bg-forest-500/30 blur-3xl" aria-hidden />
-            <BrandEmblem className="relative" />
+            {showCustomImage ? (
+              <div className="relative w-full max-w-sm shrink-0 overflow-hidden rounded-[2rem] shadow-2xl">
+                <img
+                  src={heroImageUrl}
+                  alt="Saboriza"
+                  className="h-auto w-full object-contain"
+                  onError={() => setImageFailed(true)}
+                />
+              </div>
+            ) : (
+              <BrandEmblem className="relative" />
+            )}
           </div>
         </div>
       </div>

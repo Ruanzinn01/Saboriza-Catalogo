@@ -12,6 +12,8 @@ export function settingsFromRow(row: SettingsRow): Settings {
     businessHours: row.business_hours,
     legalName: row.legal_name,
     cnpj: row.cnpj,
+    ie: row.ie,
+    heroImageUrl: row.hero_image_url,
   };
 }
 
@@ -23,5 +25,7 @@ export function settingsToRow(settings: Settings) {
     business_hours: settings.businessHours,
     legal_name: settings.legalName,
     cnpj: settings.cnpj,
+    ie: settings.ie,
+    hero_image_url: settings.heroImageUrl,
   };
 }

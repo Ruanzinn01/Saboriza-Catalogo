@@ -4,11 +4,13 @@ import { toast } from "sonner";
 import { TopBar } from "@/components/layout/TopBar";
 import { AmbientBackground } from "@/components/layout/AmbientBackground";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
+import { CouponField } from "@/components/checkout/CouponField";
 import { CustomerForm } from "@/components/checkout/CustomerForm";
 import { useCartStore } from "@/store/cart-store";
 import { useOrdersStore } from "@/store/orders-store";
 import { submitOrder } from "@/lib/orders-api";
 import type { OrderCustomer } from "@/types/order";
+import type { Coupon } from "@/types/coupon";
 
 export function CheckoutPage() {
   const items = useCartStore((state) => state.items);
@@ -16,6 +18,7 @@ export function CheckoutPage() {
   const createOrder = useOrdersStore((state) => state.createOrder);
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [coupon, setCoupon] = useState<Coupon | null>(null);
 
   if (items.length === 0) {
     return (
@@ -35,7 +38,7 @@ export function CheckoutPage() {
   async function handleSubmit(customer: OrderCustomer) {
     setSubmitting(true);
     try {
-      const order = await submitOrder(customer, items);
+      const order = await submitOrder(customer, items, coupon?.code);
       createOrder(order);
       clearCart();
 
@@ -56,7 +59,8 @@ export function CheckoutPage() {
         <h1 className="w-fit bg-linear-to-r from-forest-950 to-forest-700 bg-clip-text text-2xl font-extrabold text-transparent">
           Finalizar pedido
         </h1>
-        <OrderSummary items={items} />
+        <OrderSummary items={items} coupon={coupon} />
+        <CouponField appliedCoupon={coupon} onApply={setCoupon} onRemove={() => setCoupon(null)} />
         <CustomerForm onSubmit={handleSubmit} submitting={submitting} />
       </main>
     </div>
