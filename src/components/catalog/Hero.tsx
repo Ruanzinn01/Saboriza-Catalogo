@@ -5,8 +5,13 @@ import { BrandEmblem } from "@/components/layout/BrandEmblem";
 import { getTodayMessage } from "@/data/weekday-messages";
 import { useSettingsStore } from "@/store/settings-store";
 
-export function Hero() {
-  const heroImageUrl = useSettingsStore((state) => state.settings?.heroImageUrl);
+interface HeroProps {
+  previewImageUrl?: string;
+}
+
+export function Hero({ previewImageUrl }: HeroProps = {}) {
+  const settingsImageUrl = useSettingsStore((state) => state.settings?.heroImageUrl);
+  const heroImageUrl = previewImageUrl !== undefined ? previewImageUrl : settingsImageUrl;
   const [imageFailed, setImageFailed] = useState(false);
   const showCustomImage = Boolean(heroImageUrl) && !imageFailed;
 

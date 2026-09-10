@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/Button";
 import { AdminState } from "@/components/admin/AdminState";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { CouponsSection } from "@/components/admin/CouponsSection";
+import { TopBar } from "@/components/layout/TopBar";
+import { Hero } from "@/components/catalog/Hero";
 import { cn } from "@/lib/cn";
 import { useSettingsStore } from "@/store/settings-store";
+import { useCatalogStore } from "@/store/catalog-store";
 import type { Settings } from "@/types/settings";
 
 type SettingsTab = "fabrica" | "aparencia" | "cupons";
@@ -22,6 +25,10 @@ export function SettingsPage() {
   const status = useSettingsStore((state) => state.status);
   const fetchSettings = useSettingsStore((state) => state.fetchSettings);
   const updateSettings = useSettingsStore((state) => state.updateSettings);
+
+  const previewCategories = useCatalogStore((state) =>
+    [...state.categories].filter((category) => category.active).sort((a, b) => a.order - b.order)
+  );
 
   const [form, setForm] = useState<Settings | null>(null);
   const [tab, setTab] = useState<SettingsTab>("fabrica");
@@ -127,21 +134,12 @@ export function SettingsPage() {
                   <p className="mb-4 text-sm text-ink-700/60">
                     Imagem da Hero (logomarca/mascote) exibida no topo do catálogo público.
                   </p>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    {form.heroImageUrl ? (
-                      <img
-                        src={form.heroImageUrl}
-                        alt="Imagem da Hero atual"
-                        className="h-40 w-full rounded-2xl border border-forest-950/10 bg-cream-50 object-contain"
-                      />
-                    ) : (
-                      <div className="flex h-40 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-ink-900/20 bg-cream-50 text-center text-ink-700/50">
-                        <ImageOff size={24} />
-                        <span className="px-4 text-xs font-semibold">Nenhuma imagem cadastrada — usando a imagem padrão</span>
-                      </div>
-                    )}
-                    <ImageUploader pathPrefix="hero/" onUploaded={(url) => handleChange("heroImageUrl", url)} />
-                  </div>
+                  <ImageUploader pathPrefix="hero/" onUploaded={(url) => handleChange("heroImageUrl", url)} />
+                  {!form.heroImageUrl && (
+                    <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-ink-700/50">
+                      <ImageOff size={14} /> Nenhuma imagem cadastrada — usando a imagem padrão
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -149,6 +147,26 @@ export function SettingsPage() {
                 <Button type="submit">Salvar</Button>
               </div>
             </form>
+          )}
+
+          {tab === "aparencia" && (
+            <div className="max-w-2xl rounded-3xl border border-forest-950/10 bg-forest-950 p-3">
+              <p className="mb-2 px-2 pt-1 text-xs font-bold uppercase tracking-wide text-cream-100/50">
+                Preview ao vivo — como o catálogo público fica agora
+              </p>
+              <div className="h-[420px] overflow-hidden rounded-2xl">
+                <div className="pointer-events-none origin-top-left" style={{ transform: "scale(0.55)", width: "182%" }}>
+                  <div className="border-b border-black/10 bg-forest-950">
+                    <TopBar dark showCart={false} categories={previewCategories} activeCategoryId="" onSelectCategory={() => {}} />
+                  </div>
+                  <Hero previewImageUrl={form.heroImageUrl} />
+                </div>
+              </div>
+              <p className="px-2 pb-1 pt-2 text-xs text-cream-100/50">
+                Categorias e imagem em tempo real do banco. Se algo aqui parecer desatualizado no site em outra aba, dá um
+                refresh (F5) — a página só busca os dados uma vez, ao carregar.
+              </p>
+            </div>
           )}
 
           {tab === "cupons" && <CouponsSection />}
