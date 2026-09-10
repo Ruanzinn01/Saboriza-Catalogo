@@ -9,6 +9,9 @@ import { CustomerForm } from "@/components/checkout/CustomerForm";
 import { useCartStore } from "@/store/cart-store";
 import { useOrdersStore } from "@/store/orders-store";
 import { submitOrder } from "@/lib/orders-api";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
+import { formatOrderWhatsAppMessage } from "@/lib/order-message";
+import { CONTACT } from "@/config/contact";
 import type { OrderCustomer } from "@/types/order";
 import type { Coupon } from "@/types/coupon";
 
@@ -43,6 +46,7 @@ export function CheckoutPage() {
       clearCart();
 
       navigate(`/pedido-confirmado/${order.id}`, { state: { order } });
+      window.location.href = buildWhatsAppLink(CONTACT.whatsappNumber, formatOrderWhatsAppMessage(order));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível criar o pedido");
       setSubmitting(false);
