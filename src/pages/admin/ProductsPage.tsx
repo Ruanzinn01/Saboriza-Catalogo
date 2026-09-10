@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { ImagePlus, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currency";
 import { supabase } from "@/lib/supabase";
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { RowActionsMenu } from "@/components/admin/RowActionsMenu";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { AdminState } from "@/components/admin/AdminState";
+import { ProductImageSheet } from "@/components/admin/ProductImageSheet";
+import { ProductImage } from "@/components/catalog/ProductImage";
 import type { Product } from "@/types/product";
 
 type StatusFilter = "all" | "active" | "inactive";
@@ -21,6 +23,7 @@ export function ProductsPage() {
   const removeProduct = useCatalogStore((state) => state.removeProduct);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [productDeleteBlocked, setProductDeleteBlocked] = useState(false);
+  const [imageEditProductId, setImageEditProductId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -139,6 +142,7 @@ export function ProductsPage() {
             <table className="w-full text-left text-sm">
               <thead className="border-b border-forest-950/10 text-xs uppercase tracking-wide text-ink-700/50">
                 <tr>
+                  <th className="px-4 py-3">Imagem</th>
                   <th className="px-4 py-3">Produto</th>
                   <th className="px-4 py-3">Categoria</th>
                   <th className="px-4 py-3">Preço</th>
@@ -149,6 +153,17 @@ export function ProductsPage() {
               <tbody>
                 {products.map((product) => (
                   <tr key={product.id} className="border-b border-forest-950/5 last:border-none">
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => setImageEditProductId(product.id)}
+                        className="group relative flex h-14 w-14 overflow-hidden rounded-xl border border-forest-950/10"
+                      >
+                        <ProductImage imageUrl={product.imageUrl} name={product.name} />
+                        <span className="absolute inset-0 flex items-center justify-center bg-ink-900/0 text-cream-50 opacity-0 transition-opacity group-hover:bg-ink-900/50 group-hover:opacity-100">
+                          <ImagePlus size={18} />
+                        </span>
+                      </button>
+                    </td>
                     <td className="px-4 py-3">
                       <p className="font-semibold text-ink-900">{product.name}</p>
                       <p className="text-xs text-ink-700/50">
@@ -204,12 +219,20 @@ export function ProductsPage() {
             {products.map((product) => (
               <div key={product.id} className="rounded-2xl border border-forest-950/10 bg-white p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-ink-900">{product.name}</p>
-                    <p className="text-xs text-ink-700/50">
-                      {product.presentation} · {product.weight}
-                    </p>
-                    <p className="mt-0.5 text-xs text-ink-700/60">{categoryName(product.categoryId)}</p>
+                  <div className="flex min-w-0 items-start gap-3">
+                    <button
+                      onClick={() => setImageEditProductId(product.id)}
+                      className="flex h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-forest-950/10"
+                    >
+                      <ProductImage imageUrl={product.imageUrl} name={product.name} />
+                    </button>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-ink-900">{product.name}</p>
+                      <p className="text-xs text-ink-700/50">
+                        {product.presentation} · {product.weight}
+                      </p>
+                      <p className="mt-0.5 text-xs text-ink-700/60">{categoryName(product.categoryId)}</p>
+                    </div>
                   </div>
                   <RowActionsMenu
                     items={[
@@ -282,6 +305,8 @@ export function ProductsPage() {
           }}
         />
       )}
+
+      <ProductImageSheet productId={imageEditProductId} onClose={() => setImageEditProductId(null)} />
     </div>
   );
 }

@@ -6,6 +6,10 @@ import { productFromRow, productToRow } from "@/lib/mappers/product-mapper";
 import type { Product } from "@/types/product";
 import type { Category } from "@/types/category";
 
+function sortByName(products: Product[]) {
+  return [...products].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+}
+
 interface CatalogState {
   products: Product[];
   categories: Category[];
@@ -40,13 +44,13 @@ export const useCatalogStore = create<CatalogState>()((set, get) => ({
 
     set({
       categories: (categoryRows ?? []).map(categoryFromRow),
-      products: (productRows ?? []).map(productFromRow),
+      products: sortByName((productRows ?? []).map(productFromRow)),
       status: "ready",
     });
   },
 
   addProduct: (product) => {
-    set((state) => ({ products: [...state.products, product] }));
+    set((state) => ({ products: sortByName([...state.products, product]) }));
     supabase
       .from("products")
       .insert(productToRow(product))
@@ -63,7 +67,7 @@ export const useCatalogStore = create<CatalogState>()((set, get) => ({
   updateProduct: (id, patch) => {
     const previous = get().products;
     set((state) => ({
-      products: state.products.map((product) => (product.id === id ? { ...product, ...patch } : product)),
+      products: sortByName(state.products.map((product) => (product.id === id ? { ...product, ...patch } : product))),
     }));
     const updated = get().products.find((product) => product.id === id);
     if (!updated) return;
