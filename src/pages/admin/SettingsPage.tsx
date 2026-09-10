@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from "react";
-import { ImageOff } from "lucide-react";
+import { Eye, ImageOff } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { AdminState } from "@/components/admin/AdminState";
@@ -78,57 +78,63 @@ export function SettingsPage() {
         <AdminState variant="empty" message="Nenhuma configuração encontrada." />
       ) : (
         <>
-          {(tab === "fabrica" || tab === "aparencia") && (
+          {tab === "fabrica" && (
             <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-6">
-              {tab === "fabrica" && (
-                <div className="rounded-3xl border border-forest-950/10 bg-white p-6">
-                  <p className="mb-1 text-lg font-extrabold text-forest-950">Dados da fábrica</p>
-                  <p className="mb-4 text-sm text-ink-700/60">Usados no painel administrativo e na comanda em PDF.</p>
-                  <div className="flex flex-col gap-4">
+              <div className="rounded-3xl border border-forest-950/10 bg-white p-6">
+                <p className="mb-1 text-lg font-extrabold text-forest-950">Dados da fábrica</p>
+                <p className="mb-4 text-sm text-ink-700/60">Usados no painel administrativo e na comanda em PDF.</p>
+                <div className="flex flex-col gap-4">
+                  <Input
+                    label="Nome da fábrica"
+                    value={form.factoryName}
+                    onChange={(e) => handleChange("factoryName", e.target.value)}
+                  />
+                  <Input
+                    label="Razão social"
+                    value={form.legalName}
+                    onChange={(e) => handleChange("legalName", e.target.value)}
+                    placeholder="Ex: Saboriza Indústria de Temperos LTDA"
+                  />
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Input
-                      label="Nome da fábrica"
-                      value={form.factoryName}
-                      onChange={(e) => handleChange("factoryName", e.target.value)}
+                      label="CNPJ"
+                      value={form.cnpj}
+                      onChange={(e) => handleChange("cnpj", e.target.value)}
+                      placeholder="00.000.000/0000-00"
                     />
                     <Input
-                      label="Razão social"
-                      value={form.legalName}
-                      onChange={(e) => handleChange("legalName", e.target.value)}
-                      placeholder="Ex: Saboriza Indústria de Temperos LTDA"
+                      label="Inscrição Estadual"
+                      value={form.ie}
+                      onChange={(e) => handleChange("ie", e.target.value)}
+                      placeholder="000000000"
                     />
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <Input
-                        label="CNPJ"
-                        value={form.cnpj}
-                        onChange={(e) => handleChange("cnpj", e.target.value)}
-                        placeholder="00.000.000/0000-00"
-                      />
-                      <Input
-                        label="Inscrição Estadual"
-                        value={form.ie}
-                        onChange={(e) => handleChange("ie", e.target.value)}
-                        placeholder="000000000"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <Input
-                        label="WhatsApp para pedidos"
-                        value={form.whatsappDisplay}
-                        onChange={(e) => handleChange("whatsappDisplay", e.target.value)}
-                        placeholder="(00) 00000-0000"
-                      />
-                      <Input
-                        label="Horário de atendimento"
-                        value={form.businessHours}
-                        onChange={(e) => handleChange("businessHours", e.target.value)}
-                        placeholder="Segunda a sexta, 8h às 18h"
-                      />
-                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Input
+                      label="WhatsApp para pedidos"
+                      value={form.whatsappDisplay}
+                      onChange={(e) => handleChange("whatsappDisplay", e.target.value)}
+                      placeholder="(00) 00000-0000"
+                    />
+                    <Input
+                      label="Horário de atendimento"
+                      value={form.businessHours}
+                      onChange={(e) => handleChange("businessHours", e.target.value)}
+                      placeholder="Segunda a sexta, 8h às 18h"
+                    />
                   </div>
                 </div>
-              )}
+              </div>
 
-              {tab === "aparencia" && (
+              <div>
+                <Button type="submit">Salvar</Button>
+              </div>
+            </form>
+          )}
+
+          {tab === "aparencia" && (
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
+              <div className="flex flex-col gap-6">
                 <div className="rounded-3xl border border-forest-950/10 bg-white p-6">
                   <p className="mb-1 text-lg font-extrabold text-forest-950">Aparência</p>
                   <p className="mb-4 text-sm text-ink-700/60">
@@ -141,32 +147,36 @@ export function SettingsPage() {
                     </p>
                   )}
                 </div>
-              )}
-
-              <div>
-                <Button type="submit">Salvar</Button>
-              </div>
-            </form>
-          )}
-
-          {tab === "aparencia" && (
-            <div className="max-w-2xl rounded-3xl border border-forest-950/10 bg-forest-950 p-3">
-              <p className="mb-2 px-2 pt-1 text-xs font-bold uppercase tracking-wide text-cream-100/50">
-                Preview ao vivo — como o catálogo público fica agora
-              </p>
-              <div className="h-[420px] overflow-hidden rounded-2xl">
-                <div className="pointer-events-none origin-top-left" style={{ transform: "scale(0.55)", width: "182%" }}>
-                  <div className="border-b border-black/10 bg-forest-950">
-                    <TopBar dark showCart={false} categories={previewCategories} activeCategoryId="" onSelectCategory={() => {}} />
-                  </div>
-                  <Hero previewImageUrl={form.heroImageUrl} />
+                <div>
+                  <Button type="submit">Salvar</Button>
                 </div>
               </div>
-              <p className="px-2 pb-1 pt-2 text-xs text-cream-100/50">
-                Categorias e imagem em tempo real do banco. Se algo aqui parecer desatualizado no site em outra aba, dá um
-                refresh (F5) — a página só busca os dados uma vez, ao carregar.
-              </p>
-            </div>
+
+              <div className="overflow-hidden rounded-3xl border border-gold-500/20 bg-linear-to-b from-forest-900 to-forest-950 shadow-xl shadow-forest-950/20">
+                <div className="flex items-center gap-3 border-b border-cream-50/10 px-4 py-3">
+                  <span className="flex gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-red-400/60" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-gold-400/70" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-forest-500/70" />
+                  </span>
+                  <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-cream-100/60">
+                    <Eye size={13} /> Preview ao vivo
+                  </span>
+                </div>
+                <div className="h-[380px] overflow-hidden bg-forest-950">
+                  <div className="pointer-events-none origin-top-left" style={{ transform: "scale(0.55)", width: "182%" }}>
+                    <div className="border-b border-black/10 bg-forest-950">
+                      <TopBar dark showCart={false} categories={previewCategories} activeCategoryId="" onSelectCategory={() => {}} />
+                    </div>
+                    <Hero previewImageUrl={form.heroImageUrl} />
+                  </div>
+                </div>
+                <p className="border-t border-cream-50/10 px-4 py-3 text-xs text-cream-100/50">
+                  Categorias e imagem em tempo real do banco. Se parecer desatualizado em outra aba, dá um refresh (F5) — a
+                  página só busca os dados uma vez, ao carregar.
+                </p>
+              </div>
+            </form>
           )}
 
           {tab === "cupons" && <CouponsSection />}
