@@ -45,7 +45,9 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
-        {footer && <div className="border-t border-ink-900/10 px-5 py-4">{footer}</div>}
+        {footer && (
+          <div className="border-t border-ink-900/10 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">{footer}</div>
+        )}
       </div>
     </div>,
     document.body

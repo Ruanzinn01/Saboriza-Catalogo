@@ -47,7 +47,7 @@ export function WhatsAppFloatingButton() {
   }
 
   return (
-    <div ref={containerRef} className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div ref={containerRef} className="fixed bottom-6 right-6 z-40 flex flex-col items-end">
       {open && (
         <div className="mb-3 w-72 overflow-hidden rounded-2xl border border-forest-950/10 bg-cream-50 p-2 shadow-2xl">
           <p className="px-3 pb-2 pt-1 text-xs font-bold uppercase tracking-wide text-ink-700/50">

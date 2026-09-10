@@ -14,7 +14,7 @@ export function FloatingOrderBar({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-6 left-6 z-50 flex items-center gap-2 rounded-full bg-linear-to-b from-forest-500 to-forest-700 px-5 py-3 text-sm font-bold text-cream-50 shadow-2xl shadow-forest-950/40 transition-all hover:from-forest-500 hover:to-forest-600 active:scale-[0.97]"
+      className="fixed bottom-6 left-6 z-40 flex items-center gap-2 rounded-full bg-linear-to-b from-forest-500 to-forest-700 px-5 py-3 text-sm font-bold text-cream-50 shadow-2xl shadow-forest-950/40 transition-all hover:from-forest-500 hover:to-forest-600 active:scale-[0.97]"
     >
       <ShoppingBag size={18} /> Ver pedido ({itemCount}) · {formatCurrency(total)}
     </button>

@@ -19,7 +19,7 @@ export function CategoryNav({ categories, activeCategoryId, onSelect }: Category
             key={category.id}
             onClick={() => onSelect(category.id)}
             className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors",
+              "flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors",
               isActive
                 ? "bg-linear-to-b from-gold-400 to-gold-600 text-forest-950 shadow-sm shadow-gold-600/25"
                 : "bg-cream-50/10 text-cream-100/80 hover:bg-cream-50/20"

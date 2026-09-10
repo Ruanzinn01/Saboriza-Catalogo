@@ -15,13 +15,13 @@ export function CartLineItem({ item }: { item: CartItem }) {
     <div className="flex gap-3 border-b border-ink-900/10 py-4 last:border-none">
       <img src={item.imageUrl} alt={item.name} className="h-16 w-16 shrink-0 rounded-xl object-cover" />
       <div className="flex flex-1 flex-col gap-1">
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center justify-between gap-2">
           <p className="text-sm font-bold text-ink-900">
             {item.name} · {item.presentation} · {item.weight}
           </p>
           <button
             onClick={() => removeItem(item.productId)}
-            className="text-ink-700/40 hover:text-red-600"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-700/40 hover:bg-red-50 hover:text-red-600"
             aria-label="Remover item"
           >
             <Trash2 size={16} />
@@ -31,10 +31,10 @@ export function CartLineItem({ item }: { item: CartItem }) {
           {item.packs} {item.packs === 1 ? "pack" : "packs"} × {item.packQuantity} un ({formatCurrency(item.unitPrice)} / unid)
         </p>
         <div className="mt-1 flex items-center justify-between">
-          <div className="flex items-center gap-2 rounded-full border border-ink-900/15 px-1">
+          <div className="flex items-center gap-1 rounded-full border border-ink-900/15">
             <button
               onClick={() => decreasePack(item.productId)}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-ink-900 hover:bg-ink-900/5"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-ink-900 hover:bg-ink-900/5"
               aria-label="Diminuir packs"
             >
               <Minus size={14} />
@@ -42,7 +42,7 @@ export function CartLineItem({ item }: { item: CartItem }) {
             <span className="w-6 text-center text-sm font-bold">{item.packs}</span>
             <button
               onClick={() => increasePack(item.productId)}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-ink-900 hover:bg-ink-900/5"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-ink-900 hover:bg-ink-900/5"
               aria-label="Aumentar packs"
             >
               <Plus size={14} />
