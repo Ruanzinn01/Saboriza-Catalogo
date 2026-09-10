@@ -25,7 +25,7 @@ type RequiredField = "name" | "companyName" | "phone";
 
 export function CustomerFormPage() {
   const { customerId } = useParams();
-  const isEditing = customerId !== "novo";
+  const isEditing = customerId !== undefined;
   const navigate = useNavigate();
   const customers = useCustomersStore((state) => state.customers);
   const fetchCustomers = useCustomersStore((state) => state.fetchCustomers);
