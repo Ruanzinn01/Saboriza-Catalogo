@@ -34,7 +34,7 @@ export function ConfirmDialog({
   }, [open]);
 
   return createPortal(
-    <div className={cn("fixed inset-0 z-50 flex items-center justify-center p-4", open ? "pointer-events-auto" : "pointer-events-none")} aria-hidden={!open}>
+    <div className={cn("fixed inset-0 z-[60] flex items-center justify-center p-4", open ? "pointer-events-auto" : "pointer-events-none")} aria-hidden={!open}>
       <div
         className={cn(
           "absolute inset-0 bg-ink-900/50 backdrop-blur-sm transition-opacity duration-300",

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Copy, Download, MessageCircle, UserPlus } from "lucide-react";
+import { Copy, Download, MessageCircle, Trash2, UserPlus } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
 import { useOrdersStore } from "@/store/orders-store";
 import { useSettingsStore } from "@/store/settings-store";
@@ -25,6 +26,7 @@ export function OrderDetailSheet({ order, onClose }: OrderDetailSheetProps) {
   const updateStatus = useOrdersStore((state) => state.updateStatus);
   const updateOrderDetails = useOrdersStore((state) => state.updateOrderDetails);
   const linkCustomer = useOrdersStore((state) => state.linkCustomer);
+  const deleteOrder = useOrdersStore((state) => state.deleteOrder);
   const settings = useSettingsStore((state) => state.settings);
   const registeredCustomers = useCustomersStore((state) => state.customers);
   const fetchCustomers = useCustomersStore((state) => state.fetchCustomers);
@@ -34,6 +36,7 @@ export function OrderDetailSheet({ order, onClose }: OrderDetailSheetProps) {
   const [customerForm, setCustomerForm] = useState<OrderCustomer | null>(null);
   const [paymentTerms, setPaymentTerms] = useState("");
   const [registeringCustomer, setRegisteringCustomer] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   useEffect(() => {
     if (order) {
@@ -87,9 +90,16 @@ export function OrderDetailSheet({ order, onClose }: OrderDetailSheetProps) {
     setRegisteringCustomer(false);
   }
 
+  async function handleDelete() {
+    if (!order) return;
+    const ok = await deleteOrder(order.id);
+    if (ok) onClose();
+  }
+
   return (
-    <Sheet open={order !== null} onClose={onClose} title={order ? `Pedido ${order.number}` : "Pedido"}>
-      {order && customerForm && (
+    <>
+      <Sheet open={order !== null} onClose={onClose} title={order ? `Pedido ${order.number}` : "Pedido"}>
+        {order && customerForm && (
         <div className="flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <OrderStatusBadge status={order.status} />
@@ -237,9 +247,36 @@ export function OrderDetailSheet({ order, onClose }: OrderDetailSheetProps) {
             <Button type="button" variant="ghost" onClick={() => copyOrderText(order)}>
               <Copy size={16} /> Copiar comanda
             </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-red-600 hover:bg-red-50"
+              onClick={() => setConfirmingDelete(true)}
+            >
+              <Trash2 size={16} /> Excluir pedido
+            </Button>
           </div>
         </div>
-      )}
-    </Sheet>
+        )}
+      </Sheet>
+
+      <ConfirmDialog
+        open={confirmingDelete}
+        onClose={() => setConfirmingDelete(false)}
+        title="Excluir pedido?"
+        description={
+          <>
+            O pedido <strong className="text-ink-900">{order?.number}</strong> será removido permanentemente e não poderá
+            ser recuperado.
+          </>
+        }
+        confirmLabel="Excluir"
+        destructive
+        onConfirm={() => {
+          setConfirmingDelete(false);
+          void handleDelete();
+        }}
+      />
+    </>
   );
 }

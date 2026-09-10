@@ -12,6 +12,7 @@ interface OrdersState {
   updateStatus: (orderId: string, status: OrderStatus) => void;
   updateOrderDetails: (orderId: string, customer: OrderCustomer, paymentTerms: string) => void;
   linkCustomer: (orderId: string, customerId: string) => Promise<boolean>;
+  deleteOrder: (orderId: string) => Promise<boolean>;
 }
 
 export const useOrdersStore = create<OrdersState>()((set, get) => ({
@@ -103,6 +104,20 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
     }
 
     set({ orders: previous.map((order) => (order.id === orderId ? { ...order, customerId } : order)) });
+    return true;
+  },
+
+  deleteOrder: async (orderId) => {
+    const previous = get().orders;
+    const { error } = await supabase.from("orders").delete().eq("id", orderId);
+
+    if (error) {
+      toast.error("Não foi possível excluir o pedido");
+      return false;
+    }
+
+    set({ orders: previous.filter((order) => order.id !== orderId) });
+    toast.success("Pedido excluído");
     return true;
   },
 }));
