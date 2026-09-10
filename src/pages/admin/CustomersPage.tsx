@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search } from "lucide-react";
+import { Pencil, Plus, Search } from "lucide-react";
 import { useCustomersStore } from "@/store/customers-store";
 import { useOrdersStore } from "@/store/orders-store";
 import { AdminState } from "@/components/admin/AdminState";
@@ -82,6 +82,7 @@ export function CustomersPage() {
                   <th className="px-4 py-3">CNPJ</th>
                   <th className="px-4 py-3">Telefone</th>
                   <th className="px-4 py-3">Pedidos</th>
+                  <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody>
@@ -96,6 +97,16 @@ export function CustomersPage() {
                     <td className="px-4 py-3 text-ink-700/70">{customer.cnpj || "-----"}</td>
                     <td className="px-4 py-3 text-ink-700/70">{customer.phone}</td>
                     <td className="px-4 py-3 text-ink-700/70">{orderCountByCustomer.get(customer.id) ?? 0}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end">
+                        <Link
+                          to={`/admin/clientes/${customer.id}/editar`}
+                          className="flex h-9 w-9 items-center justify-center rounded-full text-forest-800 hover:bg-forest-950/5"
+                        >
+                          <Pencil size={16} />
+                        </Link>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -104,18 +115,24 @@ export function CustomersPage() {
 
           <div className="flex flex-col gap-3 lg:hidden">
             {filtered.map((customer) => (
-              <Link
-                key={customer.id}
-                to={`/admin/clientes/${customer.id}`}
-                className="flex flex-col gap-1 rounded-2xl border border-forest-950/10 bg-white p-4"
-              >
-                <p className="font-extrabold text-forest-950">{customer.name}</p>
-                <p className="text-sm text-ink-700/70">{customer.companyName}</p>
+              <div key={customer.id} className="rounded-2xl border border-forest-950/10 bg-white p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <Link to={`/admin/clientes/${customer.id}`} className="min-w-0">
+                    <p className="truncate font-extrabold text-forest-950">{customer.name}</p>
+                    <p className="text-sm text-ink-700/70">{customer.companyName}</p>
+                  </Link>
+                  <Link
+                    to={`/admin/clientes/${customer.id}/editar`}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-forest-800 hover:bg-forest-950/5"
+                  >
+                    <Pencil size={16} />
+                  </Link>
+                </div>
                 <div className="mt-1 flex items-center justify-between text-xs text-ink-700/60">
                   <span>{customer.phone}</span>
                   <span>{orderCountByCustomer.get(customer.id) ?? 0} pedido(s)</span>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         </>
