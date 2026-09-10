@@ -22,6 +22,7 @@ export interface Order {
   id: string;
   number: string;
   createdAt: string;
+  customerId: string | null;
   customer: OrderCustomer;
   items: CartItem[];
   total: number;

@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Plus, Search } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { ORDER_STATUS_OPTIONS } from "@/lib/order-status";
 import { useOrdersStore } from "@/store/orders-store";
 import { AdminState } from "@/components/admin/AdminState";
 import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
 import { OrderDetailSheet } from "@/components/admin/OrderDetailSheet";
+import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import type { OrderStatus } from "@/types/order";
 
@@ -70,9 +72,16 @@ export function OrdersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-extrabold text-forest-950">Pedidos</h1>
-        <p className="text-sm text-ink-700/60">Acompanhe e gerencie os pedidos recebidos.</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-extrabold text-forest-950">Pedidos</h1>
+          <p className="text-sm text-ink-700/60">Acompanhe e gerencie os pedidos recebidos.</p>
+        </div>
+        <Link to="/admin/pedidos/novo">
+          <Button className="w-full sm:w-auto">
+            <Plus size={18} /> Novo pedido
+          </Button>
+        </Link>
       </div>
 
       {status === "loading" && orders.length === 0 ? (

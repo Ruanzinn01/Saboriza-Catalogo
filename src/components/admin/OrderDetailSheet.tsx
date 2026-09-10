@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react";
-import { Copy, Download, MessageCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import { Copy, Download, MessageCircle, UserPlus } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
 import { useOrdersStore } from "@/store/orders-store";
 import { useSettingsStore } from "@/store/settings-store";
+import { useCustomersStore } from "@/store/customers-store";
 import { ORDER_STATUS_OPTIONS, ORDER_STATUS_TRANSITIONS } from "@/lib/order-status";
 import { formatCurrency } from "@/lib/currency";
 import { calculateLineTotal } from "@/lib/pricing";
 import { copyOrderText, downloadOrderPdf, sendOrderWhatsApp } from "@/lib/order-actions";
 import type { Order, OrderCustomer, OrderStatus } from "@/types/order";
+import type { CustomerInput } from "@/types/customer";
 
 interface OrderDetailSheetProps {
   order: Order | null;
@@ -20,10 +24,16 @@ interface OrderDetailSheetProps {
 export function OrderDetailSheet({ order, onClose }: OrderDetailSheetProps) {
   const updateStatus = useOrdersStore((state) => state.updateStatus);
   const updateOrderDetails = useOrdersStore((state) => state.updateOrderDetails);
+  const linkCustomer = useOrdersStore((state) => state.linkCustomer);
   const settings = useSettingsStore((state) => state.settings);
+  const registeredCustomers = useCustomersStore((state) => state.customers);
+  const fetchCustomers = useCustomersStore((state) => state.fetchCustomers);
+  const findDuplicate = useCustomersStore((state) => state.findDuplicate);
+  const createCustomer = useCustomersStore((state) => state.createCustomer);
 
   const [customerForm, setCustomerForm] = useState<OrderCustomer | null>(null);
   const [paymentTerms, setPaymentTerms] = useState("");
+  const [registeringCustomer, setRegisteringCustomer] = useState(false);
 
   useEffect(() => {
     if (order) {
@@ -32,6 +42,11 @@ export function OrderDetailSheet({ order, onClose }: OrderDetailSheetProps) {
     }
   }, [order]);
 
+  useEffect(() => {
+    if (registeredCustomers.length === 0) fetchCustomers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function handleCustomerChange<K extends keyof OrderCustomer>(key: K, value: OrderCustomer[K]) {
     setCustomerForm((prev) => (prev ? { ...prev, [key]: value } : prev));
   }
@@ -39,6 +54,37 @@ export function OrderDetailSheet({ order, onClose }: OrderDetailSheetProps) {
   function handleSaveDetails() {
     if (!order || !customerForm) return;
     updateOrderDetails(order.id, customerForm, paymentTerms);
+  }
+
+  async function handleRegisterCustomer() {
+    if (!order || !customerForm) return;
+
+    const input: CustomerInput = {
+      name: customerForm.name,
+      companyName: customerForm.company,
+      phone: customerForm.phone,
+      tradeName: customerForm.tradeName,
+      cnpj: customerForm.cnpj,
+      ie: customerForm.ie,
+      email: customerForm.email,
+      address: customerForm.address,
+      neighborhood: customerForm.neighborhood,
+      cep: customerForm.cep,
+      city: customerForm.city,
+      state: customerForm.state,
+    };
+
+    setRegisteringCustomer(true);
+    const match = findDuplicate(input);
+
+    if (match) {
+      const linked = await linkCustomer(order.id, match.id);
+      if (linked) toast.success(`Cliente já cadastrado: ${match.name}. Pedido vinculado ao cadastro.`);
+    } else {
+      const created = await createCustomer(input);
+      if (created) await linkCustomer(order.id, created.id);
+    }
+    setRegisteringCustomer(false);
   }
 
   return (
@@ -68,6 +114,18 @@ export function OrderDetailSheet({ order, onClose }: OrderDetailSheetProps) {
             <p className="text-sm font-semibold text-ink-900">{order.customer.name}</p>
             <p className="text-sm text-ink-700/70">{order.customer.company}</p>
             <p className="text-sm text-ink-700/70">{order.customer.phone}</p>
+            {order.customerId ? (
+              <Link
+                to={`/admin/clientes/${order.customerId}`}
+                className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-forest-800 hover:underline"
+              >
+                <UserPlus size={14} /> Cliente cadastrado · Ver cadastro
+              </Link>
+            ) : (
+              <Button type="button" size="sm" variant="outline" className="mt-2" disabled={registeringCustomer} onClick={() => void handleRegisterCustomer()}>
+                <UserPlus size={16} /> {registeringCustomer ? "Cadastrando..." : "Cadastrar cliente"}
+              </Button>
+            )}
           </div>
 
           <div>

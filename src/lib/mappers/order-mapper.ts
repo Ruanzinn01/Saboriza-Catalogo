@@ -24,6 +24,7 @@ export function orderFromRow(row: OrderRow, itemRows: OrderItemRow[]): Order {
     id: row.id,
     number: row.order_number,
     createdAt: row.created_at,
+    customerId: row.customer_id,
     customer: {
       name: row.customer_name,
       company: row.company_name,

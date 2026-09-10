@@ -15,7 +15,11 @@ import { DashboardPage } from "@/pages/admin/DashboardPage";
 import { ProductsPage } from "@/pages/admin/ProductsPage";
 import { ProductFormPage } from "@/pages/admin/ProductFormPage";
 import { CategoriesPage } from "@/pages/admin/CategoriesPage";
+import { CustomersPage } from "@/pages/admin/CustomersPage";
+import { CustomerFormPage } from "@/pages/admin/CustomerFormPage";
+import { CustomerDetailPage } from "@/pages/admin/CustomerDetailPage";
 import { OrdersPage } from "@/pages/admin/OrdersPage";
+import { NewOrderPage } from "@/pages/admin/NewOrderPage";
 import { SettingsPage } from "@/pages/admin/SettingsPage";
 import { WhatsAppFloatingButton } from "@/components/layout/WhatsAppFloatingButton";
 
@@ -42,7 +46,12 @@ export function App() {
             <Route path="produtos" element={<ProductsPage />} />
             <Route path="produtos/:productId" element={<ProductFormPage />} />
             <Route path="categorias" element={<CategoriesPage />} />
+            <Route path="clientes" element={<CustomersPage />} />
+            <Route path="clientes/novo" element={<CustomerFormPage />} />
+            <Route path="clientes/:customerId" element={<CustomerDetailPage />} />
+            <Route path="clientes/:customerId/editar" element={<CustomerFormPage />} />
             <Route path="pedidos" element={<OrdersPage />} />
+            <Route path="pedidos/novo" element={<NewOrderPage />} />
             <Route path="configuracoes" element={<SettingsPage />} />
           </Route>
         </Route>

@@ -77,6 +77,60 @@ export type Database = {
         }
         Relationships: []
       }
+      customers: {
+        Row: {
+          address: string
+          cep: string
+          city: string
+          cnpj: string
+          company_name: string
+          created_at: string
+          email: string
+          id: string
+          ie: string
+          name: string
+          neighborhood: string
+          phone: string
+          state: string
+          trade_name: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string
+          cep?: string
+          city?: string
+          cnpj?: string
+          company_name: string
+          created_at?: string
+          email?: string
+          id?: string
+          ie?: string
+          name: string
+          neighborhood?: string
+          phone: string
+          state?: string
+          trade_name?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          cep?: string
+          city?: string
+          cnpj?: string
+          company_name?: string
+          created_at?: string
+          email?: string
+          id?: string
+          ie?: string
+          name?: string
+          neighborhood?: string
+          phone?: string
+          state?: string
+          trade_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -149,6 +203,7 @@ export type Database = {
           customer_city: string
           customer_cnpj: string
           customer_email: string
+          customer_id: string | null
           customer_ie: string
           customer_name: string
           customer_neighborhood: string
@@ -176,6 +231,7 @@ export type Database = {
           customer_city?: string
           customer_cnpj?: string
           customer_email?: string
+          customer_id?: string | null
           customer_ie?: string
           customer_name: string
           customer_neighborhood?: string
@@ -203,6 +259,7 @@ export type Database = {
           customer_city?: string
           customer_cnpj?: string
           customer_email?: string
+          customer_id?: string | null
           customer_ie?: string
           customer_name?: string
           customer_neighborhood?: string
@@ -219,7 +276,15 @@ export type Database = {
           total_units?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
@@ -336,6 +401,7 @@ export type Database = {
           p_customer_city?: string
           p_customer_cnpj?: string
           p_customer_email?: string
+          p_customer_id?: string
           p_customer_ie?: string
           p_customer_name: string
           p_customer_neighborhood?: string

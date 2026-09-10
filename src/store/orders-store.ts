@@ -11,6 +11,7 @@ interface OrdersState {
   createOrder: (order: Order) => void;
   updateStatus: (orderId: string, status: OrderStatus) => void;
   updateOrderDetails: (orderId: string, customer: OrderCustomer, paymentTerms: string) => void;
+  linkCustomer: (orderId: string, customerId: string) => Promise<boolean>;
 }
 
 export const useOrdersStore = create<OrdersState>()((set, get) => ({
@@ -90,5 +91,18 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
           toast.success("Pedido atualizado");
         }
       });
+  },
+
+  linkCustomer: async (orderId, customerId) => {
+    const previous = get().orders;
+    const { error } = await supabase.from("orders").update({ customer_id: customerId }).eq("id", orderId);
+
+    if (error) {
+      toast.error("Não foi possível vincular o cliente ao pedido");
+      return false;
+    }
+
+    set({ orders: previous.map((order) => (order.id === orderId ? { ...order, customerId } : order)) });
+    return true;
   },
 }));
