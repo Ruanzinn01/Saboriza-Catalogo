@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Pencil, Plus, Search } from "lucide-react";
+import { Eye, Plus, Search } from "lucide-react";
 import { useCustomersStore } from "@/store/customers-store";
 import { useOrdersStore } from "@/store/orders-store";
 import { AdminState } from "@/components/admin/AdminState";
@@ -100,10 +100,10 @@ export function CustomersPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end">
                         <Link
-                          to={`/admin/clientes/${customer.id}/editar`}
+                          to={`/admin/clientes/${customer.id}`}
                           className="flex h-9 w-9 items-center justify-center rounded-full text-forest-800 hover:bg-forest-950/5"
                         >
-                          <Pencil size={16} />
+                          <Eye size={16} />
                         </Link>
                       </div>
                     </td>
@@ -122,10 +122,10 @@ export function CustomersPage() {
                     <p className="text-sm text-ink-700/70">{customer.companyName}</p>
                   </Link>
                   <Link
-                    to={`/admin/clientes/${customer.id}/editar`}
+                    to={`/admin/clientes/${customer.id}`}
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-forest-800 hover:bg-forest-950/5"
                   >
-                    <Pencil size={16} />
+                    <Eye size={16} />
                   </Link>
                 </div>
                 <div className="mt-1 flex items-center justify-between text-xs text-ink-700/60">
