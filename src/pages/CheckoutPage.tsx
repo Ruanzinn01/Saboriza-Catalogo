@@ -1,22 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { toast } from "sonner";
 import { TopBar } from "@/components/layout/TopBar";
 import { AmbientBackground } from "@/components/layout/AmbientBackground";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
 import { CustomerForm } from "@/components/checkout/CustomerForm";
 import { useCartStore } from "@/store/cart-store";
 import { useOrdersStore } from "@/store/orders-store";
-import { calculateCartTotal } from "@/lib/pricing";
-import { generateOrderNumber } from "@/lib/order-number";
-import { formatOrderWhatsAppMessage } from "@/lib/order-message";
-import { buildWhatsAppLink } from "@/lib/whatsapp";
-import { CONTACT } from "@/config/contact";
+import { submitOrder } from "@/lib/orders-api";
 import type { OrderCustomer } from "@/types/order";
 
 export function CheckoutPage() {
   const items = useCartStore((state) => state.items);
   const clearCart = useCartStore((state) => state.clearCart);
-  const orders = useOrdersStore((state) => state.orders);
   const createOrder = useOrdersStore((state) => state.createOrder);
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
@@ -36,24 +32,18 @@ export function CheckoutPage() {
     );
   }
 
-  function handleSubmit(customer: OrderCustomer) {
+  async function handleSubmit(customer: OrderCustomer) {
     setSubmitting(true);
-    const order = {
-      id: crypto.randomUUID(),
-      number: generateOrderNumber(orders.length + 1),
-      createdAt: new Date().toISOString(),
-      customer,
-      items,
-      total: calculateCartTotal(items),
-      status: "novo" as const,
-    };
-    createOrder(order);
-    clearCart();
+    try {
+      const order = await submitOrder(customer, items);
+      createOrder(order);
+      clearCart();
 
-    const message = formatOrderWhatsAppMessage(order);
-    window.open(buildWhatsAppLink(CONTACT.whatsappNumber, message), "_blank");
-
-    navigate(`/pedido-confirmado/${order.id}`, { state: { order } });
+      navigate(`/pedido-confirmado/${order.id}`, { state: { order } });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível criar o pedido");
+      setSubmitting(false);
+    }
   }
 
   return (

@@ -4,3 +4,5 @@ dist
 *.local
 *.tsbuildinfo
 Imagens/
+.env
+.env.local

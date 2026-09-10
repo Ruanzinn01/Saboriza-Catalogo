@@ -12,7 +12,7 @@ export function CategoryNav({ categories, activeCategoryId, onSelect }: Category
   return (
     <div className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 pb-3 sm:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {categories.map((category) => {
-        const Icon = getCategoryIcon(category.id);
+        const Icon = getCategoryIcon(category.slug);
         const isActive = activeCategoryId === category.id;
         return (
           <button

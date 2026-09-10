@@ -1,5 +1,8 @@
+import { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
+import { useCatalogStore } from "@/store/catalog-store";
+import { useAdminAuthStore } from "@/store/admin-auth-store";
 import { CatalogPage } from "@/pages/CatalogPage";
 import { CheckoutPage } from "@/pages/CheckoutPage";
 import { OrderConfirmedPage } from "@/pages/OrderConfirmedPage";
@@ -16,6 +19,11 @@ import { SettingsPage } from "@/pages/admin/SettingsPage";
 import { WhatsAppFloatingButton } from "@/components/layout/WhatsAppFloatingButton";
 
 export function App() {
+  useEffect(() => {
+    useCatalogStore.getState().fetchCatalog();
+    useAdminAuthStore.getState().init();
+  }, []);
+
   return (
     <>
       <Toaster position="top-center" richColors />

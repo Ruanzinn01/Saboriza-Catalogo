@@ -46,7 +46,7 @@ export function TopBar({
         {categories && categories.length > 0 && (
           <nav className="hidden min-w-0 items-center gap-0.5 overflow-x-auto [scrollbar-width:none] lg:flex [&::-webkit-scrollbar]:hidden">
             {categories.map((category) => {
-              const Icon = getCategoryIcon(category.id);
+              const Icon = getCategoryIcon(category.slug);
               const isActive = activeCategoryId === category.id;
               return (
                 <button

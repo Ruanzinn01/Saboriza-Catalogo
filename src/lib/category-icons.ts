@@ -1,14 +1,16 @@
-import { Boxes, Droplets, FlaskConical, Flame, Package, Package2, type LucideIcon } from "lucide-react";
+import { Boxes, Droplets, Flame, Leaf, Package, ShoppingBasket, Soup, Warehouse, type LucideIcon } from "lucide-react";
 
 const categoryIcons: Record<string, LucideIcon> = {
-  "sal-churrasco": Flame,
-  frascos: FlaskConical,
-  potes: Package2,
+  combos: Boxes,
+  temperos: ShoppingBasket,
+  ervas: Leaf,
   molhos: Droplets,
-  saches: Package,
-  "linha-maior": Boxes,
+  "sal-churrasco": Flame,
+  naturais: Soup,
+  "food-service": Warehouse,
+  "linha-maior": Package,
 };
 
-export function getCategoryIcon(categoryId: string): LucideIcon {
-  return categoryIcons[categoryId] ?? Package;
+export function getCategoryIcon(categorySlug: string): LucideIcon {
+  return categoryIcons[categorySlug] ?? Package;
 }

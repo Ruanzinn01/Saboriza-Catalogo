@@ -1,22 +1,41 @@
 import { create } from "zustand";
-
-const ADMIN_CREDENTIALS = {
-  email: "admin@saboriza.com.br",
-  password: "saboriza123",
-};
+import type { Session } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
 interface AdminAuthState {
+  session: Session | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
+  isLoading: boolean;
+  init: () => void;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
 }
 
 export const useAdminAuthStore = create<AdminAuthState>((set) => ({
+  session: null,
   isAuthenticated: false,
-  login: (email, password) => {
-    const valid = email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password;
-    if (valid) set({ isAuthenticated: true });
-    return valid;
+  isLoading: true,
+
+  init: () => {
+    supabase.auth.getSession().then(({ data }) => {
+      set({ session: data.session, isAuthenticated: data.session !== null, isLoading: false });
+    });
+    supabase.auth.onAuthStateChange((_event, session) => {
+      set({ session, isAuthenticated: session !== null, isLoading: false });
+    });
   },
-  logout: () => set({ isAuthenticated: false }),
+
+  login: async (email, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.session) {
+      return { success: false, error: error?.message ?? "E-mail ou senha inválidos" };
+    }
+    set({ session: data.session, isAuthenticated: true, isLoading: false });
+    return { success: true };
+  },
+
+  logout: async () => {
+    await supabase.auth.signOut();
+    set({ session: null, isAuthenticated: false });
+  },
 }));

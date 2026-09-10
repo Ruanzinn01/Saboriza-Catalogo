@@ -1,12 +1,15 @@
+import { useEffect } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { CheckCircle2, MessageCircle } from "lucide-react";
+import { CheckCircle2, Download, MessageCircle } from "lucide-react";
 import { TopBar } from "@/components/layout/TopBar";
 import { AmbientBackground } from "@/components/layout/AmbientBackground";
 import { Button } from "@/components/ui/Button";
 import { useOrdersStore } from "@/store/orders-store";
+import { useSettingsStore } from "@/store/settings-store";
 import { formatCurrency } from "@/lib/currency";
-import { formatOrderWhatsAppMessage } from "@/lib/order-message";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
+import { formatOrderWhatsAppMessage } from "@/lib/order-message";
+import { downloadOrderPdf } from "@/lib/order-actions";
 import { CONTACT } from "@/config/contact";
 import type { Order } from "@/types/order";
 
@@ -16,6 +19,12 @@ export function OrderConfirmedPage() {
   const orderFromState = (location.state as { order?: Order } | null)?.order;
   const orderFromStore = useOrdersStore((state) => state.orders.find((order) => order.id === orderId));
   const order = orderFromState ?? orderFromStore;
+  const settings = useSettingsStore((state) => state.settings);
+  const fetchSettings = useSettingsStore((state) => state.fetchSettings);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   if (!order) {
     return (
@@ -56,14 +65,18 @@ export function OrderConfirmedPage() {
           ))}
           <p className="mt-3 text-base font-extrabold text-forest-950">Total: {formatCurrency(order.total)}</p>
         </div>
-        <a
-          href={buildWhatsAppLink(CONTACT.whatsappNumber, formatOrderWhatsAppMessage(order))}
-          target="_blank"
-          rel="noreferrer"
+        <Button
           className="w-full"
+          size="lg"
+          variant="outline"
+          disabled={!settings}
+          onClick={() => settings && downloadOrderPdf(order, settings)}
         >
+          <Download size={18} /> Baixar comanda PDF
+        </Button>
+        <a href={buildWhatsAppLink(CONTACT.whatsappNumber, formatOrderWhatsAppMessage(order))} target="_blank" rel="noreferrer" className="w-full">
           <Button className="w-full" size="lg">
-            <MessageCircle size={18} /> Reenviar pedido no WhatsApp
+            <MessageCircle size={18} /> Enviar comanda pelo WhatsApp
           </Button>
         </a>
         <Link to="/" className="w-full">

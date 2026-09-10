@@ -1,8 +1,9 @@
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import { ImageUploader } from "@/components/admin/ImageUploader";
 import { useCatalogStore } from "@/store/catalog-store";
 import type { PackagingType, Product, ProductBadge } from "@/types/product";
 
@@ -42,6 +43,18 @@ export function ProductFormPage() {
   const existingProduct = useMemo(() => products.find((product) => product.id === productId), [products, productId]);
 
   const [form, setForm] = useState(() => existingProduct ?? createEmptyForm(categories[0]?.id ?? ""));
+  const hydratedIdRef = useRef<string | undefined>(existingProduct ? productId : undefined);
+
+  useEffect(() => {
+    if (hydratedIdRef.current === productId) return;
+    if (isEditing) {
+      if (!existingProduct) return;
+      setForm(existingProduct);
+    } else {
+      setForm(createEmptyForm(categories[0]?.id ?? ""));
+    }
+    hydratedIdRef.current = productId;
+  }, [isEditing, existingProduct, productId, categories]);
 
   const previewProduct: Product = {
     id: existingProduct?.id ?? "preview",
@@ -70,14 +83,6 @@ export function ProductFormPage() {
           <p className="text-xs font-bold uppercase tracking-wide text-ink-700/50">Informações básicas</p>
           <Input label="Nome" value={form.name} onChange={(e) => handleChange("name", e.target.value)} required />
           <Input label="Descrição" value={form.description} onChange={(e) => handleChange("description", e.target.value)} />
-          <Input
-            label="Imagem (URL)"
-            value={form.imageUrl}
-            onChange={(e) => handleChange("imageUrl", e.target.value)}
-            placeholder="https://..."
-          />
-
-          <p className="mt-2 text-xs font-bold uppercase tracking-wide text-ink-700/50">Organização</p>
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-semibold text-ink-900">Categoria</span>
             <select
@@ -93,6 +98,15 @@ export function ProductFormPage() {
             </select>
           </label>
           <Input
+            label="Imagem (URL)"
+            value={form.imageUrl}
+            onChange={(e) => handleChange("imageUrl", e.target.value)}
+            placeholder="https://..."
+          />
+          <ImageUploader onUploaded={(url) => handleChange("imageUrl", url)} />
+
+          <p className="mt-2 text-xs font-bold uppercase tracking-wide text-ink-700/50">Apresentação</p>
+          <Input
             label="Apresentação"
             value={form.presentation}
             onChange={(e) => handleChange("presentation", e.target.value)}
@@ -100,7 +114,7 @@ export function ProductFormPage() {
           />
           <Input label="Peso/volume" value={form.weight} onChange={(e) => handleChange("weight", e.target.value)} placeholder="80g" />
 
-          <p className="mt-2 text-xs font-bold uppercase tracking-wide text-ink-700/50">Informações comerciais</p>
+          <p className="mt-2 text-xs font-bold uppercase tracking-wide text-ink-700/50">Venda</p>
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Preço unitário (R$)"
@@ -118,39 +132,36 @@ export function ProductFormPage() {
               onChange={(e) => handleChange("packQuantity", Number(e.target.value))}
             />
           </div>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-semibold text-ink-900">Tipo de embalagem interno</span>
+            <select
+              value={form.packagingType}
+              onChange={(e) => handleChange("packagingType", e.target.value as PackagingType)}
+              className="h-11 rounded-xl border border-ink-900/15 bg-white px-4 text-sm text-ink-900 outline-none focus:border-forest-700"
+            >
+              {packagingOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
 
-          <p className="mt-2 text-xs font-bold uppercase tracking-wide text-ink-700/50">Operacional</p>
-          <div className="grid grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-semibold text-ink-900">Tipo de embalagem interno</span>
-              <select
-                value={form.packagingType}
-                onChange={(e) => handleChange("packagingType", e.target.value as PackagingType)}
-                className="h-11 rounded-xl border border-ink-900/15 bg-white px-4 text-sm text-ink-900 outline-none focus:border-forest-700"
-              >
-                {packagingOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-semibold text-ink-900">Selo</span>
-              <select
-                value={form.badge ?? ""}
-                onChange={(e) => handleChange("badge", (e.target.value || undefined) as ProductBadge | undefined)}
-                className="h-11 rounded-xl border border-ink-900/15 bg-white px-4 text-sm text-ink-900 outline-none focus:border-forest-700"
-              >
-                {badgeOptions.map((option) => (
-                  <option key={option.label} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
+          <p className="mt-2 text-xs font-bold uppercase tracking-wide text-ink-700/50">Publicação</p>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-semibold text-ink-900">Selo</span>
+            <select
+              value={form.badge ?? ""}
+              onChange={(e) => handleChange("badge", (e.target.value || undefined) as ProductBadge | undefined)}
+              className="h-11 rounded-xl border border-ink-900/15 bg-white px-4 text-sm text-ink-900 outline-none focus:border-forest-700"
+            >
+              {badgeOptions.map((option) => (
+                <option key={option.label} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="flex items-center gap-2 pt-2">
             <input
               type="checkbox"

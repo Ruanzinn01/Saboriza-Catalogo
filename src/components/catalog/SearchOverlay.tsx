@@ -73,7 +73,7 @@ export function SearchOverlay({ open, onClose, onSelectCategory }: SearchOverlay
           <div className="flex flex-col gap-1.5">
             <p className="text-xs font-bold uppercase tracking-wide text-ink-700/40">Categorias</p>
             {matchedCategories.map((category) => {
-              const Icon = getCategoryIcon(category.id);
+              const Icon = getCategoryIcon(category.slug);
               return (
                 <button
                   key={category.id}

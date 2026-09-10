@@ -11,16 +11,20 @@ export function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   if (isAuthenticated) return <Navigate to="/admin" replace />;
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    const success = login(email, password);
-    if (success) {
+    setSubmitting(true);
+    setError("");
+    const result = await login(email, password);
+    setSubmitting(false);
+    if (result.success) {
       navigate("/admin");
     } else {
-      setError("E-mail ou senha inválidos");
+      setError(result.error ?? "E-mail ou senha inválidos");
     }
   }
 
@@ -45,10 +49,9 @@ export function AdminLoginPage() {
             placeholder="••••••••"
           />
           {error && <p className="text-xs text-red-600">{error}</p>}
-          <Button type="submit" size="lg">
-            Entrar
+          <Button type="submit" size="lg" disabled={submitting}>
+            {submitting ? "Entrando..." : "Entrar"}
           </Button>
-          <p className="text-center text-[11px] text-ink-700/50">Demonstração: admin@saboriza.com.br / saboriza123</p>
         </div>
       </form>
     </div>
