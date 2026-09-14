@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowDown, ArrowUp, CheckCircle2, Clock, Inbox, Minus, Wallet } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, Clock, Inbox, Minus } from "lucide-react";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useOrdersStore } from "@/store/orders-store";
 import { useCustomersStore } from "@/store/customers-store";
@@ -90,8 +90,6 @@ export function IndicatorsPage() {
     const createdAt = new Date(order.createdAt);
     return createdAt.getMonth() === now.getMonth() && createdAt.getFullYear() === now.getFullYear();
   });
-  const monthlySales = ordersThisMonth.reduce((total, order) => total + order.total, 0);
-
   const dailyRevenue = useMemo(() => buildDailyRevenue(orders), [orders]);
   const hasRevenueThisMonth = dailyRevenue.some((point) => point.amount > 0);
 
@@ -111,7 +109,6 @@ export function IndicatorsPage() {
     { label: "Novos pedidos", value: newOrders, icon: Inbox },
     { label: "Em análise", value: inReviewOrders, icon: Clock },
     { label: "Confirmados", value: confirmedOrders, icon: CheckCircle2 },
-    { label: "Vendas do mês", value: formatCurrency(monthlySales), icon: Wallet },
   ];
 
   const recentOrders = [...orders]
@@ -148,7 +145,7 @@ export function IndicatorsPage() {
         <AdminState variant="loading" message="Carregando indicadores..." />
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {cards.map((card) => (
               <div key={card.label} className="flex items-start justify-between gap-3 rounded-3xl border border-forest-950/10 bg-white p-5">
                 <div>
