@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { ClipboardList, ExternalLink, LayoutDashboard, LogOut, Menu, Package, Settings, Tag, Users } from "lucide-react";
+import { ClipboardList, ExternalLink, LogOut, Menu, Package, Settings, Tag, TrendingUp, Users } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
 import { useSettingsStore } from "@/store/settings-store";
 import { Sheet } from "@/components/ui/Sheet";
 
 const navItems = [
-  { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/admin", label: "Indicadores", icon: TrendingUp, end: true },
   { to: "/admin/produtos", label: "Produtos", icon: Package, end: false },
   { to: "/admin/categorias", label: "Categorias", icon: Tag, end: false },
   { to: "/admin/clientes", label: "Clientes", icon: Users, end: false },

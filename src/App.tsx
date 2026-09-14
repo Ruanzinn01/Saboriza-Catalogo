@@ -11,7 +11,7 @@ import { NotFoundPage } from "@/pages/NotFoundPage";
 import { AdminLoginPage } from "@/pages/admin/AdminLoginPage";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
-import { DashboardPage } from "@/pages/admin/DashboardPage";
+import { IndicatorsPage } from "@/pages/admin/IndicatorsPage";
 import { ProductsPage } from "@/pages/admin/ProductsPage";
 import { ProductFormPage } from "@/pages/admin/ProductFormPage";
 import { CategoriesPage } from "@/pages/admin/CategoriesPage";
@@ -42,7 +42,7 @@ export function App() {
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<DashboardPage />} />
+            <Route index element={<IndicatorsPage />} />
             <Route path="produtos" element={<ProductsPage />} />
             <Route path="produtos/:productId" element={<ProductFormPage />} />
             <Route path="categorias" element={<CategoriesPage />} />
