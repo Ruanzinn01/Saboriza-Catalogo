@@ -1,0 +1,24 @@
+import type { Supplier } from "@/types/supplier";
+import type { Database } from "@/types/supabase";
+
+type SupplierRow = Database["public"]["Tables"]["suppliers"]["Row"];
+
+export function supplierFromRow(row: SupplierRow): Supplier {
+  return {
+    id: row.id,
+    name: row.name,
+    companyName: row.company_name,
+    phone: row.phone,
+    tradeName: row.trade_name,
+    cnpj: row.cnpj,
+    ie: row.ie,
+    email: row.email,
+    address: row.address,
+    neighborhood: row.neighborhood,
+    cep: row.cep,
+    city: row.city,
+    state: row.state,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}

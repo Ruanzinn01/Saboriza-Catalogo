@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { ClipboardList, ExternalLink, LogOut, Menu, Package, Settings, Tag, TrendingUp, Users } from "lucide-react";
+import { ClipboardList, ExternalLink, LogOut, Menu, Package, Settings, Tag, Truck, TrendingUp, Users } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
 import { useSettingsStore } from "@/store/settings-store";
@@ -11,6 +11,7 @@ const navItems = [
   { to: "/admin/produtos", label: "Produtos", icon: Package, end: false },
   { to: "/admin/categorias", label: "Categorias", icon: Tag, end: false },
   { to: "/admin/clientes", label: "Clientes", icon: Users, end: false },
+  { to: "/admin/fornecedores", label: "Fornecedores", icon: Truck, end: false },
   { to: "/admin/pedidos", label: "Pedidos", icon: ClipboardList, end: false },
   { to: "/admin/configuracoes", label: "Configurações", icon: Settings, end: false },
 ];

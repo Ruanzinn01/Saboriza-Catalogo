@@ -8,6 +8,7 @@ export interface Product {
   description: string;
   imageUrl: string;
   categoryId: string;
+  supplierId: string | null;
   presentation: string;
   weight: string;
   unitPrice: number;

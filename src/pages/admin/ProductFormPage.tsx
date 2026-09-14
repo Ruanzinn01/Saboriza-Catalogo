@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { useCatalogStore } from "@/store/catalog-store";
+import { useSuppliersStore } from "@/store/suppliers-store";
 import type { PackagingType, Product, ProductBadge } from "@/types/product";
 
 const packagingOptions: PackagingType[] = ["Fardo", "Caixa", "Pacote", "Kit", "Outro"];
@@ -21,6 +22,7 @@ function createEmptyForm(categoryId: string) {
     description: "",
     imageUrl: "",
     categoryId,
+    supplierId: null as string | null,
     presentation: "",
     weight: "",
     unitPrice: 0,
@@ -39,6 +41,13 @@ export function ProductFormPage() {
   const products = useCatalogStore((state) => state.products);
   const addProduct = useCatalogStore((state) => state.addProduct);
   const updateProduct = useCatalogStore((state) => state.updateProduct);
+  const suppliers = useSuppliersStore((state) => state.suppliers);
+  const fetchSuppliers = useSuppliersStore((state) => state.fetchSuppliers);
+
+  useEffect(() => {
+    if (suppliers.length === 0) fetchSuppliers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const existingProduct = useMemo(() => products.find((product) => product.id === productId), [products, productId]);
 
@@ -93,6 +102,21 @@ export function ProductFormPage() {
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-semibold text-ink-900">Fornecedor</span>
+            <select
+              value={form.supplierId ?? ""}
+              onChange={(e) => handleChange("supplierId", e.target.value || null)}
+              className="h-11 rounded-xl border border-ink-900/15 bg-white px-4 text-sm text-ink-900 outline-none focus:border-forest-700"
+            >
+              <option value="">Nenhum</option>
+              {suppliers.map((supplier) => (
+                <option key={supplier.id} value={supplier.id}>
+                  {supplier.tradeName || supplier.companyName}
                 </option>
               ))}
             </select>

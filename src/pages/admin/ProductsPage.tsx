@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ImagePlus, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/currency";
 import { supabase } from "@/lib/supabase";
 import { useCatalogStore } from "@/store/catalog-store";
+import { useSuppliersStore } from "@/store/suppliers-store";
 import { Button } from "@/components/ui/Button";
 import { RowActionsMenu } from "@/components/admin/RowActionsMenu";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
@@ -21,12 +22,19 @@ export function ProductsPage() {
   const status = useCatalogStore((state) => state.status);
   const updateProduct = useCatalogStore((state) => state.updateProduct);
   const removeProduct = useCatalogStore((state) => state.removeProduct);
+  const suppliers = useSuppliersStore((state) => state.suppliers);
+  const fetchSuppliers = useSuppliersStore((state) => state.fetchSuppliers);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [productDeleteBlocked, setProductDeleteBlocked] = useState(false);
   const [imageEditProductId, setImageEditProductId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+  useEffect(() => {
+    if (suppliers.length === 0) fetchSuppliers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleDeleteClick(product: Product) {
     const { count, error } = await supabase
@@ -58,6 +66,12 @@ export function ProductsPage() {
 
   function categoryName(categoryId: string) {
     return categories.find((category) => category.id === categoryId)?.name ?? "Sem categoria";
+  }
+
+  function supplierName(supplierId: string | null) {
+    if (!supplierId) return null;
+    const supplier = suppliers.find((item) => item.id === supplierId);
+    return supplier ? supplier.tradeName || supplier.companyName : null;
   }
 
   function handleCategorySelect(value: string) {
@@ -170,7 +184,12 @@ export function ProductsPage() {
                         {product.presentation} · {product.weight}
                       </p>
                     </td>
-                    <td className="px-4 py-3 text-ink-700/70">{categoryName(product.categoryId)}</td>
+                    <td className="px-4 py-3 text-ink-700/70">
+                      <p>{categoryName(product.categoryId)}</p>
+                      {supplierName(product.supplierId) && (
+                        <p className="text-xs text-ink-700/50">Fornecedor: {supplierName(product.supplierId)}</p>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-ink-700/70">
                       <p>{formatCurrency(product.unitPrice)}/unidade</p>
                       <p className="text-xs text-ink-700/50">
@@ -232,6 +251,9 @@ export function ProductsPage() {
                         {product.presentation} · {product.weight}
                       </p>
                       <p className="mt-0.5 text-xs text-ink-700/60">{categoryName(product.categoryId)}</p>
+                      {supplierName(product.supplierId) && (
+                        <p className="text-xs text-ink-700/50">Fornecedor: {supplierName(product.supplierId)}</p>
+                      )}
                     </div>
                   </div>
                   <RowActionsMenu

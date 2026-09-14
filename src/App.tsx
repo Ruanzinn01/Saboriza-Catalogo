@@ -18,6 +18,9 @@ import { CategoriesPage } from "@/pages/admin/CategoriesPage";
 import { CustomersPage } from "@/pages/admin/CustomersPage";
 import { CustomerFormPage } from "@/pages/admin/CustomerFormPage";
 import { CustomerDetailPage } from "@/pages/admin/CustomerDetailPage";
+import { SuppliersPage } from "@/pages/admin/SuppliersPage";
+import { SupplierFormPage } from "@/pages/admin/SupplierFormPage";
+import { SupplierDetailPage } from "@/pages/admin/SupplierDetailPage";
 import { OrdersPage } from "@/pages/admin/OrdersPage";
 import { OrderEditorPage } from "@/pages/admin/OrderEditorPage";
 import { SettingsPage } from "@/pages/admin/SettingsPage";
@@ -50,6 +53,10 @@ export function App() {
             <Route path="clientes/novo" element={<CustomerFormPage />} />
             <Route path="clientes/:customerId" element={<CustomerDetailPage />} />
             <Route path="clientes/:customerId/editar" element={<CustomerFormPage />} />
+            <Route path="fornecedores" element={<SuppliersPage />} />
+            <Route path="fornecedores/novo" element={<SupplierFormPage />} />
+            <Route path="fornecedores/:supplierId" element={<SupplierDetailPage />} />
+            <Route path="fornecedores/:supplierId/editar" element={<SupplierFormPage />} />
             <Route path="pedidos" element={<OrdersPage />} />
             <Route path="pedidos/novo" element={<OrderEditorPage />} />
             <Route path="pedidos/:orderId" element={<OrderEditorPage />} />

@@ -299,6 +299,7 @@ export type Database = {
           pack_quantity: number
           packaging_type: string
           presentation: string
+          supplier_id: string | null
           unit_price: number
           updated_at: string
           weight_volume: string
@@ -315,6 +316,7 @@ export type Database = {
           pack_quantity: number
           packaging_type: string
           presentation: string
+          supplier_id?: string | null
           unit_price: number
           updated_at?: string
           weight_volume: string
@@ -331,6 +333,7 @@ export type Database = {
           pack_quantity?: number
           packaging_type?: string
           presentation?: string
+          supplier_id?: string | null
           unit_price?: number
           updated_at?: string
           weight_volume?: string
@@ -341,6 +344,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -387,6 +397,60 @@ export type Database = {
         }
         Relationships: []
       }
+      suppliers: {
+        Row: {
+          address: string
+          cep: string
+          city: string
+          cnpj: string
+          company_name: string
+          created_at: string
+          email: string
+          id: string
+          ie: string
+          name: string
+          neighborhood: string
+          phone: string
+          state: string
+          trade_name: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string
+          cep?: string
+          city?: string
+          cnpj?: string
+          company_name: string
+          created_at?: string
+          email?: string
+          id?: string
+          ie?: string
+          name: string
+          neighborhood?: string
+          phone: string
+          state?: string
+          trade_name?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          cep?: string
+          city?: string
+          cnpj?: string
+          company_name?: string
+          created_at?: string
+          email?: string
+          id?: string
+          ie?: string
+          name?: string
+          neighborhood?: string
+          phone?: string
+          state?: string
+          trade_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -410,6 +474,10 @@ export type Database = {
           p_items: Json
           p_phone: string
         }
+        Returns: Json
+      }
+      update_order_items: {
+        Args: { p_coupon_code?: string; p_items: Json; p_order_id: string }
         Returns: Json
       }
     }
