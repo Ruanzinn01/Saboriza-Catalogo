@@ -39,3 +39,18 @@ export async function submitOrder(
   const result = data as unknown as CreateOrderResult;
   return orderFromRow(result, result.items);
 }
+
+export async function updateOrderItems(orderId: string, items: CartItem[], couponCode?: string): Promise<Order> {
+  const { data, error } = await supabase.rpc("update_order_items", {
+    p_order_id: orderId,
+    p_items: items.map((item) => ({ product_id: item.productId, packs_quantity: item.packs })),
+    p_coupon_code: couponCode ?? "",
+  });
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "Não foi possível atualizar os itens do pedido");
+  }
+
+  const result = data as unknown as CreateOrderResult;
+  return orderFromRow(result, result.items);
+}

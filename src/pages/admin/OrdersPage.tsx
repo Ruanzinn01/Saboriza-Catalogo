@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search } from "lucide-react";
+import { Building2, Plus, Search, Tag } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
-import { ORDER_STATUS_OPTIONS } from "@/lib/order-status";
+import { ORDER_STATUS_OPTIONS, groupOrdersByDay } from "@/lib/order-status";
 import { useOrdersStore } from "@/store/orders-store";
 import { AdminState } from "@/components/admin/AdminState";
 import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
-import { OrderDetailSheet } from "@/components/admin/OrderDetailSheet";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
-import type { OrderStatus } from "@/types/order";
+import type { Order, OrderStatus } from "@/types/order";
 
 type StatusFilter = "ALL" | OrderStatus;
 
@@ -20,14 +19,38 @@ function formatOrderDate(iso: string) {
   return isToday ? `Hoje, ${time}` : `${date.toLocaleDateString("pt-BR")}, ${time}`;
 }
 
+function OrderCard({ order }: { order: Order }) {
+  return (
+    <Link
+      to={`/admin/pedidos/${order.id}`}
+      className="flex flex-col gap-2 rounded-3xl border border-forest-950/10 bg-white p-4 transition-colors hover:border-forest-700/30 hover:bg-forest-950/[0.02] sm:p-5"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-base font-extrabold text-forest-950">{order.number}</span>
+        <OrderStatusBadge status={order.status} />
+      </div>
+      <div className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+        <Building2 size={15} className="shrink-0 text-ink-700/50" />
+        {order.customer.company}
+      </div>
+      <div className="flex items-center gap-2 text-sm text-ink-700/70">
+        <Tag size={15} className="shrink-0 text-ink-700/50" />
+        {order.customer.tradeName || order.customer.name}
+      </div>
+      <div className="mt-1 flex items-center justify-between text-xs text-ink-700/60">
+        <span>{formatOrderDate(order.createdAt)}</span>
+        <span className="text-sm font-bold text-ink-900">{formatCurrency(order.total)}</span>
+      </div>
+    </Link>
+  );
+}
+
 export function OrdersPage() {
   const orders = useOrdersStore((state) => state.orders);
   const status = useOrdersStore((state) => state.status);
   const fetchOrders = useOrdersStore((state) => state.fetchOrders);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const selectedOrder = orders.find((order) => order.id === selectedOrderId) ?? null;
 
   useEffect(() => {
     fetchOrders();
@@ -45,6 +68,8 @@ export function OrdersPage() {
       return matchesStatus && matchesQuery;
     });
   }, [orders, search, statusFilter]);
+
+  const groupedFiltered = useMemo(() => groupOrdersByDay(filtered), [filtered]);
 
   const counts = useMemo(() => {
     const map: Record<StatusFilter, number> = {
@@ -124,66 +149,21 @@ export function OrdersPage() {
           {filtered.length === 0 ? (
             <AdminState variant="empty" message="Nenhum pedido encontrado com esse filtro." />
           ) : (
-            <>
-              <div className="hidden overflow-x-auto rounded-3xl border border-forest-950/10 bg-white lg:block">
-                <table className="w-full text-left text-sm">
-                  <thead className="border-b border-forest-950/10 text-xs uppercase tracking-wide text-ink-700/50">
-                    <tr>
-                      <th className="px-4 py-3">Pedido</th>
-                      <th className="px-4 py-3">Cliente</th>
-                      <th className="px-4 py-3">Empresa</th>
-                      <th className="px-4 py-3">Data</th>
-                      <th className="px-4 py-3">Total</th>
-                      <th className="px-4 py-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((order) => (
-                      <tr
-                        key={order.id}
-                        onClick={() => setSelectedOrderId(order.id)}
-                        className="cursor-pointer border-b border-forest-950/5 last:border-none hover:bg-forest-950/5"
-                      >
-                        <td className="px-4 py-3 font-semibold text-ink-900">{order.number}</td>
-                        <td className="px-4 py-3 text-ink-700/70">{order.customer.name}</td>
-                        <td className="px-4 py-3 text-ink-700/70">{order.customer.company}</td>
-                        <td className="px-4 py-3 text-ink-700/70">{formatOrderDate(order.createdAt)}</td>
-                        <td className="px-4 py-3 font-semibold text-ink-900">{formatCurrency(order.total)}</td>
-                        <td className="px-4 py-3">
-                          <OrderStatusBadge status={order.status} />
-                        </td>
-                      </tr>
+            <div className="flex flex-col gap-6">
+              {groupedFiltered.map((group) => (
+                <div key={group.label} className="flex flex-col gap-3">
+                  <p className="text-xs font-bold uppercase tracking-wide text-ink-700/60">{group.label}</p>
+                  <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                    {group.orders.map((order) => (
+                      <OrderCard key={order.id} order={order} />
                     ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex flex-col gap-3 lg:hidden">
-                {filtered.map((order) => (
-                  <button
-                    key={order.id}
-                    onClick={() => setSelectedOrderId(order.id)}
-                    className="flex flex-col gap-1 rounded-2xl border border-forest-950/10 bg-white p-4 text-left"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-extrabold text-forest-950">{order.number}</span>
-                      <OrderStatusBadge status={order.status} />
-                    </div>
-                    <p className="text-sm text-ink-900">{order.customer.name}</p>
-                    <p className="text-xs text-ink-700/60">{order.customer.company}</p>
-                    <div className="mt-1 flex items-center justify-between text-xs text-ink-700/60">
-                      <span>{formatOrderDate(order.createdAt)}</span>
-                      <span className="text-sm font-bold text-ink-900">{formatCurrency(order.total)}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </>
       )}
-
-      <OrderDetailSheet order={selectedOrder} onClose={() => setSelectedOrderId(null)} />
     </div>
   );
 }

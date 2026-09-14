@@ -5,10 +5,10 @@ import { useCustomersStore } from "@/store/customers-store";
 import { useOrdersStore } from "@/store/orders-store";
 import { AdminState } from "@/components/admin/AdminState";
 import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
-import { OrderDetailSheet } from "@/components/admin/OrderDetailSheet";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
 import { formatCurrency } from "@/lib/currency";
+import { getCustomerDisplayName } from "@/lib/customer-display";
 
 function formatOrderDate(iso: string) {
   return new Date(iso).toLocaleDateString("pt-BR");
@@ -23,7 +23,6 @@ export function CustomerDetailPage() {
   const deleteCustomer = useCustomersStore((state) => state.deleteCustomer);
   const orders = useOrdersStore((state) => state.orders);
   const fetchOrders = useOrdersStore((state) => state.fetchOrders);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteBlocked, setDeleteBlocked] = useState(false);
 
@@ -38,7 +37,6 @@ export function CustomerDetailPage() {
     () => orders.filter((order) => order.customerId === customerId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [orders, customerId]
   );
-  const selectedOrder = customerOrders.find((order) => order.id === selectedOrderId) ?? null;
 
   const summary = useMemo(() => {
     const total = customerOrders.reduce((sum, order) => sum + order.total, 0);
@@ -75,8 +73,8 @@ export function CustomerDetailPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-forest-950">{customer.name}</h1>
-          <p className="text-sm text-ink-700/60">{customer.companyName}</p>
+          <h1 className="text-2xl font-extrabold text-forest-950">{getCustomerDisplayName(customer)}</h1>
+          <p className="text-sm text-ink-700/60">{customer.name}</p>
         </div>
         <div className="flex gap-2">
           <Link to={`/admin/clientes/${customer.id}/editar`}>
@@ -128,9 +126,9 @@ export function CustomerDetailPage() {
           ) : (
             <div className="flex flex-col divide-y divide-forest-950/5">
               {customerOrders.map((order) => (
-                <button
+                <Link
                   key={order.id}
-                  onClick={() => setSelectedOrderId(order.id)}
+                  to={`/admin/pedidos/${order.id}`}
                   className="flex items-center justify-between gap-3 py-3 text-left hover:bg-forest-950/5"
                 >
                   <div>
@@ -141,14 +139,12 @@ export function CustomerDetailPage() {
                     <span className="text-sm font-bold text-ink-900">{formatCurrency(order.total)}</span>
                     <OrderStatusBadge status={order.status} />
                   </div>
-                </button>
+                </Link>
               ))}
             </div>
           )}
         </div>
       </div>
-
-      <OrderDetailSheet order={selectedOrder} onClose={() => setSelectedOrderId(null)} />
 
       {deleteBlocked ? (
         <ConfirmDialog

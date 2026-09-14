@@ -19,7 +19,7 @@ import { CustomersPage } from "@/pages/admin/CustomersPage";
 import { CustomerFormPage } from "@/pages/admin/CustomerFormPage";
 import { CustomerDetailPage } from "@/pages/admin/CustomerDetailPage";
 import { OrdersPage } from "@/pages/admin/OrdersPage";
-import { NewOrderPage } from "@/pages/admin/NewOrderPage";
+import { OrderEditorPage } from "@/pages/admin/OrderEditorPage";
 import { SettingsPage } from "@/pages/admin/SettingsPage";
 import { WhatsAppFloatingButton } from "@/components/layout/WhatsAppFloatingButton";
 
@@ -51,7 +51,8 @@ export function App() {
             <Route path="clientes/:customerId" element={<CustomerDetailPage />} />
             <Route path="clientes/:customerId/editar" element={<CustomerFormPage />} />
             <Route path="pedidos" element={<OrdersPage />} />
-            <Route path="pedidos/novo" element={<NewOrderPage />} />
+            <Route path="pedidos/novo" element={<OrderEditorPage />} />
+            <Route path="pedidos/:orderId" element={<OrderEditorPage />} />
             <Route path="configuracoes" element={<SettingsPage />} />
           </Route>
         </Route>

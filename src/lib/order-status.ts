@@ -1,4 +1,4 @@
-import type { OrderStatus } from "@/types/order";
+import type { Order, OrderStatus } from "@/types/order";
 
 export const ORDER_STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: "NEW", label: "Novo" },
@@ -39,3 +39,32 @@ export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   COMPLETED: [],
   CANCELLED: [],
 };
+
+export interface OrderDayGroup {
+  label: string;
+  orders: Order[];
+}
+
+export function groupOrdersByDay(orders: Order[]): OrderDayGroup[] {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  function labelFor(date: Date) {
+    if (date.toDateString() === today.toDateString()) return "Hoje";
+    if (date.toDateString() === yesterday.toDateString()) return "Ontem";
+    return `Dia ${date.toLocaleDateString("pt-BR")}`;
+  }
+
+  const groups: OrderDayGroup[] = [];
+  for (const order of orders) {
+    const label = labelFor(new Date(order.createdAt));
+    const lastGroup = groups[groups.length - 1];
+    if (lastGroup && lastGroup.label === label) {
+      lastGroup.orders.push(order);
+    } else {
+      groups.push({ label, orders: [order] });
+    }
+  }
+  return groups;
+}

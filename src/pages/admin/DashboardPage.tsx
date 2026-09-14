@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { CheckCircle2, Clock, Inbox, Wallet } from "lucide-react";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useOrdersStore } from "@/store/orders-store";
@@ -6,7 +7,6 @@ import { formatCurrency } from "@/lib/currency";
 import { buildDailyRevenue } from "@/lib/daily-revenue";
 import { AdminState } from "@/components/admin/AdminState";
 import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
-import { OrderDetailSheet } from "@/components/admin/OrderDetailSheet";
 import { RevenueByDayChart } from "@/components/admin/RevenueByDayChart";
 
 const monthLabelFormatter = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" });
@@ -25,8 +25,6 @@ export function DashboardPage() {
   const orders = useOrdersStore((state) => state.orders);
   const ordersStatus = useOrdersStore((state) => state.status);
   const fetchOrders = useOrdersStore((state) => state.fetchOrders);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const selectedOrder = orders.find((order) => order.id === selectedOrderId) ?? null;
 
   useEffect(() => {
     fetchOrders();
@@ -114,9 +112,9 @@ export function DashboardPage() {
               ) : (
                 <div className="flex flex-col gap-2">
                   {recentOrders.map((order) => (
-                    <button
+                    <Link
                       key={order.id}
-                      onClick={() => setSelectedOrderId(order.id)}
+                      to={`/admin/pedidos/${order.id}`}
                       className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-forest-950/10 p-3 text-left transition-colors hover:border-forest-700/30 hover:bg-forest-950/[0.02]"
                     >
                       <div>
@@ -130,7 +128,7 @@ export function DashboardPage() {
                         <span className="text-sm font-bold text-ink-900">{formatCurrency(order.total)}</span>
                         <OrderStatusBadge status={order.status} />
                       </div>
-                    </button>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -178,8 +176,6 @@ export function DashboardPage() {
           </div>
         </>
       )}
-
-      <OrderDetailSheet order={selectedOrder} onClose={() => setSelectedOrderId(null)} />
     </div>
   );
 }

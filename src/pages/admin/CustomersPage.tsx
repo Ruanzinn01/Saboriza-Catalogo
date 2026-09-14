@@ -5,6 +5,8 @@ import { useCustomersStore } from "@/store/customers-store";
 import { useOrdersStore } from "@/store/orders-store";
 import { AdminState } from "@/components/admin/AdminState";
 import { Button } from "@/components/ui/Button";
+import { CustomersActivityChart } from "@/components/admin/CustomersActivityChart";
+import { getCustomerDisplayName } from "@/lib/customer-display";
 
 export function CustomersPage() {
   const customers = useCustomersStore((state) => state.customers);
@@ -52,6 +54,8 @@ export function CustomersPage() {
         </Link>
       </div>
 
+      <CustomersActivityChart customers={customers} orders={orders} />
+
       <div className="relative">
         <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-700/40" />
         <input
@@ -77,8 +81,8 @@ export function CustomersPage() {
             <table className="w-full text-left text-sm">
               <thead className="border-b border-forest-950/10 text-xs uppercase tracking-wide text-ink-700/50">
                 <tr>
-                  <th className="px-4 py-3">Cliente</th>
                   <th className="px-4 py-3">Empresa</th>
+                  <th className="px-4 py-3">Contato</th>
                   <th className="px-4 py-3">CNPJ</th>
                   <th className="px-4 py-3">Telefone</th>
                   <th className="px-4 py-3">Pedidos</th>
@@ -90,10 +94,10 @@ export function CustomersPage() {
                   <tr key={customer.id} className="border-b border-forest-950/5 last:border-none hover:bg-forest-950/5">
                     <td className="px-4 py-3">
                       <Link to={`/admin/clientes/${customer.id}`} className="font-semibold text-ink-900 hover:underline">
-                        {customer.name}
+                        {getCustomerDisplayName(customer)}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-ink-700/70">{customer.companyName}</td>
+                    <td className="px-4 py-3 text-ink-700/70">{customer.name}</td>
                     <td className="px-4 py-3 text-ink-700/70">{customer.cnpj || "-----"}</td>
                     <td className="px-4 py-3 text-ink-700/70">{customer.phone}</td>
                     <td className="px-4 py-3 text-ink-700/70">{orderCountByCustomer.get(customer.id) ?? 0}</td>
@@ -118,8 +122,8 @@ export function CustomersPage() {
               <div key={customer.id} className="rounded-2xl border border-forest-950/10 bg-white p-4">
                 <div className="flex items-start justify-between gap-3">
                   <Link to={`/admin/clientes/${customer.id}`} className="min-w-0">
-                    <p className="truncate font-extrabold text-forest-950">{customer.name}</p>
-                    <p className="text-sm text-ink-700/70">{customer.companyName}</p>
+                    <p className="truncate font-extrabold text-forest-950">{getCustomerDisplayName(customer)}</p>
+                    <p className="text-sm text-ink-700/70">{customer.name}</p>
                   </Link>
                   <Link
                     to={`/admin/clientes/${customer.id}`}

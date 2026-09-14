@@ -4,6 +4,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { CustomerFormFields } from "@/components/admin/CustomerFormFields";
 import { useCustomersStore } from "@/store/customers-store";
+import { getCustomerDisplayName, getCustomerSecondaryLine } from "@/lib/customer-display";
 import type { Customer, CustomerInput } from "@/types/customer";
 
 const emptyForm: CustomerInput = {
@@ -88,8 +89,8 @@ export function CustomerPicker({ selectedCustomer, onSelect, onClear }: Customer
       <div className="flex flex-col gap-2 rounded-2xl border border-forest-700/20 bg-forest-700/5 p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-sm font-extrabold text-forest-950">{selectedCustomer.name}</p>
-            <p className="text-sm text-ink-700/70">{selectedCustomer.companyName}</p>
+            <p className="text-sm font-extrabold text-forest-950">{getCustomerDisplayName(selectedCustomer)}</p>
+            <p className="text-sm text-ink-700/70">{getCustomerSecondaryLine(selectedCustomer)}</p>
           </div>
           <button
             type="button"
@@ -135,10 +136,8 @@ export function CustomerPicker({ selectedCustomer, onSelect, onClear }: Customer
               }}
               className="flex flex-col items-start px-4 py-3 text-left hover:bg-forest-950/5"
             >
-              <span className="text-sm font-semibold text-ink-900">{customer.name}</span>
-              <span className="text-xs text-ink-700/60">
-                {customer.companyName} · {customer.phone}
-              </span>
+              <span className="text-sm font-semibold text-ink-900">{getCustomerDisplayName(customer)}</span>
+              <span className="text-xs text-ink-700/60">{getCustomerSecondaryLine(customer)}</span>
             </button>
           ))}
         </div>

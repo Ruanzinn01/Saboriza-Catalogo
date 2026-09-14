@@ -13,6 +13,7 @@ interface OrdersState {
   updateOrderDetails: (orderId: string, customer: OrderCustomer, paymentTerms: string) => void;
   linkCustomer: (orderId: string, customerId: string) => Promise<boolean>;
   deleteOrder: (orderId: string) => Promise<boolean>;
+  replaceOrder: (order: Order) => void;
 }
 
 export const useOrdersStore = create<OrdersState>()((set, get) => ({
@@ -119,5 +120,9 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
     set({ orders: previous.filter((order) => order.id !== orderId) });
     toast.success("Pedido excluído");
     return true;
+  },
+
+  replaceOrder: (order) => {
+    set((state) => ({ orders: state.orders.map((item) => (item.id === order.id ? order : item)) }));
   },
 }));
