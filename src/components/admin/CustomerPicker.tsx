@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
-import { Search, UserPlus, X } from "lucide-react";
+import { Search, UserPlus } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { CustomerFormFields } from "@/components/admin/CustomerFormFields";
@@ -47,7 +47,7 @@ export function CustomerPicker({ selectedCustomer, onSelect, onClear }: Customer
 
   const results = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return [];
+    if (!query) return customers.slice(0, 8);
     return customers
       .filter((customer) =>
         [customer.name, customer.companyName, customer.cnpj, customer.phone].some((field) => field.toLowerCase().includes(query))
@@ -84,36 +84,20 @@ export function CustomerPicker({ selectedCustomer, onSelect, onClear }: Customer
     }
   }
 
-  if (selectedCustomer) {
-    return (
-      <div className="flex flex-col gap-2 rounded-2xl border border-forest-700/20 bg-forest-700/5 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-extrabold text-forest-950">{getCustomerDisplayName(selectedCustomer)}</p>
-            <p className="text-sm text-ink-700/70">{getCustomerSecondaryLine(selectedCustomer)}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClear}
-            aria-label="Trocar cliente"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-ink-700/60 hover:bg-ink-900/5"
-          >
-            <X size={16} />
-          </button>
-        </div>
-        <div className="grid grid-cols-1 gap-x-4 gap-y-0.5 text-sm text-ink-700/70 sm:grid-cols-2">
-          <p>CNPJ: {selectedCustomer.cnpj || "-----"}</p>
-          <p>IE: {selectedCustomer.ie || "-----"}</p>
-          <p>Telefone: {selectedCustomer.phone}</p>
-          <p>E-mail: {selectedCustomer.email || "-----"}</p>
-          <p className="sm:col-span-2">Endereço: {selectedCustomer.address || "-----"}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-3">
+      {selectedCustomer && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-forest-700/20 bg-forest-700/5 px-4 py-3">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold text-forest-950">{getCustomerDisplayName(selectedCustomer)}</p>
+            <p className="text-xs text-ink-700/60">Cliente vinculado a este pedido</p>
+          </div>
+          <Button type="button" size="sm" variant="outline" onClick={onClear} className="shrink-0">
+            Trocar
+          </Button>
+        </div>
+      )}
+
       <div className="relative">
         <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-700/40" />
         <input

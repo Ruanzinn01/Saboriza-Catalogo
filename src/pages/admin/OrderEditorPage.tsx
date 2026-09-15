@@ -15,11 +15,11 @@ import {
   UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
 import { OrderPreviewModal } from "@/components/admin/OrderPreviewModal";
 import { CustomerPicker } from "@/components/admin/CustomerPicker";
+import { CustomerInfoPanel } from "@/components/admin/CustomerInfoPanel";
 import { CouponField } from "@/components/checkout/CouponField";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
 import { ProductImage } from "@/components/catalog/ProductImage";
@@ -167,6 +167,10 @@ export function OrderEditorPage() {
     }
   }
 
+  function handleCustomerUpdated(customer: Customer) {
+    setSelectedCustomer(customer);
+  }
+
   async function handleCreateOrder() {
     if (!selectedCustomer) {
       toast.error("Selecione ou cadastre um cliente");
@@ -219,6 +223,10 @@ export function OrderEditorPage() {
 
   async function handleRegisterCustomer() {
     if (!order || !extraForm) return;
+    if (order.customerId) {
+      toast.error("Este pedido já está vinculado a um cliente cadastrado.");
+      return;
+    }
 
     const input: CustomerInput = {
       name: extraForm.name,
@@ -368,18 +376,32 @@ export function OrderEditorPage() {
 
       <section className="flex flex-col gap-3 rounded-3xl border border-forest-950/10 bg-white p-6">
         <p className="text-xs font-bold uppercase tracking-wide text-ink-700/50">Cliente</p>
-        <CustomerPicker selectedCustomer={selectedCustomer} onSelect={(customer) => void handleSelectCustomer(customer)} onClear={() => setSelectedCustomer(null)} />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="flex flex-col gap-3">
+            <CustomerPicker selectedCustomer={selectedCustomer} onSelect={(customer) => void handleSelectCustomer(customer)} onClear={() => setSelectedCustomer(null)} />
 
-        {order && !order.customerId && (
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" variant="outline" disabled={registeringCustomer} onClick={() => void handleRegisterCustomer()}>
-              <UserPlus size={16} /> {registeringCustomer ? "Cadastrando..." : "Cadastrar cliente com esses dados"}
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => setLinkSheetOpen(true)}>
-              <UserCheck size={16} /> Vincular a cliente existente
-            </Button>
+            {order && (
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" size="sm" variant="outline" disabled={registeringCustomer} onClick={() => void handleRegisterCustomer()}>
+                  <UserPlus size={16} /> {registeringCustomer ? "Cadastrando..." : "Cadastrar cliente com esses dados"}
+                </Button>
+                <Button type="button" size="sm" variant="outline" onClick={() => setLinkSheetOpen(true)}>
+                  <UserCheck size={16} /> Vincular a cliente existente
+                </Button>
+              </div>
+            )}
           </div>
-        )}
+
+          <CustomerInfoPanel
+            selectedCustomer={selectedCustomer}
+            rawCustomer={extraForm}
+            paymentTerms={paymentTerms}
+            onRawChange={handleExtraChange}
+            onPaymentTermsChange={setPaymentTerms}
+            onSaveRaw={handleSaveExtra}
+            onCustomerUpdated={handleCustomerUpdated}
+          />
+        </div>
       </section>
 
       <section className="flex flex-col gap-4 rounded-3xl border border-forest-950/10 bg-white p-6">
@@ -508,38 +530,6 @@ export function OrderEditorPage() {
           <OrderSummary items={items} coupon={coupon} />
         )}
       </section>
-
-      {order && extraForm && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-forest-950/10 bg-cream-50 p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-ink-700/50">
-            Dados adicionais (opcional, usados na comanda em PDF)
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Nome fantasia" value={extraForm.tradeName} onChange={(e) => handleExtraChange("tradeName", e.target.value)} />
-            <Input label="CNPJ" value={extraForm.cnpj} onChange={(e) => handleExtraChange("cnpj", e.target.value)} />
-            <Input label="Inscrição estadual" value={extraForm.ie} onChange={(e) => handleExtraChange("ie", e.target.value)} />
-            <Input label="E-mail" value={extraForm.email} onChange={(e) => handleExtraChange("email", e.target.value)} />
-          </div>
-          <Input label="Endereço" value={extraForm.address} onChange={(e) => handleExtraChange("address", e.target.value)} />
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Bairro" value={extraForm.neighborhood} onChange={(e) => handleExtraChange("neighborhood", e.target.value)} />
-            <Input label="CEP" value={extraForm.cep} onChange={(e) => handleExtraChange("cep", e.target.value)} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Cidade" value={extraForm.city} onChange={(e) => handleExtraChange("city", e.target.value)} />
-            <Input
-              label="Estado"
-              maxLength={2}
-              value={extraForm.state}
-              onChange={(e) => handleExtraChange("state", e.target.value.toUpperCase())}
-            />
-          </div>
-          <Input label="Condição de pagamento" placeholder="Ex: 21,28,35" value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} />
-          <Button type="button" size="sm" variant="outline" onClick={handleSaveExtra}>
-            Salvar dados adicionais
-          </Button>
-        </div>
-      )}
 
       <Button size="lg" disabled={submitting} onClick={() => void (isEditing ? handleSaveItems() : handleCreateOrder())}>
         {submitting ? "Salvando..." : isEditing ? "Salvar alterações" : "Criar pedido"}

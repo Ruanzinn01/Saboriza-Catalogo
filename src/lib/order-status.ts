@@ -24,6 +24,14 @@ export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
   CANCELLED: "bg-red-100 text-red-700",
 };
 
+export const ORDER_STATUS_BADGE_COLORS: Record<OrderStatus, string> = {
+  NEW: "border-forest-700/40 bg-forest-700/10 text-forest-800",
+  IN_REVIEW: "border-gold-500/50 bg-gold-500/15 text-gold-700",
+  CONFIRMED: "border-forest-950/30 bg-forest-950/10 text-forest-950",
+  COMPLETED: "border-forest-900/40 bg-forest-900 text-cream-50",
+  CANCELLED: "border-red-300 bg-red-100 text-red-700",
+};
+
 export const ORDER_STATUS_DOT_COLORS: Record<OrderStatus, string> = {
   NEW: "bg-forest-700",
   IN_REVIEW: "bg-gold-500",

@@ -73,6 +73,9 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
     supabase
       .from("orders")
       .update({
+        customer_name: customer.name,
+        company_name: customer.company,
+        phone: customer.phone,
         customer_trade_name: customer.tradeName,
         customer_cnpj: customer.cnpj,
         customer_ie: customer.ie,
