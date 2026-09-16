@@ -131,6 +131,27 @@ export type Database = {
         }
         Relationships: []
       }
+      ibge_cities: {
+        Row: {
+          city_code: string
+          city_name: string
+          state_code: string
+          state_name: string
+        }
+        Insert: {
+          city_code: string
+          city_name: string
+          state_code: string
+          state_name: string
+        }
+        Update: {
+          city_code?: string
+          city_name?: string
+          state_code?: string
+          state_name?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -358,39 +379,99 @@ export type Database = {
       settings: {
         Row: {
           business_hours: string
+          cep: string
+          city_code: string
+          city_name: string
+          cnae_code: string
+          cnae_description: string
           cnpj: string
+          complement: string
+          country: string
           created_at: string
+          effective_rate: number
           factory_name: string
+          fantasy_name: string
           hero_image_url: string
+          ibge_code: string
           id: string
           ie: string
           legal_name: string
+          municipal_registration: string
+          neighborhood: string
+          number: string
+          rbt12: number
+          reference_competence: string
+          schedule_annex: string
+          state_code: string
+          state_name: string
+          street: string
+          tax_regime: string
           updated_at: string
           whatsapp_display: string
           whatsapp_number: string
         }
         Insert: {
           business_hours?: string
+          cep?: string
+          city_code?: string
+          city_name?: string
+          cnae_code?: string
+          cnae_description?: string
           cnpj?: string
+          complement?: string
+          country?: string
           created_at?: string
+          effective_rate?: number
           factory_name?: string
+          fantasy_name?: string
           hero_image_url?: string
+          ibge_code?: string
           id?: string
           ie?: string
           legal_name?: string
+          municipal_registration?: string
+          neighborhood?: string
+          number?: string
+          rbt12?: number
+          reference_competence?: string
+          schedule_annex?: string
+          state_code?: string
+          state_name?: string
+          street?: string
+          tax_regime?: string
           updated_at?: string
           whatsapp_display?: string
           whatsapp_number?: string
         }
         Update: {
           business_hours?: string
+          cep?: string
+          city_code?: string
+          city_name?: string
+          cnae_code?: string
+          cnae_description?: string
           cnpj?: string
+          complement?: string
+          country?: string
           created_at?: string
+          effective_rate?: number
           factory_name?: string
+          fantasy_name?: string
           hero_image_url?: string
+          ibge_code?: string
           id?: string
           ie?: string
           legal_name?: string
+          municipal_registration?: string
+          neighborhood?: string
+          number?: string
+          rbt12?: number
+          reference_competence?: string
+          schedule_annex?: string
+          state_code?: string
+          state_name?: string
+          street?: string
+          tax_regime?: string
           updated_at?: string
           whatsapp_display?: string
           whatsapp_number?: string

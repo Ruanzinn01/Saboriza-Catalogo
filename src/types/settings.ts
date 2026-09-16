@@ -8,4 +8,24 @@ export interface Settings {
   cnpj: string;
   ie: string;
   heroImageUrl: string;
+  fantasyName: string;
+  cnaeCode: string;
+  cnaeDescription: string;
+  taxRegime: string;
+  municipalRegistration: string;
+  cep: string;
+  street: string;
+  number: string;
+  complement: string;
+  neighborhood: string;
+  stateCode: string;
+  stateName: string;
+  cityCode: string;
+  cityName: string;
+  ibgeCode: string;
+  country: string;
+  rbt12: number;
+  effectiveRate: number;
+  scheduleAnnex: string;
+  referenceCompetence: string;
 }

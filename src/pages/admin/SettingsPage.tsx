@@ -1,7 +1,9 @@
-import { type FormEvent, useEffect, useState } from "react";
-import { Eye, ImageOff } from "lucide-react";
+import { type FormEvent, useEffect, useState, useCallback } from "react";
+import { toast } from "sonner";
+import { Eye, ImageOff, CheckCircle2, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { Combobox, type ComboboxOption } from "@/components/ui/Combobox";
 import { AdminState } from "@/components/admin/AdminState";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { CouponsSection } from "@/components/admin/CouponsSection";
@@ -11,6 +13,12 @@ import { cn } from "@/lib/cn";
 import { useSettingsStore } from "@/store/settings-store";
 import { useCatalogStore } from "@/store/catalog-store";
 import type { Settings } from "@/types/settings";
+import { formatCnpj, isValidCnpj } from "@/lib/cnpj";
+import { formatCep, fetchAddressByCep } from "@/lib/cep";
+import { listIbgeStates, listIbgeCitiesByState, findIbgeCityByCode, type IbgeState } from "@/lib/ibge";
+import { searchCnae } from "@/lib/cnae";
+import { TAX_REGIMES, SCHEDULE_ANNEXES } from "@/lib/fiscal-constants";
+import { getSettingsReadiness } from "@/lib/settings-readiness";
 
 type SettingsTab = "fabrica" | "aparencia" | "cupons";
 
@@ -32,6 +40,8 @@ export function SettingsPage() {
 
   const [form, setForm] = useState<Settings | null>(null);
   const [tab, setTab] = useState<SettingsTab>("fabrica");
+  const [ufOptions, setUfOptions] = useState<IbgeState[]>([]);
+  const [cepLoading, setCepLoading] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -41,6 +51,10 @@ export function SettingsPage() {
     if (settings) setForm(settings);
   }, [settings]);
 
+  useEffect(() => {
+    listIbgeStates().then(setUfOptions);
+  }, []);
+
   function handleChange<K extends keyof Settings>(key: K, value: Settings[K]) {
     setForm((prev) => (prev ? { ...prev, [key]: value } : prev));
   }
@@ -48,8 +62,65 @@ export function SettingsPage() {
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!form) return;
+    if (tab === "fabrica" && form.cnpj.trim() !== "" && !isValidCnpj(form.cnpj)) {
+      toast.error("CNPJ inválido. Corrija antes de salvar.");
+      return;
+    }
     updateSettings(form);
   }
+
+  async function handleCepBlur() {
+    if (!form) return;
+    const digits = form.cep.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+
+    setCepLoading(true);
+    const address = await fetchAddressByCep(form.cep);
+    if (address) {
+      const city = await findIbgeCityByCode(address.ibgeCode);
+      setForm((prev) =>
+        prev
+          ? {
+              ...prev,
+              street: address.street || prev.street,
+              neighborhood: address.neighborhood || prev.neighborhood,
+              stateCode: city?.stateCode ?? address.stateCode,
+              stateName: city?.stateName ?? prev.stateName,
+              cityCode: address.ibgeCode,
+              cityName: city?.name ?? address.cityName,
+              ibgeCode: address.ibgeCode,
+            }
+          : prev
+      );
+    }
+    setCepLoading(false);
+  }
+
+  function handleUfChange(stateCode: string) {
+    const state = ufOptions.find((item) => item.code === stateCode);
+    setForm((prev) =>
+      prev
+        ? { ...prev, stateCode, stateName: state?.name ?? "", cityCode: "", cityName: "", ibgeCode: "" }
+        : prev
+    );
+  }
+
+  const fetchCityOptions = useCallback(
+    async (query: string): Promise<ComboboxOption[]> => {
+      if (!form?.stateCode) return [];
+      const cities = await listIbgeCitiesByState(form.stateCode, query);
+      return cities.map((city) => ({ value: city.code, label: city.name }));
+    },
+    [form?.stateCode]
+  );
+
+  const fetchCnaeOptions = useCallback(async (query: string): Promise<ComboboxOption[]> => {
+    const results = await searchCnae(query);
+    return results.map((item) => ({ value: item.code, label: item.description, sublabel: item.code }));
+  }, []);
+
+  const readiness = form ? getSettingsReadiness(form) : [];
+  const cnpjInvalid = !!form?.cnpj && !isValidCnpj(form.cnpj);
 
   return (
     <div className="flex flex-col gap-6">
@@ -79,9 +150,10 @@ export function SettingsPage() {
       ) : (
         <>
           {tab === "fabrica" && (
-            <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-6">
-              <div className="rounded-3xl border border-forest-950/10 bg-white p-6">
-                <p className="mb-1 text-lg font-extrabold text-forest-950">Dados da fábrica</p>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6 lg:flex-row lg:items-start">
+            <div className="flex flex-1 flex-col gap-6 lg:max-w-2xl">
+              <div id="bloco-identificacao" className="rounded-3xl border border-forest-950/10 bg-white p-6">
+                <p className="mb-1 text-lg font-extrabold text-forest-950">Identificação fiscal</p>
                 <p className="mb-4 text-sm text-ink-700/60">Usados no painel administrativo e na comanda em PDF.</p>
                 <div className="flex flex-col gap-4">
                   <Input
@@ -89,18 +161,26 @@ export function SettingsPage() {
                     value={form.factoryName}
                     onChange={(e) => handleChange("factoryName", e.target.value)}
                   />
-                  <Input
-                    label="Razão social"
-                    value={form.legalName}
-                    onChange={(e) => handleChange("legalName", e.target.value)}
-                    placeholder="Ex: Saboriza Indústria de Temperos LTDA"
-                  />
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Input
+                      label="Razão social"
+                      value={form.legalName}
+                      onChange={(e) => handleChange("legalName", e.target.value)}
+                      placeholder="Ex: Saboriza Indústria de Temperos LTDA"
+                    />
+                    <Input
+                      label="Nome fantasia"
+                      value={form.fantasyName}
+                      onChange={(e) => handleChange("fantasyName", e.target.value)}
+                    />
+                  </div>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Input
                       label="CNPJ"
                       value={form.cnpj}
-                      onChange={(e) => handleChange("cnpj", e.target.value)}
+                      onChange={(e) => handleChange("cnpj", formatCnpj(e.target.value))}
                       placeholder="00.000.000/0000-00"
+                      error={cnpjInvalid ? "CNPJ inválido" : undefined}
                     />
                     <Input
                       label="Inscrição Estadual"
@@ -109,6 +189,36 @@ export function SettingsPage() {
                       placeholder="000000000"
                     />
                   </div>
+                  <Input
+                    label="Inscrição municipal"
+                    value={form.municipalRegistration}
+                    onChange={(e) => handleChange("municipalRegistration", e.target.value)}
+                  />
+                  <Combobox
+                    label="CNAE"
+                    placeholder="Buscar por código ou descrição..."
+                    selectedLabel={form.cnaeDescription ? `${form.cnaeCode} — ${form.cnaeDescription}` : ""}
+                    fetchOptions={fetchCnaeOptions}
+                    onSelect={(option) => {
+                      handleChange("cnaeCode", option.value);
+                      handleChange("cnaeDescription", option.label);
+                    }}
+                  />
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-sm font-semibold text-ink-900">Regime tributário</span>
+                    <select
+                      value={form.taxRegime}
+                      onChange={(e) => handleChange("taxRegime", e.target.value)}
+                      className="h-11 rounded-xl border border-ink-900/15 bg-white px-4 text-sm text-ink-900 outline-none focus:border-forest-700"
+                    >
+                      <option value="">Selecione...</option>
+                      {TAX_REGIMES.map((regime) => (
+                        <option key={regime.value} value={regime.value}>
+                          {regime.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Input
                       label="WhatsApp para pedidos"
@@ -126,9 +236,153 @@ export function SettingsPage() {
                 </div>
               </div>
 
+              <div id="bloco-endereco" className="rounded-3xl border border-forest-950/10 bg-white p-6">
+                <p className="mb-1 text-lg font-extrabold text-forest-950">Endereço fiscal</p>
+                <p className="mb-4 text-sm text-ink-700/60">O CEP preenche o restante do endereço automaticamente.</p>
+                <div className="flex flex-col gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Input
+                      label="CEP"
+                      value={form.cep}
+                      onChange={(e) => handleChange("cep", formatCep(e.target.value))}
+                      onBlur={handleCepBlur}
+                      placeholder="00000-000"
+                    />
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-sm font-semibold text-ink-900">País</span>
+                      <select
+                        value={form.country}
+                        onChange={(e) => handleChange("country", e.target.value)}
+                        className="h-11 rounded-xl border border-ink-900/15 bg-white px-4 text-sm text-ink-900 outline-none focus:border-forest-700"
+                      >
+                        <option value="Brasil">Brasil</option>
+                      </select>
+                    </label>
+                  </div>
+                  {cepLoading && <p className="text-xs text-ink-700/50">Buscando endereço...</p>}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr]">
+                    <Input label="Logradouro" value={form.street} onChange={(e) => handleChange("street", e.target.value)} />
+                    <Input label="Número" value={form.number} onChange={(e) => handleChange("number", e.target.value)} />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Input
+                      label="Complemento"
+                      value={form.complement}
+                      onChange={(e) => handleChange("complement", e.target.value)}
+                    />
+                    <Input
+                      label="Bairro"
+                      value={form.neighborhood}
+                      onChange={(e) => handleChange("neighborhood", e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-sm font-semibold text-ink-900">UF</span>
+                      <select
+                        value={form.stateCode}
+                        onChange={(e) => handleUfChange(e.target.value)}
+                        className="h-11 rounded-xl border border-ink-900/15 bg-white px-4 text-sm text-ink-900 outline-none focus:border-forest-700"
+                      >
+                        <option value="">Selecione...</option>
+                        {ufOptions.map((uf) => (
+                          <option key={uf.code} value={uf.code}>
+                            {uf.name} ({uf.code})
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <Combobox
+                      label="Município"
+                      placeholder={form.stateCode ? "Buscar município..." : "Selecione a UF primeiro"}
+                      disabled={!form.stateCode}
+                      selectedLabel={form.cityName}
+                      fetchOptions={fetchCityOptions}
+                      onSelect={(option) => {
+                        handleChange("cityCode", option.value);
+                        handleChange("cityName", option.label);
+                        handleChange("ibgeCode", option.value);
+                      }}
+                    />
+                  </div>
+                  <Input label="Código IBGE" value={form.ibgeCode} readOnly disabled />
+                </div>
+              </div>
+
+              <div id="bloco-parametros" className="rounded-3xl border border-forest-950/10 bg-white p-6">
+                <p className="mb-1 text-lg font-extrabold text-forest-950">Parâmetros gerenciais</p>
+                <p className="mb-4 text-sm text-ink-700/60">Usados no cálculo de custo indireto a partir da Fase 5.</p>
+                <div className="flex flex-col gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Input
+                      label="RBT12 (R$)"
+                      type="number"
+                      step="0.01"
+                      value={form.rbt12}
+                      onChange={(e) => handleChange("rbt12", Number(e.target.value))}
+                    />
+                    <Input
+                      label="Alíquota efetiva (%)"
+                      type="number"
+                      step="0.01"
+                      value={form.effectiveRate}
+                      onChange={(e) => handleChange("effectiveRate", Number(e.target.value))}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-sm font-semibold text-ink-900">Anexo / enquadramento</span>
+                      <select
+                        value={form.scheduleAnnex}
+                        onChange={(e) => handleChange("scheduleAnnex", e.target.value)}
+                        className="h-11 rounded-xl border border-ink-900/15 bg-white px-4 text-sm text-ink-900 outline-none focus:border-forest-700"
+                      >
+                        <option value="">Selecione...</option>
+                        {SCHEDULE_ANNEXES.map((annex) => (
+                          <option key={annex.value} value={annex.value}>
+                            {annex.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <Input
+                      label="Competência de referência"
+                      type="month"
+                      value={form.referenceCompetence}
+                      onChange={(e) => handleChange("referenceCompetence", e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <Button type="submit">Salvar</Button>
               </div>
+            </div>
+
+            <aside className="w-full shrink-0 lg:sticky lg:top-6 lg:w-80">
+              <div className="rounded-3xl border border-forest-950/10 bg-white p-6">
+                <p className="mb-1 text-lg font-extrabold text-forest-950">Prontidão fiscal</p>
+                <p className="mb-4 text-sm text-ink-700/60">
+                  Base necessária para as próximas fases (insumos, produção, financeiro e nota fiscal).
+                </p>
+                <div className="flex flex-col gap-2">
+                  {readiness.map((item) => (
+                    <a
+                      key={item.label}
+                      href={item.anchor}
+                      className={cn(
+                        "flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
+                        item.ok ? "bg-forest-700/10 text-forest-800" : "bg-gold-500/10 text-gold-700 hover:bg-gold-500/20"
+                      )}
+                    >
+                      {item.ok ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                      {item.label} — {item.ok ? "completo" : "pendente"}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </aside>
             </form>
           )}
 

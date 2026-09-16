@@ -6,3 +6,4 @@ dist
 Imagens/
 .env
 .env.local
+scripts/output/
