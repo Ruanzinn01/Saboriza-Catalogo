@@ -13,7 +13,11 @@ export interface IbgeCity {
 }
 
 export async function listIbgeStates(): Promise<IbgeState[]> {
-  const { data, error } = await supabase.from("ibge_cities").select("state_code, state_name").order("state_name");
+  const { data, error } = await supabase
+    .from("ibge_cities")
+    .select("state_code, state_name")
+    .order("state_name")
+    .limit(6000);
   if (error || !data) return [];
 
   const seen = new Set<string>();
