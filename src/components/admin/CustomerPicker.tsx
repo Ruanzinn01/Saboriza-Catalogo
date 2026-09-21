@@ -90,7 +90,7 @@ export function CustomerPicker({ selectedCustomer, onSelect, onClear }: Customer
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-forest-700/20 bg-forest-700/5 px-4 py-3">
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-forest-950">{getCustomerDisplayName(selectedCustomer)}</p>
-            <p className="text-xs text-ink-700/60">Cliente vinculado a este pedido</p>
+            <p className="text-xs text-ink-muted">Cliente vinculado a este pedido</p>
           </div>
           <Button type="button" size="sm" variant="outline" onClick={onClear} className="shrink-0">
             Trocar
@@ -121,7 +121,7 @@ export function CustomerPicker({ selectedCustomer, onSelect, onClear }: Customer
               className="flex flex-col items-start px-4 py-3 text-left hover:bg-forest-950/5"
             >
               <span className="text-sm font-semibold text-ink-900">{getCustomerDisplayName(customer)}</span>
-              <span className="text-xs text-ink-700/60">{getCustomerSecondaryLine(customer)}</span>
+              <span className="text-xs text-ink-muted">{getCustomerSecondaryLine(customer)}</span>
             </button>
           ))}
         </div>

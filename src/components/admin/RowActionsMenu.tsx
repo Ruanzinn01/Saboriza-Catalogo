@@ -34,7 +34,7 @@ export function RowActionsMenu({ items }: RowActionsMenuProps) {
         onClick={() => setOpen((value) => !value)}
         aria-label="Mais ações"
         aria-expanded={open}
-        className="flex h-9 w-9 items-center justify-center rounded-full text-ink-700/60 hover:bg-ink-900/5"
+        className="flex h-9 w-9 items-center justify-center rounded-full text-ink-muted hover:bg-ink-900/5"
       >
         <MoreVertical size={16} />
       </button>

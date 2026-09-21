@@ -10,14 +10,14 @@ interface CustomerFormFieldsProps {
 export function CustomerFormFields({ form, errors, onChange }: CustomerFormFieldsProps) {
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-xs font-bold uppercase tracking-wide text-ink-700/50">Dados do contato</p>
+      <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Dados do contato</p>
       <Input label="Nome" value={form.name} onChange={(e) => onChange("name", e.target.value)} error={errors.name} />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Input label="Telefone" value={form.phone} onChange={(e) => onChange("phone", e.target.value)} error={errors.phone} />
         <Input label="E-mail" type="email" value={form.email} onChange={(e) => onChange("email", e.target.value)} />
       </div>
 
-      <p className="mt-2 text-xs font-bold uppercase tracking-wide text-ink-700/50">Dados da empresa</p>
+      <p className="mt-2 text-xs font-bold uppercase tracking-wide text-ink-muted">Dados da empresa</p>
       <Input
         label="Razão social / empresa"
         value={form.companyName}
@@ -30,7 +30,7 @@ export function CustomerFormFields({ form, errors, onChange }: CustomerFormField
         <Input label="Inscrição estadual" value={form.ie} onChange={(e) => onChange("ie", e.target.value)} />
       </div>
 
-      <p className="mt-2 text-xs font-bold uppercase tracking-wide text-ink-700/50">Endereço</p>
+      <p className="mt-2 text-xs font-bold uppercase tracking-wide text-ink-muted">Endereço</p>
       <Input label="Endereço" value={form.address} onChange={(e) => onChange("address", e.target.value)} />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Input label="Bairro" value={form.neighborhood} onChange={(e) => onChange("neighborhood", e.target.value)} />

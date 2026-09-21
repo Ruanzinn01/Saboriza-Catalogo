@@ -154,7 +154,7 @@ export function SettingsPage() {
             <div className="flex flex-1 flex-col gap-6 lg:max-w-2xl">
               <div id="bloco-identificacao" className="rounded-3xl border border-forest-950/10 bg-white p-6">
                 <p className="mb-1 text-lg font-extrabold text-forest-950">Identificação fiscal</p>
-                <p className="mb-4 text-sm text-ink-700/60">Usados no painel administrativo e na comanda em PDF.</p>
+                <p className="mb-4 text-sm text-ink-muted">Usados no painel administrativo e na comanda em PDF.</p>
                 <div className="flex flex-col gap-4">
                   <Input
                     label="Nome da fábrica"
@@ -238,7 +238,7 @@ export function SettingsPage() {
 
               <div id="bloco-endereco" className="rounded-3xl border border-forest-950/10 bg-white p-6">
                 <p className="mb-1 text-lg font-extrabold text-forest-950">Endereço fiscal</p>
-                <p className="mb-4 text-sm text-ink-700/60">O CEP preenche o restante do endereço automaticamente.</p>
+                <p className="mb-4 text-sm text-ink-muted">O CEP preenche o restante do endereço automaticamente.</p>
                 <div className="flex flex-col gap-4">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Input
@@ -259,7 +259,7 @@ export function SettingsPage() {
                       </select>
                     </label>
                   </div>
-                  {cepLoading && <p className="text-xs text-ink-700/50">Buscando endereço...</p>}
+                  {cepLoading && <p className="text-xs text-ink-muted">Buscando endereço...</p>}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr]">
                     <Input label="Logradouro" value={form.street} onChange={(e) => handleChange("street", e.target.value)} />
                     <Input label="Número" value={form.number} onChange={(e) => handleChange("number", e.target.value)} />
@@ -311,7 +311,7 @@ export function SettingsPage() {
 
               <div id="bloco-parametros" className="rounded-3xl border border-forest-950/10 bg-white p-6">
                 <p className="mb-1 text-lg font-extrabold text-forest-950">Parâmetros gerenciais</p>
-                <p className="mb-4 text-sm text-ink-700/60">Usados no cálculo de custo indireto a partir da Fase 5.</p>
+                <p className="mb-4 text-sm text-ink-muted">Usados no cálculo de custo indireto a partir da Fase 5.</p>
                 <div className="flex flex-col gap-4">
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Input
@@ -363,7 +363,7 @@ export function SettingsPage() {
             <aside className="w-full shrink-0 lg:sticky lg:top-6 lg:w-80">
               <div className="rounded-3xl border border-forest-950/10 bg-white p-6">
                 <p className="mb-1 text-lg font-extrabold text-forest-950">Prontidão fiscal</p>
-                <p className="mb-4 text-sm text-ink-700/60">
+                <p className="mb-4 text-sm text-ink-muted">
                   Base necessária para as próximas fases (insumos, produção, financeiro e nota fiscal).
                 </p>
                 <div className="flex flex-col gap-2">
@@ -391,12 +391,12 @@ export function SettingsPage() {
               <div className="flex flex-col gap-6">
                 <div className="rounded-3xl border border-forest-950/10 bg-white p-6">
                   <p className="mb-1 text-lg font-extrabold text-forest-950">Aparência</p>
-                  <p className="mb-4 text-sm text-ink-700/60">
+                  <p className="mb-4 text-sm text-ink-muted">
                     Imagem da Hero (logomarca/mascote) exibida no topo do catálogo público.
                   </p>
                   <ImageUploader pathPrefix="hero/" onUploaded={(url) => handleChange("heroImageUrl", url)} />
                   {!form.heroImageUrl && (
-                    <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-ink-700/50">
+                    <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-ink-muted">
                       <ImageOff size={14} /> Nenhuma imagem cadastrada — usando a imagem padrão
                     </p>
                   )}

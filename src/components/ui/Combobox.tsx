@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Search } from "lucide-react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { ChevronDown, Search } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 export interface ComboboxOption {
@@ -13,11 +13,13 @@ interface ComboboxProps {
   placeholder?: string;
   selectedLabel: string;
   disabled?: boolean;
+  icon?: ReactNode;
+  chevron?: boolean;
   fetchOptions: (query: string) => Promise<ComboboxOption[]>;
   onSelect: (option: ComboboxOption) => void;
 }
 
-export function Combobox({ label, placeholder, selectedLabel, disabled, fetchOptions, onSelect }: ComboboxProps) {
+export function Combobox({ label, placeholder, selectedLabel, disabled, icon, chevron, fetchOptions, onSelect }: ComboboxProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<ComboboxOption[]>([]);
@@ -48,7 +50,9 @@ export function Combobox({ label, placeholder, selectedLabel, disabled, fetchOpt
     <div ref={containerRef} className="relative flex flex-col gap-1.5">
       {label && <span className="text-sm font-semibold text-ink-900">{label}</span>}
       <div className="relative">
-        <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-700/40" />
+        <span aria-hidden className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-700/50">
+          {icon ?? <Search size={16} />}
+        </span>
         <input
           disabled={disabled}
           value={open ? query : selectedLabel}
@@ -59,10 +63,12 @@ export function Combobox({ label, placeholder, selectedLabel, disabled, fetchOpt
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
           className={cn(
-            "h-11 w-full rounded-xl border border-ink-900/15 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none focus:border-forest-700",
-            disabled && "cursor-not-allowed bg-ink-900/5 text-ink-700/50"
+            "h-11 w-full rounded-xl border border-ink-900/15 bg-white pl-11 text-sm text-ink-900 outline-none focus:border-forest-700",
+            chevron ? "pr-11" : "pr-4",
+            disabled && "cursor-not-allowed bg-ink-900/5 text-ink-muted"
           )}
         />
+        {chevron && <ChevronDown size={18} aria-hidden className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-ink-700/60" />}
       </div>
 
       {open && options.length > 0 && (
@@ -79,7 +85,7 @@ export function Combobox({ label, placeholder, selectedLabel, disabled, fetchOpt
               className="flex flex-col items-start px-4 py-2.5 text-left hover:bg-forest-950/5"
             >
               <span className="text-sm font-semibold text-ink-900">{option.label}</span>
-              {option.sublabel && <span className="text-xs text-ink-700/60">{option.sublabel}</span>}
+              {option.sublabel && <span className="text-xs text-ink-muted">{option.sublabel}</span>}
             </button>
           ))}
         </div>

@@ -112,7 +112,7 @@ export function OrderPreviewModal({ order, open, onClose }: OrderPreviewModalPro
 
         <div className="flex-1 overflow-hidden bg-ink-900/5">
           {loading || !previewUrl ? (
-            <div className="flex h-full items-center justify-center text-sm text-ink-700/60">Gerando visualização...</div>
+            <div className="flex h-full items-center justify-center text-sm text-ink-muted">Gerando visualização...</div>
           ) : (
             <iframe title={`Pedido ${order.number}`} src={previewUrl} className="h-full w-full border-0" />
           )}

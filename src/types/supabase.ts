@@ -307,55 +307,213 @@ export type Database = {
           },
         ]
       }
+      product_recipe: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          quantity_per_unit: number
+          raw_material_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          quantity_per_unit: number
+          raw_material_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          quantity_per_unit?: number
+          raw_material_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_recipe_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_recipe_raw_material_id_fkey"
+            columns: ["raw_material_id"]
+            isOneToOne: false
+            referencedRelation: "raw_materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_consumptions: {
+        Row: {
+          consumed_quantity: number
+          created_at: string
+          id: string
+          needed_quantity: number
+          new_balance: number
+          previous_balance: number
+          production_record_id: string
+          raw_material_id: string
+        }
+        Insert: {
+          consumed_quantity: number
+          created_at?: string
+          id?: string
+          needed_quantity: number
+          new_balance: number
+          previous_balance: number
+          production_record_id: string
+          raw_material_id: string
+        }
+        Update: {
+          consumed_quantity?: number
+          created_at?: string
+          id?: string
+          needed_quantity?: number
+          new_balance?: number
+          previous_balance?: number
+          production_record_id?: string
+          raw_material_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_consumptions_production_record_id_fkey"
+            columns: ["production_record_id"]
+            isOneToOne: false
+            referencedRelation: "production_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_consumptions_raw_material_id_fkey"
+            columns: ["raw_material_id"]
+            isOneToOne: false
+            referencedRelation: "raw_materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_records: {
+        Row: {
+          confirmed_at: string
+          created_at: string
+          id: string
+          packs_quantity: number
+          product_id: string
+          responsible_id: string | null
+          status: string
+          units_quantity: number
+          updated_at: string
+        }
+        Insert: {
+          confirmed_at?: string
+          created_at?: string
+          id?: string
+          packs_quantity: number
+          product_id: string
+          responsible_id?: string | null
+          status?: string
+          units_quantity: number
+          updated_at?: string
+        }
+        Update: {
+          confirmed_at?: string
+          created_at?: string
+          id?: string
+          packs_quantity?: number
+          product_id?: string
+          responsible_id?: string | null
+          status?: string
+          units_quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_records_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           badge: string | null
+          brand: string
           category_id: string
+          code: string | null
           created_at: string
+          current_stock: number
           description: string
+          gtin: string
           id: string
           image_url: string
           is_active: boolean
+          min_stock: number
           name: string
+          ncm: string
           pack_quantity: number
           packaging_type: string
           presentation: string
           supplier_id: string | null
+          target_margin_pct: number
           unit_price: number
+          unit_weight_grams: number | null
           updated_at: string
           weight_volume: string
         }
         Insert: {
           badge?: string | null
+          brand?: string
           category_id: string
+          code?: string | null
           created_at?: string
+          current_stock?: number
           description?: string
+          gtin?: string
           id?: string
           image_url?: string
           is_active?: boolean
+          min_stock?: number
           name: string
+          ncm?: string
           pack_quantity: number
           packaging_type: string
           presentation: string
           supplier_id?: string | null
+          target_margin_pct?: number
           unit_price: number
+          unit_weight_grams?: number | null
           updated_at?: string
           weight_volume: string
         }
         Update: {
           badge?: string | null
+          brand?: string
           category_id?: string
+          code?: string | null
           created_at?: string
+          current_stock?: number
           description?: string
+          gtin?: string
           id?: string
           image_url?: string
           is_active?: boolean
+          min_stock?: number
           name?: string
+          ncm?: string
           pack_quantity?: number
           packaging_type?: string
           presentation?: string
           supplier_id?: string | null
+          target_margin_pct?: number
           unit_price?: number
+          unit_weight_grams?: number | null
           updated_at?: string
           weight_volume?: string
         }
@@ -370,6 +528,191 @@ export type Database = {
           {
             foreignKeyName: "products_supplier_id_fkey"
             columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      raw_material_entries: {
+        Row: {
+          batch: string
+          control_quantity: number | null
+          conversion_factor: number | null
+          created_at: string
+          entry_date: string
+          expiry_date: string
+          id: string
+          invoice_access_key: string
+          invoice_issue_date: string | null
+          invoice_number: string
+          invoice_series: string
+          new_balance: number | null
+          packages_quantity: number
+          previous_balance: number | null
+          raw_material_id: string
+          responsible_id: string | null
+          reversal_reason: string | null
+          reversed_at: string | null
+          reversed_by: string | null
+          status: string
+          supplier_id: string
+          total_value: number | null
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          batch: string
+          control_quantity?: number | null
+          conversion_factor?: number | null
+          created_at?: string
+          entry_date?: string
+          expiry_date: string
+          id?: string
+          invoice_access_key?: string
+          invoice_issue_date?: string | null
+          invoice_number?: string
+          invoice_series?: string
+          new_balance?: number | null
+          packages_quantity: number
+          previous_balance?: number | null
+          raw_material_id: string
+          responsible_id?: string | null
+          reversal_reason?: string | null
+          reversed_at?: string | null
+          reversed_by?: string | null
+          status?: string
+          supplier_id: string
+          total_value?: number | null
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          batch?: string
+          control_quantity?: number | null
+          conversion_factor?: number | null
+          created_at?: string
+          entry_date?: string
+          expiry_date?: string
+          id?: string
+          invoice_access_key?: string
+          invoice_issue_date?: string | null
+          invoice_number?: string
+          invoice_series?: string
+          new_balance?: number | null
+          packages_quantity?: number
+          previous_balance?: number | null
+          raw_material_id?: string
+          responsible_id?: string | null
+          reversal_reason?: string | null
+          reversed_at?: string | null
+          reversed_by?: string | null
+          status?: string
+          supplier_id?: string
+          total_value?: number | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raw_material_entries_raw_material_id_fkey"
+            columns: ["raw_material_id"]
+            isOneToOne: false
+            referencedRelation: "raw_materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raw_material_entries_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      raw_materials: {
+        Row: {
+          avg_cost: number
+          category: string
+          code: string
+          control_unit: string
+          cost_basis: string
+          created_at: string
+          current_stock: number
+          default_reorder_qty: number
+          description: string
+          id: string
+          image_url: string
+          is_active: boolean
+          lead_time_days: number
+          manual_cost: number
+          max_stock: number
+          min_purchase_qty: number
+          min_stock: number
+          name: string
+          primary_supplier_id: string | null
+          purchase_multiple: number
+          purchase_unit_factor: number
+          purchase_unit_label: string
+          unit_locked: boolean
+          updated_at: string
+        }
+        Insert: {
+          avg_cost?: number
+          category?: string
+          code?: string
+          control_unit: string
+          cost_basis?: string
+          created_at?: string
+          current_stock?: number
+          default_reorder_qty?: number
+          description?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          lead_time_days?: number
+          manual_cost?: number
+          max_stock?: number
+          min_purchase_qty?: number
+          min_stock?: number
+          name: string
+          primary_supplier_id?: string | null
+          purchase_multiple?: number
+          purchase_unit_factor?: number
+          purchase_unit_label?: string
+          unit_locked?: boolean
+          updated_at?: string
+        }
+        Update: {
+          avg_cost?: number
+          category?: string
+          code?: string
+          control_unit?: string
+          cost_basis?: string
+          created_at?: string
+          current_stock?: number
+          default_reorder_qty?: number
+          description?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          lead_time_days?: number
+          manual_cost?: number
+          max_stock?: number
+          min_purchase_qty?: number
+          min_stock?: number
+          name?: string
+          primary_supplier_id?: string | null
+          purchase_multiple?: number
+          purchase_unit_factor?: number
+          purchase_unit_label?: string
+          unit_locked?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raw_materials_primary_supplier_id_fkey"
+            columns: ["primary_supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
             referencedColumns: ["id"]
@@ -478,6 +821,53 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_movements: {
+        Row: {
+          created_at: string
+          id: string
+          new_balance: number
+          observation: string
+          origin: string
+          previous_balance: number
+          product_id: string
+          reference_id: string | null
+          responsible_id: string | null
+          variation: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          new_balance: number
+          observation?: string
+          origin: string
+          previous_balance: number
+          product_id: string
+          reference_id?: string | null
+          responsible_id?: string | null
+          variation: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          new_balance?: number
+          observation?: string
+          origin?: string
+          previous_balance?: number
+          product_id?: string
+          reference_id?: string | null
+          responsible_id?: string | null
+          variation?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           address: string
@@ -537,6 +927,66 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_stock: {
+        Args: {
+          p_counted_stock: number
+          p_product_id: string
+          p_reason: string
+        }
+        Returns: {
+          created_at: string
+          id: string
+          new_balance: number
+          observation: string
+          origin: string
+          previous_balance: number
+          product_id: string
+          reference_id: string | null
+          responsible_id: string | null
+          variation: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "stock_movements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      confirm_raw_material_entry: {
+        Args: { p_entry_id: string }
+        Returns: {
+          batch: string
+          control_quantity: number | null
+          conversion_factor: number | null
+          created_at: string
+          entry_date: string
+          expiry_date: string
+          id: string
+          invoice_access_key: string
+          invoice_issue_date: string | null
+          invoice_number: string
+          invoice_series: string
+          new_balance: number | null
+          packages_quantity: number
+          previous_balance: number | null
+          raw_material_id: string
+          responsible_id: string | null
+          reversal_reason: string | null
+          reversed_at: string | null
+          reversed_by: string | null
+          status: string
+          supplier_id: string
+          total_value: number | null
+          unit_price: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "raw_material_entries"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_order: {
         Args: {
           p_company_name: string
@@ -556,6 +1006,86 @@ export type Database = {
           p_phone: string
         }
         Returns: Json
+      }
+      create_production: {
+        Args: { p_packs_quantity: number; p_product_id: string }
+        Returns: {
+          confirmed_at: string
+          created_at: string
+          id: string
+          packs_quantity: number
+          product_id: string
+          responsible_id: string | null
+          status: string
+          units_quantity: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "production_records"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_stock_entry: {
+        Args: {
+          p_observation?: string
+          p_product_id: string
+          p_quantity: number
+        }
+        Returns: {
+          created_at: string
+          id: string
+          new_balance: number
+          observation: string
+          origin: string
+          previous_balance: number
+          product_id: string
+          reference_id: string | null
+          responsible_id: string | null
+          variation: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "stock_movements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      reverse_raw_material_entry: {
+        Args: { p_entry_id: string; p_reason: string }
+        Returns: {
+          batch: string
+          control_quantity: number | null
+          conversion_factor: number | null
+          created_at: string
+          entry_date: string
+          expiry_date: string
+          id: string
+          invoice_access_key: string
+          invoice_issue_date: string | null
+          invoice_number: string
+          invoice_series: string
+          new_balance: number | null
+          packages_quantity: number
+          previous_balance: number | null
+          raw_material_id: string
+          responsible_id: string | null
+          reversal_reason: string | null
+          reversed_at: string | null
+          reversed_by: string | null
+          status: string
+          supplier_id: string
+          total_value: number | null
+          unit_price: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "raw_material_entries"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       update_order_items: {
         Args: { p_coupon_code?: string; p_items: Json; p_order_id: string }
@@ -692,11 +1222,3 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
-
-export const Constants = {
-  public: {
-    Enums: {
-      order_status: ["NEW", "IN_REVIEW", "CONFIRMED", "COMPLETED", "CANCELLED"],
-    },
-  },
-} as const

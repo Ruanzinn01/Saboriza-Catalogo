@@ -1,40 +1,146 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { ImagePlus, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
-import { formatCurrency } from "@/lib/currency";
 import { supabase } from "@/lib/supabase";
 import { useCatalogStore } from "@/store/catalog-store";
+import { useProductRecipeStore } from "@/store/product-recipe-store";
+import { useRawMaterialsStore } from "@/store/raw-materials-store";
 import { useSuppliersStore } from "@/store/suppliers-store";
 import { Button } from "@/components/ui/Button";
-import { RowActionsMenu } from "@/components/admin/RowActionsMenu";
-import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { AdminState } from "@/components/admin/AdminState";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { Pagination } from "@/components/admin/Pagination";
 import { ProductImageSheet } from "@/components/admin/ProductImageSheet";
-import { ProductImage } from "@/components/catalog/ProductImage";
+import type { ProductRowActions } from "@/components/admin/ProductRowMenu";
+import { ProductsFilterSheet } from "@/components/admin/ProductsFilterSheet";
+import { ProductsKpiCards } from "@/components/admin/ProductsKpiCards";
+import { ProductsMobileList } from "@/components/admin/ProductsMobileList";
+import { ProductsTable } from "@/components/admin/ProductsTable";
+import { paginate } from "@/lib/pagination";
+import { buildDuplicateDraft } from "@/lib/product-duplicate";
+import {
+  EMPTY_FILTERS,
+  buildKpis,
+  buildProductRows,
+  countActiveFilters,
+  filterRows,
+  sortRows,
+  type ProductFilters,
+  type SortKey,
+  type SortState,
+} from "@/lib/product-list";
 import type { Product } from "@/types/product";
 
-type StatusFilter = "all" | "active" | "inactive";
+const selectClasses =
+  "h-11 rounded-xl border border-ink-900/15 bg-white px-4 text-sm text-ink-900 outline-none focus:border-forest-700";
 
 export function ProductsPage() {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const allProducts = useCatalogStore((state) => state.products);
   const categories = useCatalogStore((state) => state.categories);
-  const status = useCatalogStore((state) => state.status);
+  const catalogStatus = useCatalogStore((state) => state.status);
+  const fetchCatalog = useCatalogStore((state) => state.fetchCatalog);
   const updateProduct = useCatalogStore((state) => state.updateProduct);
+  const setActiveMany = useCatalogStore((state) => state.setActiveMany);
   const removeProduct = useCatalogStore((state) => state.removeProduct);
   const suppliers = useSuppliersStore((state) => state.suppliers);
   const fetchSuppliers = useSuppliersStore((state) => state.fetchSuppliers);
+  const materials = useRawMaterialsStore((state) => state.materials);
+  const fetchMaterials = useRawMaterialsStore((state) => state.fetchMaterials);
+  const recipesByProduct = useProductRecipeStore((state) => state.linesByProduct);
+  const fetchRecipesFor = useProductRecipeStore((state) => state.fetchRecipesFor);
+
+  const [localFilters, setLocalFilters] = useState<Omit<ProductFilters, "categoryId">>({
+    search: "",
+    active: "all",
+    stock: "all",
+    margin: "all",
+    supplierId: "",
+  });
+  const [sort, setSort] = useState<SortState>({ key: "code", dir: "asc" });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [productDeleteBlocked, setProductDeleteBlocked] = useState(false);
   const [imageEditProductId, setImageEditProductId] = useState<string | null>(null);
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   useEffect(() => {
+    fetchCatalog();
     if (suppliers.length === 0) fetchSuppliers();
+    if (materials.length === 0) fetchMaterials();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const missingRecipeKey = allProducts
+    .filter((product) => recipesByProduct[product.id] === undefined)
+    .map((product) => product.id)
+    .join(",");
+
+  useEffect(() => {
+    if (missingRecipeKey) void fetchRecipesFor(missingRecipeKey.split(","));
+  }, [missingRecipeKey, fetchRecipesFor]);
+
+  const filters: ProductFilters = { ...localFilters, categoryId: searchParams.get("categoria") ?? "" };
+  const advancedCount = Number(filters.margin !== "all") + Number(filters.supplierId !== "");
+  const activeFilterCount = countActiveFilters(filters);
+
+  function patchFilters(patch: Partial<ProductFilters>) {
+    const { categoryId, ...rest } = patch;
+    if (categoryId !== undefined) setSearchParams(categoryId ? { categoria: categoryId } : {});
+    if (Object.keys(rest).length > 0) setLocalFilters((current) => ({ ...current, ...rest }));
+    setPage(1);
+  }
+
+  function clearFilters() {
+    setSearchParams({});
+    setLocalFilters({ search: "", active: "all", stock: "all", margin: "all", supplierId: "" });
+    setPage(1);
+  }
+
+  const rows = useMemo(
+    () => buildProductRows(allProducts, categories, suppliers, recipesByProduct, materials),
+    [allProducts, categories, suppliers, recipesByProduct, materials]
+  );
+  const kpis = useMemo(() => buildKpis(allProducts), [allProducts]);
+  const visibleRows = useMemo(
+    () => sortRows(filterRows(rows, filters), sort),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows, localFilters, searchParams, sort]
+  );
+  const pageData = paginate(visibleRows, page, pageSize);
+
+  function handleSort(key: SortKey) {
+    setSort((current) => (current.key === key ? { key, dir: current.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
+    setPage(1);
+  }
+
+  function toggleRow(productId: string) {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  }
+
+  function togglePage() {
+    const ids = pageData.items.map((row) => row.product.id);
+    const allSelected = ids.length > 0 && ids.every((id) => selectedIds.has(id));
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      ids.forEach((id) => (allSelected ? next.delete(id) : next.add(id)));
+      return next;
+    });
+  }
+
+  function bulkSetActive(active: boolean) {
+    setActiveMany([...selectedIds], active);
+    setSelectedIds(new Set());
+  }
 
   async function handleDeleteClick(product: Product) {
     const { count, error } = await supabase
@@ -51,253 +157,165 @@ export function ProductsPage() {
     setProductToDelete(product);
   }
 
-  const categoryFilter = searchParams.get("categoria");
-  const filteredCategory = categoryFilter ? categories.find((category) => category.id === categoryFilter) : undefined;
-
-  const products = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    return allProducts.filter((product) => {
-      const matchesCategory = !categoryFilter || product.categoryId === categoryFilter;
-      const matchesStatus = statusFilter === "all" || (statusFilter === "active" ? product.active : !product.active);
-      const matchesQuery = !query || product.name.toLowerCase().includes(query);
-      return matchesCategory && matchesStatus && matchesQuery;
-    });
-  }, [allProducts, categoryFilter, statusFilter, search]);
-
-  function categoryName(categoryId: string) {
-    return categories.find((category) => category.id === categoryId)?.name ?? "Sem categoria";
-  }
-
-  function supplierName(supplierId: string | null) {
-    if (!supplierId) return null;
-    const supplier = suppliers.find((item) => item.id === supplierId);
-    return supplier ? supplier.tradeName || supplier.companyName : null;
-  }
-
-  function handleCategorySelect(value: string) {
-    if (!value) {
-      setSearchParams({});
-    } else {
-      setSearchParams({ categoria: value });
-    }
-  }
+  const actions: ProductRowActions = {
+    onEditImage: setImageEditProductId,
+    onDuplicate: (product) => {
+      toast.info("Cópia aberta. Ajuste os dados e salve. A ficha técnica não é copiada.");
+      navigate("/admin/produtos/novo", { state: { duplicateOf: buildDuplicateDraft(product) } });
+    },
+    onToggleActive: (product) => updateProduct(product.id, { active: !product.active }),
+    onDelete: (product) => void handleDeleteClick(product),
+  };
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-extrabold text-forest-950">Produtos</h1>
-          <p className="text-sm text-ink-700/60">Gerencie os produtos disponíveis no catálogo.</p>
+      <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-center">
+        <div className="2xl:w-72 2xl:shrink-0">
+          <h1 className="text-2xl font-extrabold text-forest-950 sm:text-3xl">Produtos</h1>
+          <p className="text-sm text-ink-muted">Gerencie os produtos disponíveis no catálogo.</p>
         </div>
-        <Link to="/admin/produtos/novo">
-          <Button className="w-full sm:w-auto">
+        <div className="2xl:flex-1">
+          <ProductsKpiCards kpis={kpis} />
+        </div>
+        <Link to="/admin/produtos/novo" className="2xl:shrink-0">
+          <Button size="lg" className="w-full 2xl:w-auto">
             <Plus size={18} /> Novo produto
           </Button>
         </Link>
       </div>
 
-      {filteredCategory && (
-        <div className="flex items-center gap-2 rounded-full bg-forest-950/5 px-4 py-2 text-sm text-forest-900 w-fit">
-          <span>
-            Filtrando por: <strong>{filteredCategory.name}</strong>
-          </span>
-          <button
-            onClick={() => setSearchParams({})}
-            aria-label="Limpar filtro"
-            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-forest-950/10"
+      <div className="flex flex-col gap-3 xl:flex-row">
+        <div className="relative flex-1">
+          <label htmlFor="produtos-busca" className="sr-only">
+            Buscar produto por nome, código ou SKU
+          </label>
+          <Search size={18} aria-hidden className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-700/40" />
+          <input
+            id="produtos-busca"
+            value={filters.search}
+            onChange={(e) => patchFilters({ search: e.target.value })}
+            placeholder="Buscar produto por nome, código ou SKU..."
+            className="h-12 w-full rounded-xl border border-ink-900/15 bg-white pl-12 pr-4 text-sm text-ink-900 outline-none focus:border-forest-700"
+          />
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:flex">
+          <select
+            aria-label="Categoria"
+            value={filters.categoryId}
+            onChange={(e) => patchFilters({ categoryId: e.target.value })}
+            className={`${selectClasses} xl:h-12`}
           >
-            <X size={14} />
+            <option value="">Todas as categorias</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="Status do produto"
+            value={filters.active}
+            onChange={(e) => patchFilters({ active: e.target.value as ProductFilters["active"] })}
+            className={`${selectClasses} xl:h-12`}
+          >
+            <option value="all">Todos os status</option>
+            <option value="active">Ativos</option>
+            <option value="inactive">Inativos</option>
+          </select>
+          <select
+            aria-label="Situação do estoque"
+            value={filters.stock}
+            onChange={(e) => patchFilters({ stock: e.target.value as ProductFilters["stock"] })}
+            className={`${selectClasses} xl:h-12`}
+          >
+            <option value="all">Todos os estoques</option>
+            <option value="ok">Em estoque</option>
+            <option value="low">Estoque baixo</option>
+            <option value="out">Sem estoque</option>
+          </select>
+          <Button type="button" variant="outline" className="h-11 border-ink-900/15 bg-white xl:h-12" onClick={() => setFiltersOpen(true)}>
+            <SlidersHorizontal size={16} /> Filtros
+            {advancedCount > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-forest-700 px-1.5 text-[11px] font-bold text-cream-50">
+                {advancedCount}
+              </span>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {activeFilterCount > 0 && (
+        <div className="-mt-3 flex items-center gap-3 text-sm text-ink-700">
+          <span>
+            {visibleRows.length} de {allProducts.length} produtos
+          </span>
+          <button type="button" onClick={clearFilters} className="min-h-9 font-semibold text-forest-800 hover:underline">
+            Limpar filtros
           </button>
         </div>
       )}
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
-          <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-700/40" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar produto..."
-            className="h-11 w-full rounded-xl border border-ink-900/15 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none focus:border-forest-700"
-          />
-        </div>
-        <select
-          value={categoryFilter ?? ""}
-          onChange={(e) => handleCategorySelect(e.target.value)}
-          className="h-11 rounded-xl border border-ink-900/15 bg-white px-4 text-sm text-ink-900 outline-none focus:border-forest-700"
-        >
-          <option value="">Todas as categorias</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-          className="h-11 rounded-xl border border-ink-900/15 bg-white px-4 text-sm text-ink-900 outline-none focus:border-forest-700"
-        >
-          <option value="all">Todos os status</option>
-          <option value="active">Ativos</option>
-          <option value="inactive">Inativos</option>
-        </select>
-      </div>
-
-      {status === "loading" && allProducts.length === 0 ? (
+      {catalogStatus === "loading" && allProducts.length === 0 ? (
         <AdminState variant="loading" message="Carregando produtos..." />
-      ) : status === "error" ? (
-        <AdminState variant="error" message="Não foi possível carregar os produtos. Tente recarregar a página." />
-      ) : products.length === 0 ? (
+      ) : catalogStatus === "error" && allProducts.length === 0 ? (
+        <AdminState variant="error" message="Não foi possível carregar os produtos." onRetry={fetchCatalog} />
+      ) : visibleRows.length === 0 ? (
         <AdminState variant="empty" message="Nenhum produto encontrado." />
       ) : (
-        <>
-          <div className="hidden overflow-x-auto rounded-3xl border border-forest-950/10 bg-white lg:block">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-forest-950/10 text-xs uppercase tracking-wide text-ink-700/50">
-                <tr>
-                  <th className="px-4 py-3">Imagem</th>
-                  <th className="px-4 py-3">Produto</th>
-                  <th className="px-4 py-3">Categoria</th>
-                  <th className="px-4 py-3">Preço</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => (
-                  <tr key={product.id} className="border-b border-forest-950/5 last:border-none">
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => setImageEditProductId(product.id)}
-                        className="group relative flex h-14 w-14 overflow-hidden rounded-xl border border-forest-950/10"
-                      >
-                        <ProductImage imageUrl={product.imageUrl} name={product.name} />
-                        <span className="absolute inset-0 flex items-center justify-center bg-ink-900/0 text-cream-50 opacity-0 transition-opacity group-hover:bg-ink-900/50 group-hover:opacity-100">
-                          <ImagePlus size={18} />
-                        </span>
-                      </button>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-ink-900">{product.name}</p>
-                      <p className="text-xs text-ink-700/50">
-                        {product.presentation} · {product.weight}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 text-ink-700/70">
-                      <p>{categoryName(product.categoryId)}</p>
-                      {supplierName(product.supplierId) && (
-                        <p className="text-xs text-ink-700/50">Fornecedor: {supplierName(product.supplierId)}</p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-ink-700/70">
-                      <p>{formatCurrency(product.unitPrice)}/unidade</p>
-                      <p className="text-xs text-ink-700/50">
-                        Pack {product.packQuantity} un · {formatCurrency(product.unitPrice * product.packQuantity)}/pack
-                      </p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => updateProduct(product.id, { active: !product.active })}
-                        className={
-                          product.active
-                            ? "rounded-full bg-forest-700/10 px-3 py-1 text-xs font-bold text-forest-800"
-                            : "rounded-full bg-ink-900/10 px-3 py-1 text-xs font-bold text-ink-700/60"
-                        }
-                      >
-                        {product.active ? "Ativo" : "Inativo"}
-                      </button>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link
-                          to={`/admin/produtos/${product.id}`}
-                          className="flex h-9 w-9 items-center justify-center rounded-full text-forest-800 hover:bg-forest-950/5"
-                        >
-                          <Pencil size={16} />
-                        </Link>
-                        <RowActionsMenu
-                          items={[
-                            {
-                              label: "Excluir permanentemente",
-                              icon: <Trash2 size={16} />,
-                              destructive: true,
-                              onClick: () => handleDeleteClick(product),
-                            },
-                          ]}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex flex-col gap-3 lg:hidden">
-            {products.map((product) => (
-              <div key={product.id} className="rounded-2xl border border-forest-950/10 bg-white p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-start gap-3">
-                    <button
-                      onClick={() => setImageEditProductId(product.id)}
-                      className="flex h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-forest-950/10"
-                    >
-                      <ProductImage imageUrl={product.imageUrl} name={product.name} />
-                    </button>
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-ink-900">{product.name}</p>
-                      <p className="text-xs text-ink-700/50">
-                        {product.presentation} · {product.weight}
-                      </p>
-                      <p className="mt-0.5 text-xs text-ink-700/60">{categoryName(product.categoryId)}</p>
-                      {supplierName(product.supplierId) && (
-                        <p className="text-xs text-ink-700/50">Fornecedor: {supplierName(product.supplierId)}</p>
-                      )}
-                    </div>
-                  </div>
-                  <RowActionsMenu
-                    items={[
-                      {
-                        label: "Excluir permanentemente",
-                        icon: <Trash2 size={16} />,
-                        destructive: true,
-                        onClick: () => handleDeleteClick(product),
-                      },
-                    ]}
-                  />
-                </div>
-                <div className="mt-3 flex items-end justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-bold text-ink-900">{formatCurrency(product.unitPrice)}/unidade</p>
-                    <p className="text-xs text-ink-700/50">
-                      Pack {product.packQuantity} un · {formatCurrency(product.unitPrice * product.packQuantity)}/pack
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => updateProduct(product.id, { active: !product.active })}
-                      className={
-                        product.active
-                          ? "rounded-full bg-forest-700/10 px-3 py-1 text-xs font-bold text-forest-800"
-                          : "rounded-full bg-ink-900/10 px-3 py-1 text-xs font-bold text-ink-700/60"
-                      }
-                    >
-                      {product.active ? "Ativo" : "Inativo"}
-                    </button>
-                    <Link
-                      to={`/admin/produtos/${product.id}`}
-                      className="flex h-9 w-9 items-center justify-center rounded-full text-forest-800 hover:bg-forest-950/5"
-                    >
-                      <Pencil size={16} />
-                    </Link>
-                  </div>
-                </div>
+        <div className="overflow-hidden rounded-3xl border border-forest-950/10 bg-white">
+          {selectedIds.size > 0 && (
+            <div role="status" className="flex flex-wrap items-center justify-between gap-2 border-b border-forest-950/10 bg-forest-700/10 px-4 py-2.5">
+              <span className="text-sm font-semibold text-forest-900">
+                {selectedIds.size} produto{selectedIds.size > 1 ? "s" : ""} selecionado{selectedIds.size > 1 ? "s" : ""}
+              </span>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" size="sm" variant="outline" onClick={() => bulkSetActive(true)}>
+                  Ativar
+                </Button>
+                <Button type="button" size="sm" variant="outline" onClick={() => bulkSetActive(false)}>
+                  Desativar
+                </Button>
+                <Button type="button" size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+                  Limpar seleção
+                </Button>
               </div>
-            ))}
-          </div>
-        </>
+            </div>
+          )}
+
+          <ProductsTable
+            rows={pageData.items}
+            sort={sort}
+            onSort={handleSort}
+            selectedIds={selectedIds}
+            onToggleRow={toggleRow}
+            onTogglePage={togglePage}
+            actions={actions}
+          />
+          <ProductsMobileList rows={pageData.items} actions={actions} />
+
+          <Pagination
+            page={pageData.page}
+            totalPages={pageData.totalPages}
+            pageSize={pageSize}
+            total={visibleRows.length}
+            itemLabel="produtos"
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+          />
+        </div>
       )}
+
+      <ProductsFilterSheet
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        filters={filters}
+        suppliers={suppliers}
+        onChange={patchFilters}
+        onClear={clearFilters}
+      />
 
       {productToDelete && productDeleteBlocked ? (
         <ConfirmDialog
@@ -323,6 +341,11 @@ export function ProductsPage() {
           onConfirm={() => {
             if (!productToDelete) return;
             removeProduct(productToDelete.id);
+            setSelectedIds((current) => {
+              const next = new Set(current);
+              next.delete(productToDelete.id);
+              return next;
+            });
             setProductToDelete(null);
           }}
         />

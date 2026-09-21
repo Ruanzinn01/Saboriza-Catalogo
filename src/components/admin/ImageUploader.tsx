@@ -73,14 +73,15 @@ export function ImageUploader({ onUploaded, pathPrefix = "" }: ImageUploaderProp
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
       className={cn(
-        "flex h-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed px-4 text-center transition-colors",
+        "flex min-h-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed px-4 py-3 text-center transition-colors",
         dragging
           ? "border-forest-700 bg-forest-700/5 text-forest-800"
           : "border-ink-900/20 bg-cream-50 text-ink-700/70 hover:border-forest-700 hover:text-forest-800"
       )}
     >
-      <UploadCloud size={18} />
-      <span className="text-sm font-semibold">{uploading ? "Enviando..." : "Arraste, cole (Ctrl+V) ou clique pra enviar"}</span>
+      <UploadCloud size={28} />
+      <span className="text-sm font-semibold">{uploading ? "Enviando..." : "Arraste, cole (Ctrl+V) ou clique para enviar"}</span>
+      <span className="text-xs text-ink-muted">Formatos: JPG, PNG | Tamanho máximo: 5MB</span>
       <input type="file" accept="image/*" className="hidden" onChange={handleChange} disabled={uploading} />
     </label>
   );

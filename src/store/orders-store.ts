@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { orderFromRow } from "@/lib/mappers/order-mapper";
+import { useCatalogStore } from "@/store/catalog-store";
 import type { Order, OrderCustomer, OrderStatus } from "@/types/order";
 
 interface OrdersState {
@@ -55,12 +56,26 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
       .from("orders")
       .update({ status })
       .eq("id", orderId)
-      .then(({ error }) => {
+      .then(async ({ error }) => {
         if (error) {
           toast.error("Não foi possível atualizar o status do pedido");
           set({ orders: previous });
-        } else if (order) {
+          return;
+        }
+        if (order) {
           toast.success(`Pedido ${order.number} atualizado`);
+        }
+        if (status === "COMPLETED") {
+          const { data: movements } = await supabase
+            .from("stock_movements")
+            .select("product_id, observation")
+            .eq("reference_id", orderId)
+            .eq("origin", "order");
+          await useCatalogStore.getState().refreshProducts((movements ?? []).map((movement) => movement.product_id));
+          const shortfalls = (movements ?? []).filter((movement) => movement.observation.includes("insuficiente"));
+          if (shortfalls.length > 0) {
+            toast.warning(`Estoque insuficiente pra ${shortfalls.length} item(ns) desse pedido — baixou até zero.`);
+          }
         }
       });
   },

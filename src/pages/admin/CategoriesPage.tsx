@@ -88,13 +88,13 @@ export function CategoriesPage() {
           >
             <div className="flex flex-1 items-center gap-3">
               <div className="flex flex-col">
-                <button onClick={() => move(index, -1)} disabled={index === 0} className="text-ink-700/50 disabled:opacity-20">
+                <button onClick={() => move(index, -1)} disabled={index === 0} className="text-ink-muted disabled:opacity-20">
                   <ArrowUp size={14} />
                 </button>
                 <button
                   onClick={() => move(index, 1)}
                   disabled={index === categories.length - 1}
-                  className="text-ink-700/50 disabled:opacity-20"
+                  className="text-ink-muted disabled:opacity-20"
                 >
                   <ArrowDown size={14} />
                 </button>
@@ -102,7 +102,7 @@ export function CategoriesPage() {
               <div className="flex flex-1 flex-col gap-1">
                 <span className="flex items-center gap-2 font-semibold text-ink-900">
                   {category.name}
-                  <span className="rounded-full bg-forest-950/5 px-2 py-0.5 text-[11px] font-semibold text-ink-700/60">
+                  <span className="rounded-full bg-forest-950/5 px-2 py-0.5 text-[11px] font-semibold text-ink-muted">
                     {linkedProductsCount(category.id)} produto{linkedProductsCount(category.id) === 1 ? "" : "s"}
                   </span>
                 </span>
@@ -110,7 +110,7 @@ export function CategoriesPage() {
                   defaultValue={category.tagline}
                   onBlur={(e) => updateCategory(category.id, { tagline: e.target.value })}
                   placeholder="Frase de apoio..."
-                  className="w-full max-w-sm rounded-lg border border-transparent bg-transparent text-xs text-ink-700/60 outline-none focus:border-forest-700/30 focus:bg-cream-50 focus:px-2 focus:py-1"
+                  className="w-full max-w-sm rounded-lg border border-transparent bg-transparent text-xs text-ink-muted outline-none focus:border-forest-700/30 focus:bg-cream-50 focus:px-2 focus:py-1"
                 />
               </div>
             </div>
@@ -120,7 +120,7 @@ export function CategoriesPage() {
                 className={
                   category.active
                     ? "rounded-full bg-forest-700/10 px-3 py-1 text-xs font-bold text-forest-800"
-                    : "rounded-full bg-ink-900/10 px-3 py-1 text-xs font-bold text-ink-700/60"
+                    : "rounded-full bg-ink-900/10 px-3 py-1 text-xs font-bold text-ink-muted"
                 }
               >
                 {category.active ? "Ativa" : "Inativa"}

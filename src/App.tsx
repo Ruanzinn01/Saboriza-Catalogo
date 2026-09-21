@@ -21,6 +21,15 @@ import { CustomerDetailPage } from "@/pages/admin/CustomerDetailPage";
 import { SuppliersPage } from "@/pages/admin/SuppliersPage";
 import { SupplierFormPage } from "@/pages/admin/SupplierFormPage";
 import { SupplierDetailPage } from "@/pages/admin/SupplierDetailPage";
+import { RawMaterialsPage } from "@/pages/admin/RawMaterialsPage";
+import { RawMaterialFormPage } from "@/pages/admin/RawMaterialFormPage";
+import { RawMaterialDetailPage } from "@/pages/admin/RawMaterialDetailPage";
+import { RawMaterialEntryPage } from "@/pages/admin/RawMaterialEntryPage";
+import { ProduzirRegistraPage } from "@/pages/admin/ProduzirRegistraPage";
+import { ProductionPanelPage } from "@/pages/admin/ProductionPanelPage";
+import { StockPage } from "@/pages/admin/StockPage";
+import { StockInsightsPage } from "@/pages/admin/StockInsightsPage";
+import { ProductStockDetailPage } from "@/pages/admin/ProductStockDetailPage";
 import { OrdersPage } from "@/pages/admin/OrdersPage";
 import { OrderEditorPage } from "@/pages/admin/OrderEditorPage";
 import { SettingsPage } from "@/pages/admin/SettingsPage";
@@ -53,6 +62,16 @@ export function App() {
             <Route path="clientes/novo" element={<CustomerFormPage />} />
             <Route path="clientes/:customerId" element={<CustomerDetailPage />} />
             <Route path="clientes/:customerId/editar" element={<CustomerFormPage />} />
+            <Route path="materias-primas" element={<RawMaterialsPage />} />
+            <Route path="materias-primas/novo" element={<RawMaterialFormPage />} />
+            <Route path="materias-primas/entrada" element={<RawMaterialEntryPage />} />
+            <Route path="materias-primas/:rawMaterialId" element={<RawMaterialDetailPage />} />
+            <Route path="materias-primas/:rawMaterialId/editar" element={<RawMaterialFormPage />} />
+            <Route path="produzir" element={<ProduzirRegistraPage />} />
+            <Route path="producao" element={<ProductionPanelPage />} />
+            <Route path="estoque" element={<StockPage />} />
+            <Route path="estoque/indicadores" element={<StockInsightsPage />} />
+            <Route path="estoque/:productId" element={<ProductStockDetailPage />} />
             <Route path="fornecedores" element={<SuppliersPage />} />
             <Route path="fornecedores/novo" element={<SupplierFormPage />} />
             <Route path="fornecedores/:supplierId" element={<SupplierDetailPage />} />

@@ -1,4 +1,5 @@
 import { Package, Plus } from "lucide-react";
+import { cn } from "@/lib/cn";
 import { formatProductTitle } from "@/lib/product-title";
 import { formatCurrency } from "@/lib/currency";
 import { ProductBadgeTag } from "@/components/ui/Badge";
@@ -8,13 +9,17 @@ import type { Product } from "@/types/product";
 interface ProductCardProps {
   product: Product;
   onAdd: (product: Product) => void;
+  embedded?: boolean;
 }
 
-export function ProductCard({ product, onAdd }: ProductCardProps) {
+export function ProductCard({ product, onAdd, embedded = false }: ProductCardProps) {
   return (
     <article
       id={`product-${product.id}`}
-      className="group relative flex scroll-mt-32 flex-col overflow-hidden rounded-3xl border border-forest-950/10 bg-white shadow-sm transition-shadow hover:shadow-md"
+      className={cn(
+        "group relative flex scroll-mt-32 flex-col overflow-hidden bg-white",
+        embedded ? "rounded-2xl" : "rounded-3xl border border-forest-950/10 shadow-sm transition-shadow hover:shadow-md"
+      )}
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-forest-950/5">
         <ProductImage imageUrl={product.imageUrl} name={product.name} />

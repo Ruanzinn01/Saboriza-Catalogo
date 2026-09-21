@@ -45,7 +45,7 @@ export function SuppliersPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold text-forest-950">Fornecedores</h1>
-          <p className="text-sm text-ink-700/60">Fornecedores cadastrados, reutilizáveis no vínculo com produtos.</p>
+          <p className="text-sm text-ink-muted">Fornecedores cadastrados, reutilizáveis no vínculo com produtos.</p>
         </div>
         <Link to="/admin/fornecedores/novo">
           <Button className="w-full sm:w-auto">
@@ -77,7 +77,7 @@ export function SuppliersPage() {
         <>
           <div className="hidden overflow-x-auto rounded-3xl border border-forest-950/10 bg-white lg:block">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-forest-950/10 text-xs uppercase tracking-wide text-ink-700/50">
+              <thead className="border-b border-forest-950/10 text-xs uppercase tracking-wide text-ink-muted">
                 <tr>
                   <th className="px-4 py-3">Empresa</th>
                   <th className="px-4 py-3">Contato</th>
@@ -130,7 +130,7 @@ export function SuppliersPage() {
                     <Eye size={16} />
                   </Link>
                 </div>
-                <div className="mt-1 flex items-center justify-between text-xs text-ink-700/60">
+                <div className="mt-1 flex items-center justify-between text-xs text-ink-muted">
                   <span>{supplier.phone}</span>
                   <span>{productCountBySupplier.get(supplier.id) ?? 0} produto(s)</span>
                 </div>

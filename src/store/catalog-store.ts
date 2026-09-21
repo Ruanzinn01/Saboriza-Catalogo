@@ -15,8 +15,10 @@ interface CatalogState {
   categories: Category[];
   status: "idle" | "loading" | "ready" | "error";
   fetchCatalog: () => Promise<void>;
+  refreshProducts: (productIds: string[]) => Promise<void>;
   addProduct: (product: Product) => void;
   updateProduct: (id: string, patch: Partial<Product>) => void;
+  setActiveMany: (ids: string[], active: boolean) => void;
   removeProduct: (id: string) => void;
   addCategory: (category: Category) => void;
   updateCategory: (id: string, patch: Partial<Category>) => void;
@@ -49,16 +51,32 @@ export const useCatalogStore = create<CatalogState>()((set, get) => ({
     });
   },
 
+  refreshProducts: async (productIds) => {
+    const uniqueIds = [...new Set(productIds)];
+    if (uniqueIds.length === 0) return;
+    const { data, error } = await supabase.from("products").select("*").in("id", uniqueIds);
+    if (error || !data) return;
+    const refreshed = new Map(data.map((row) => [row.id, productFromRow(row)]));
+    set((state) => ({
+      products: state.products.map((item) => refreshed.get(item.id) ?? item),
+    }));
+  },
+
   addProduct: (product) => {
     set((state) => ({ products: sortByName([...state.products, product]) }));
     supabase
       .from("products")
       .insert(productToRow(product))
-      .then(({ error }) => {
+      .select("code")
+      .single()
+      .then(({ data, error }) => {
         if (error) {
           toast.error("Não foi possível salvar o produto");
           set((state) => ({ products: state.products.filter((item) => item.id !== product.id) }));
         } else {
+          set((state) => ({
+            products: state.products.map((item) => (item.id === product.id ? { ...item, code: data.code ?? "" } : item)),
+          }));
           toast.success("Produto salvo com sucesso");
         }
       });
@@ -83,6 +101,25 @@ export const useCatalogStore = create<CatalogState>()((set, get) => ({
           toast.success(updated.active ? "Produto ativado" : "Produto desativado");
         } else {
           toast.success("Produto atualizado");
+        }
+      });
+  },
+
+  setActiveMany: (ids, active) => {
+    if (ids.length === 0) return;
+    const previous = get().products;
+    const targets = new Set(ids);
+    set((state) => ({ products: state.products.map((product) => (targets.has(product.id) ? { ...product, active } : product)) }));
+    supabase
+      .from("products")
+      .update({ is_active: active })
+      .in("id", ids)
+      .then(({ error }) => {
+        if (error) {
+          toast.error("Não foi possível atualizar os produtos");
+          set({ products: previous });
+        } else {
+          toast.success(`${ids.length} produto${ids.length > 1 ? "s" : ""} ${active ? "ativado" : "desativado"}${ids.length > 1 ? "s" : ""}`);
         }
       });
   },

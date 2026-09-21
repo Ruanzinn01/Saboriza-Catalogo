@@ -44,14 +44,14 @@ export function CustomersActivityChart({ customers, orders }: CustomersActivityC
         </svg>
         <div className="absolute flex flex-col items-center">
           <span className="text-2xl font-extrabold text-forest-950">{total}</span>
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-700/50">Clientes</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-muted">Clientes</span>
         </div>
       </div>
 
       <div className="flex flex-col gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-ink-700/50">Carteira de clientes</p>
-          <p className="text-sm text-ink-700/60">Ativos = pelo menos 1 pedido nos últimos {ACTIVE_WINDOW_DAYS} dias.</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Carteira de clientes</p>
+          <p className="text-sm text-ink-muted">Ativos = pelo menos 1 pedido nos últimos {ACTIVE_WINDOW_DAYS} dias.</p>
         </div>
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2 text-sm">

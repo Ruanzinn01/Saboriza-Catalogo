@@ -71,7 +71,7 @@ export function CustomerInfoPanel({
 
   if (!selectedCustomer && !rawCustomer) {
     return (
-      <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-ink-900/15 p-6 text-center text-sm text-ink-700/60">
+      <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-ink-900/15 p-6 text-center text-sm text-ink-muted">
         As informações do cliente aparecem aqui.
       </div>
     );
@@ -108,7 +108,7 @@ export function CustomerInfoPanel({
     return (
       <div className="flex flex-col gap-4 rounded-2xl border border-forest-950/10 bg-cream-50 p-4">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-bold uppercase tracking-wide text-ink-700/50">Dados do cliente cadastrado</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Dados do cliente cadastrado</p>
           {!editingRegistered && (
             <Button type="button" size="sm" variant="outline" onClick={openEditRegistered}>
               <Pencil size={14} /> Editar
@@ -156,7 +156,7 @@ export function CustomerInfoPanel({
   return (
     <div className="flex flex-col gap-4 rounded-2xl border border-forest-950/10 bg-cream-50 p-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-bold uppercase tracking-wide text-ink-700/50">Dados informados no pedido</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Dados informados no pedido</p>
         {!editingRaw && (
           <Button type="button" size="sm" variant="outline" onClick={() => setEditingRaw(true)}>
             <Pencil size={14} /> Editar

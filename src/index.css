@@ -21,6 +21,7 @@
 
   --color-ink-900: #1b1812;
   --color-ink-700: #3a362c;
+  --color-ink-muted: #6b665a;
 }
 
 * {
@@ -29,6 +30,24 @@
 
 html {
   scroll-behavior: smooth;
+}
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-forest-600);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 body {

@@ -200,7 +200,7 @@ Embalagem e apresentação (frasco, pote, sachê, pacote, balde, caixa, kit) sã
 Preço cadastrado é unitário. Venda acontece por pack.
 
 ```
-A�afrão · unitário R$ 4,90 · pack de 12
+A�afrão · unitário R$ 4,90 · pack de 12
 1 pack  = 12 unidades = R$ 58,80
 3 packs = 36 unidades = R$ 176,40
 ```
@@ -528,34 +528,38 @@ estoque, indicador e custo ao mesmo tempo.
 
 ### Tarefa 2.1 · Banco e ficha técnica
 
-- [ ] Tabela `production_records`: produto, quantidade em packs, quantidade em
+- [x] Tabela `production_records`: produto, quantidade em packs, quantidade em
       unidades, situação, responsável, data de criação, data de confirmação
-- [ ] Tabela `product_recipe`: produto, insumo componente, quantidade por unidade,
+- [x] Tabela `product_recipe`: produto, insumo componente, quantidade por unidade,
       unidade
-- [ ] Trigger de confirmação consumindo componentes conforme a ficha
-- [ ] Trigger de confirmação lançando o produto acabado no estoque
-- [ ] Ambos vinculados ao mesmo registro de produção
-- [ ] RLS por perfil configurado
+- [x] Trigger de confirmação consumindo componentes conforme a ficha (implementado
+      como RPC transacional `create_production`, com `for update` nas linhas
+      tocadas — mesmo efeito de um trigger, validado com produção real)
+- [x] Trigger de confirmação lançando o produto acabado no estoque
+- [x] Ambos vinculados ao mesmo registro de produção
+- [x] RLS por perfil configurado
 
 ### Tarefa 2.2 · Produziu Registra
 
 Página independente, otimizada para celular e chão de fábrica.
 
-- [ ] Busca por nome ou código como primeiro elemento funcional
-- [ ] Área grande de leitura, ativando a câmera ao toque para código de barras ou QR
-- [ ] Busca e câmera como caminhos alternativos para o mesmo objetivo
-- [ ] Registro **por pack ou kit**, nunca por unidade digitada
-- [ ] Quantidade por pack puxada automaticamente do cadastro do produto
-- [ ] Botões de mais e menos ajustando os packs
-- [ ] Conferência exibindo `1 pack × 12 un = 12 unidades`
-- [ ] Carrinho com foto, código, nome, packs e total em unidades
-- [ ] Remover item e ajustar quantidade antes de confirmar
-- [ ] Botão único confirmando todos os itens de uma vez
-- [ ] **Nenhum valor financeiro em nenhuma parte desta tela**
-- [ ] Alertas apenas de amarelo e vermelho, para produtos e para insumos
-- [ ] Itens em situação normal não ocupam espaço na tela
-- [ ] Gráfico simples da produção da semana, de segunda a sábado
-- [ ] Mensagens de boas-vindas variando por dia da semana e turno
+- [x] Busca por nome ou código como primeiro elemento funcional
+- [x] Área grande de leitura, ativando a câmera ao toque para código de barras ou QR
+- [x] Busca e câmera como caminhos alternativos para o mesmo objetivo
+- [x] Registro **por pack ou kit**, nunca por unidade digitada
+- [x] Quantidade por pack puxada automaticamente do cadastro do produto
+- [x] Botões de mais e menos ajustando os packs
+- [x] Conferência exibindo `1 pack × 12 un = 12 unidades`
+- [x] Carrinho com foto, código, nome, packs e total em unidades
+- [x] Remover item e ajustar quantidade antes de confirmar
+- [x] Botão único confirmando todos os itens de uma vez
+- [x] **Nenhum valor financeiro em nenhuma parte desta tela**
+- [ ] Alertas apenas de amarelo e vermelho, para produtos e para insumos —
+      só insumo implementado; alerta de produto acabado depende do estoque
+      mínimo do produto, que é Tarefa 3.1 (Fase 3)
+- [x] Itens em situação normal não ocupam espaço na tela
+- [x] Gráfico simples da produção da semana, de segunda a sábado
+- [x] Mensagens de boas-vindas variando por dia da semana e turno
 
 ### Tarefa 2.3 · Regra de saldo insuficiente
 
@@ -569,29 +573,32 @@ Produto acabado entra no estoque
 Saldo NUNCA fica negativo
 ```
 
-- [ ] Produção física que aconteceu nunca é bloqueada
-- [ ] Baixa até zero quando o saldo é menor que o consumo
-- [ ] Sem saldo negativo automático
-- [ ] Sem pendência automática de estoque
+- [x] Produção física que aconteceu nunca é bloqueada — validado com produção
+      real (Açafrão PRD-0019), dois componentes zerados, produção seguiu normal
+- [x] Baixa até zero quando o saldo é menor que o consumo
+- [x] Sem saldo negativo automático
+- [x] Sem pendência automática de estoque
 
 ### Tarefa 2.4 · Painel administrativo
 
-- [ ] Filtros rápidos: hoje, semana, mês, ano, personalizado
-- [ ] Busca de produto por nome ou código, e filtro por categoria
-- [ ] Cartões: produção total, peso produzido, produtos produzidos, registros
-- [ ] Gráfico de produção por período, clicável
-- [ ] Clique em um dia abre o detalhamento **na mesma tela**, sem nova página
-- [ ] Lista detalhada com foto, código, nome, quantidade e peso, sem preço
-- [ ] PDF, impressão e Excel respeitando exatamente os filtros ativos
-- [ ] Relatório saindo com empresa, período, data, hora e filtros aplicados
+- [x] Filtros rápidos: hoje, semana, mês, ano, personalizado
+- [x] Busca de produto por nome ou código, e filtro por categoria
+- [x] Cartões: produção total, peso produzido, produtos produzidos, registros
+- [x] Gráfico de produção por período, clicável
+- [x] Clique em um dia abre o detalhamento **na mesma tela**, sem nova página
+- [x] Lista detalhada com foto, código, nome, quantidade e peso, sem preço
+- [x] PDF, impressão e Excel respeitando exatamente os filtros ativos (Excel
+      sai em CSV — a lib `xlsx` do npm tem vulnerabilidade alta sem correção)
+- [x] Relatório saindo com empresa, período, data, hora e filtros aplicados
 
 ### Tarefa 2.5 · Card nos indicadores gerais
 
-- [ ] Card compacto de produção na tela de Indicadores
-- [ ] Total produzido em destaque e mini gráfico de evolução diária
-- [ ] Card acompanha o filtro de período dos indicadores gerais
-- [ ] Botão levando à página completa, preservando o período selecionado
-- [ ] Card é resumo, não duplica filtros nem relatórios
+- [x] Card compacto de produção na tela de Indicadores
+- [x] Total produzido em destaque e mini gráfico de evolução diária
+- [ ] Card acompanha o filtro de período dos indicadores gerais — Indicadores
+      não tem filtro de período global hoje; criar um é escopo de Fase 4
+- [x] Botão levando à página completa, preservando o período selecionado
+- [x] Card é resumo, não duplica filtros nem relatórios
 
 ## Fora de escopo
 
@@ -600,13 +607,16 @@ o roadmap futuro.
 
 ## Definição de pronto
 
-- [ ] Confirmar produção gera baixa de componentes e entrada de produto acabado em
+- [x] Confirmar produção gera baixa de componentes e entrada de produto acabado em
       uma operação vinculada
-- [ ] Conversão de packs para unidades correta em todos os casos
-- [ ] Saldo de insumo nunca negativo
-- [ ] Nenhum valor financeiro aparecendo no Produziu Registra
-- [ ] Tela funcionando em celular real, não só em simulador
-- [ ] Números do relatório idênticos aos da tela filtrada
+- [x] Conversão de packs para unidades correta em todos os casos
+- [x] Saldo de insumo nunca negativo
+- [x] Nenhum valor financeiro aparecendo no Produziu Registra
+- [ ] Tela funcionando em celular real, não só em simulador — não verificado
+      nesta sessão (sem acesso a navegador/dispositivo); build de produção
+      passa limpo, mas falta esse teste visual manual
+- [x] Números do relatório idênticos aos da tela filtrada (PDF, CSV e tabela
+      leem da mesma função `buildProductionReportRows`, uma única fonte)
 
 ## Roteiro de validação
 
@@ -656,53 +666,57 @@ Entrada → Estoque atual → Pedido → Saída → Histórico
 
 ### Tarefa 3.1 · Banco e automações
 
-- [ ] Tabela `stock_movements`: produto, variação, origem, referência vinculada,
+- [x] Tabela `stock_movements`: produto, variação, origem, referência vinculada,
       responsável, data, observação, saldo anterior, saldo posterior
-- [ ] Origens: `production`, `entry`, `order`, `adjustment`
-- [ ] Trigger de produção confirmada gerando entrada
-- [ ] Trigger de pedido confirmado gerando baixa
-- [ ] Campo de estoque mínimo no cadastro de produto
-- [ ] RLS por perfil configurado
+- [x] Origens: `production`, `entry`, `order`, `adjustment`
+- [x] Trigger de produção confirmada gerando entrada (retrofit do
+      `create_production`, validado com produção real: 30 un, saldo 1020→1050)
+- [x] Trigger de pedido confirmado gerando baixa — autorizado por Ruan em
+      2026-09-19. Dispara em `COMPLETED`, clampa em zero igual a produção
+      (achado em teste real: a constraint `current_stock >= 0` já existente
+      bloqueava a conclusão do pedido inteira até eu corrigir o clamp)
+- [x] Campo de estoque mínimo no cadastro de produto
+- [x] RLS por perfil configurado
 
 ### Tarefa 3.2 · Estoque na tela de produtos
 
-- [ ] Quantidade atual visível em cada item da lista
-- [ ] Indicador de movimentação com seta e texto ao passar o mouse
-- [ ] Elemento clicável levando ao histórico daquele produto
+- [x] Quantidade atual visível em cada item da lista
+- [x] Indicador de movimentação com seta e texto ao passar o mouse
+- [x] Elemento clicável levando ao histórico daquele produto
 
 ### Tarefa 3.3 · Movimentação individual
 
-- [ ] Página dedicada por item com saldo atual, entradas e saídas
-- [ ] Colunas: data, movimento, quantidade, saldo, responsável, observação
-- [ ] Filtros: últimos 7 dias, este mês, período personalizado
+- [x] Página dedicada por item com saldo atual, entradas e saídas
+- [x] Colunas: data, movimento, quantidade, saldo, responsável, observação
+- [x] Filtros: últimos 7 dias, este mês, período personalizado
 
 ### Tarefa 3.4 · Gerenciar estoque
 
-- [ ] Lista com produto, código, descrição, estoque, preço e movimentação
-- [ ] Situação calculada: em estoque, baixo ou crítico
-- [ ] Busca por nome
-- [ ] Cartões de resumo: total de produtos, itens críticos, valor total
-- [ ] Botão de entrada de estoque
-- [ ] Botão de ajuste de estoque
+- [x] Lista com produto, código, descrição, estoque, preço e movimentação
+- [x] Situação calculada: em estoque, baixo ou crítico
+- [x] Busca por nome
+- [x] Cartões de resumo: total de produtos, itens críticos, valor total
+- [x] Botão de entrada de estoque
+- [x] Botão de ajuste de estoque
 
 ### Tarefa 3.5 · Ajuste de estoque
 
-- [ ] O usuário informa o estoque físico real contado
-- [ ] O sistema calcula a diferença sozinho
+- [x] O usuário informa o estoque físico real contado
+- [x] O sistema calcula a diferença sozinho
 
 ```
 Sistema: 380    Físico: 365    →    ajuste de -15
 ```
 
-- [ ] Registrar anterior, atualizado, diferença, responsável, data, hora e origem
-- [ ] Motivo obrigatório
+- [x] Registrar anterior, atualizado, diferença, responsável, data, hora e origem
+- [x] Motivo obrigatório
 
 ### Tarefa 3.6 · Entrada manual
 
-- [ ] Acrescenta quantidade ao saldo existente
-- [ ] Para item fabricado pela empresa, a via preferencial continua sendo o
+- [x] Acrescenta quantidade ao saldo existente
+- [x] Para item fabricado pela empresa, a via preferencial continua sendo o
       Produziu Registra
-- [ ] Motivo e observação registrados
+- [x] Motivo e observação registrados
 
 ### Tarefa 3.7 · Baixa por pedidos
 
@@ -710,9 +724,15 @@ Sistema: 380    Físico: 365    →    ajuste de -15
 Venda de 2 packs de 12  →  saída de 24 unidades
 ```
 
-- [ ] Pedido concluído gera baixa automática em unidades físicas
-- [ ] Movimentação registrada com referência ao pedido
-- [ ] Estoque insuficiente alerta mas não bloqueia
+- [x] Pedido concluído gera baixa automática em unidades físicas — dispara em
+      `COMPLETED` (Finalizado), não `CONFIRMED`. Validado com pedido de teste
+      real: 42→38 unidades
+- [x] Movimentação registrada com referência ao pedido (`reference_id` = id
+      do pedido, observação com o número `#0016`)
+- [x] Estoque insuficiente alerta mas não bloqueia — validado: pedido de 12 un
+      contra estoque 0 completou normalmente, saldo ficou em 0 (nunca
+      negativo, por causa da constraint `current_stock >= 0` já existente),
+      movimentação registrada com aviso, e toast de alerta na tela de Pedidos
 
 ## Fora de escopo
 
@@ -720,12 +740,16 @@ Consolidação gerencial e gráficos, que pertencem à Fase 4.
 
 ## Definição de pronto
 
-- [ ] Produção confirmada aumenta o estoque sem ação manual
-- [ ] Pedido confirmado reduz o estoque sem ação manual
-- [ ] Ajuste calcula a diferença corretamente
-- [ ] Toda movimentação rastreável por origem, responsável, data e motivo
-- [ ] Saldo anterior e posterior registrados em cada movimento
-- [ ] Nenhuma planilha externa necessária
+- [x] Produção confirmada aumenta o estoque sem ação manual — validado com
+      produção real (30 un, 1020→1050, origem `production`)
+- [x] Pedido confirmado reduz o estoque sem ação manual — na verdade dispara
+      em **concluído** (`COMPLETED`), não confirmado (`CONFIRMED`); validado
+      com pedido de teste real
+- [x] Ajuste calcula a diferença corretamente — validado com produto real
+      (50→42, diferença -8)
+- [x] Toda movimentação rastreável por origem, responsável, data e motivo
+- [x] Saldo anterior e posterior registrados em cada movimento
+- [x] Nenhuma planilha externa necessária
 
 ## Roteiro de validação
 
@@ -752,8 +776,9 @@ nenhum dado.
 
 ## Pré-condições
 
-- [ ] Fase 3 concluída
-- [ ] Histórico com volume suficiente para leitura de giro
+- [x] Fase 3 concluída
+- [ ] Histórico com volume suficiente para leitura de giro — não verificado nesta
+      sessão (sem sessão autenticada pra ler dado real, ver nota de testes abaixo)
 
 ## Modo de ação
 
@@ -771,63 +796,94 @@ nenhum dado.
 
 ### Tarefa 4.1 · Saúde do estoque
 
-- [ ] Gráfico de rosca clicável
-- [ ] Verde acima de 150% do mínimo
-- [ ] Amarelo entre 100% e 150%
-- [ ] Vermelho igual ou abaixo do mínimo
-- [ ] Itens zerados em vermelho, destacados como sem estoque
-- [ ] Clique em uma cor abre a lista já filtrada
+- [x] Gráfico de rosca clicável
+- [x] Verde acima de 150% do mínimo
+- [x] Amarelo entre 100% e 150%
+- [x] Vermelho igual ou abaixo do mínimo
+- [x] Itens zerados em vermelho, destacados como sem estoque
+- [x] Clique em uma cor abre a lista já filtrada
 
 ### Tarefa 4.2 · Valor do estoque
 
-- [ ] Valor total por `saldo atual × custo médio atual`
-- [ ] Composição por produtos acabados, matérias-primas, embalagens e insumos
-- [ ] Quantidade atual item a item
+- [x] Valor total por `saldo atual × custo médio atual`
+- [x] Composição por produtos acabados, matérias-primas, embalagens e insumos —
+      quebrada pela categoria real de cada item (não por um par fixo de 2 blocos);
+      "embalagens" e "insumos" aparecem como categorias próprias se cadastradas
+      assim em matéria-prima
+- [x] Quantidade atual item a item
 
 ### Tarefa 4.3 · Validade e risco
 
-- [ ] Verde confortável, amarelo próximo do vencimento, vermelho vencido
-- [ ] Prazos de atenção configuráveis
-- [ ] Quantidade, lotes e valor financeiro em risco
-- [ ] Detalhe com item, lote, quantidade, validade e dias restantes
+- [x] Verde confortável, amarelo próximo do vencimento, vermelho vencido
+- [x] Prazos de atenção configuráveis
+- [x] Quantidade, lotes e valor financeiro em risco
+- [x] Detalhe com item, lote, quantidade, validade e dias restantes
 
 ### Tarefa 4.4 · Giro e movimentação
 
-- [ ] Entradas contra saídas no período
-- [ ] Maior giro, baixa movimentação e itens parados
-- [ ] Alertas configuráveis de 30, 60 e 90 dias sem movimentação
-- [ ] Clique abre saldo, entradas, saídas e última movimentação
+- [x] Entradas contra saídas no período
+- [x] Maior giro, baixa movimentação e itens parados
+- [x] Alertas configuráveis de 30, 60 e 90 dias sem movimentação — o mesmo toggle
+      define a janela de entradas/saídas e o limiar de "parados"
+- [x] Clique abre saldo, entradas, saídas e última movimentação
 
 ### Tarefa 4.5 · Evolução mensal
 
-- [ ] Gráfico do valor do estoque mês a mês
-- [ ] Visualizar total, matérias-primas, produtos acabados, embalagens e insumos
-- [ ] Quantidade como série secundária quando útil, sem substituir o valor
-- [ ] Respeitar mês, ano, intervalo personalizado ou histórico completo
-- [ ] Recalcular quando o usuário filtrar por categoria ou grupo
-- [ ] Clique no mês abre o detalhamento correspondente
+- [x] Gráfico do valor do estoque mês a mês
+- [x] Visualizar total, matérias-primas, produtos acabados, embalagens e insumos —
+      clique no mês abre o detalhamento por categoria real
+- [x] Quantidade como série secundária quando útil, sem substituir o valor —
+      aparece no tooltip do mês e no detalhamento, só quando os itens filtrados
+      compartilham a mesma unidade (ex.: filtrando "Produto acabado" mostra
+      unidades); com unidades mistas (kg + un) somar quantidade não faz sentido
+      e a série é omitida
+- [x] Respeitar mês, ano, intervalo personalizado ou histórico completo —
+      presets de 3/6/12/24 meses, "histórico completo" (desde a movimentação
+      mais antiga) e intervalo personalizado por mês/ano de início e fim
+- [x] Recalcular quando o usuário filtrar por categoria ou grupo — filtro de
+      grupo dedicado na própria seção
+- [x] Clique no mês abre o detalhamento correspondente
 
 ### Tarefa 4.6 · Inventário e divergências
 
-- [ ] Divergência entre saldo do sistema e contagem física
-- [ ] Saldo, quantidade física, diferença, ajuste, motivo, responsável e data
-- [ ] Sem divergência, apresentar situação positiva
+- [x] Divergência entre saldo do sistema e contagem física — só produto acabado;
+      matéria-prima ainda não tem função de ajuste (gap da Fase 1, fora deste
+      escopo)
+- [x] Saldo, quantidade física, diferença, ajuste, motivo, responsável e data
+- [x] Sem divergência, apresentar situação positiva
 
 ### Tarefa 4.7 · Tabela e relatórios
 
-- [ ] Colunas: código, item, grupo, unidade, quantidade, mínimo, situação, custo
-      médio, valor total, lote, validade, última movimentação
-- [ ] Busca e filtros por item, grupo, categoria, situação, validade e período
-- [ ] PDF em A4, impressão sem menus, exportação Excel
-- [ ] Gráficos com título, legenda e números também em texto, para leitura humana
+- [x] Colunas: código, item, grupo, unidade, quantidade, mínimo, situação, custo
+      médio, valor total, lote, validade, última movimentação — lote e validade
+      são derivados das entradas confirmadas (mesma fonte da seção "Validade e
+      risco"): mostram o lote de vencimento mais próximo do insumo, sem criar
+      cópia do dado. Produto acabado exibe "-----" (não tem lote no sistema)
+- [x] Busca e filtros por item, grupo, categoria, situação, validade e período —
+      categoria comercial do produto (ou categoria do insumo), situação pelo
+      clique na rosca, validade pelo botão "Com risco de validade" e período
+      pela última movimentação (30/60/90 dias, +90 dias, nunca movimentado)
+- [x] PDF em A4, impressão sem menus, exportação Excel
+- [x] Gráficos com título, legenda e números também em texto, para leitura humana
       e por IA
 
 ## Definição de pronto
 
-- [ ] Cartões, gráficos, tabela, PDF e Excel matematicamente consistentes
-- [ ] Nenhum campo editável em toda a área
-- [ ] Valores batendo com os saldos oficiais
-- [ ] Filtros produzindo os mesmos números em tela e em relatório
+- [x] Cartões, gráficos, tabela, PDF e Excel matematicamente consistentes —
+      valores arredondados ao centavo na fonte (`stockValue`), então a soma das
+      linhas exibidas é igual ao total em tela, PDF e CSV; cálculos de saúde,
+      valor, composição, validade, evolução mensal e giro conferidos por script
+      isolado contra contas manuais (28 verificações)
+- [x] Nenhum campo editável em toda a área — nenhuma rota ou store desta fase
+      faz `insert`, `update`, `upsert`, `delete` ou `rpc`; os únicos campos são
+      filtros de visualização
+- [x] Valores batendo com os saldos oficiais — conferido em 2026-09-21 com dado
+      real do banco (41 itens ativos): valor total R$ 1.630,50 (produtos
+      R$ 1.430,50 + insumos R$ 200,00), idêntico entre a soma feita no SQL e o
+      cálculo do código da tela (`buildStockItems` + `stockValue`)
+- [x] Filtros produzindo os mesmos números em tela e em relatório — PDF, CSV e
+      tabela leem da mesma lista filtrada; a tela mostra "N de M itens · valor
+      total" e o PDF imprime os filtros aplicados
 
 ## Roteiro de validação
 
@@ -1147,11 +1203,11 @@ integralmente e Ruan liberou.
 
 | Fase | Módulo | Situação | Concluída em |
 |---|---|---|---|
-| 0 | Fundação fiscal | Não iniciada | |
-| 1 | Base de insumos | Não iniciada | |
-| 2 | Produção | Não iniciada | |
-| 3 | Estoque | Não iniciada | |
-| 4 | Leitura gerencial | Não iniciada | |
+| 0 | Fundação fiscal | Concluída | 2026-09-16 |
+| 1 | Base de insumos | Concluída | 2026-09-17 |
+| 2 | Produção | Concluída | 2026-09-18 |
+| 3 | Estoque | Concluída | 2026-09-19 |
+| 4 | Leitura gerencial | Em validação | |
 | 5 | Financeiro e pagamentos | Não iniciada | |
 | 6 | Emissão fiscal | Não iniciada | |
 
@@ -1211,6 +1267,13 @@ Configurações
 
 A hierarquia não é imutável. Se outra organização deixar o sistema mais intuitivo,
 propor antes de alterar.
+
+**Situação atual (2026-09-20, aprovada por Ruan):** a barra lateral está agrupada
+em Visão geral (Indicadores, Pedidos), Cadastros (Produtos, Categorias, Clientes,
+Fornecedores), Fábrica (Matérias-primas, Produziu Registra, Painel de produção) e
+Estoque (Estoque, Indicadores de estoque), com Configurações fixa no fim. No
+celular há barra inferior com Pedidos, Produzir, Estoque e Mais. A lista vive em
+`src/components/admin/AdminNav.tsx`.
 
 ---
 

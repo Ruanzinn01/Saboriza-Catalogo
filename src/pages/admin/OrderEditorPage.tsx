@@ -300,7 +300,7 @@ export function OrderEditorPage() {
         <Link to="/admin/pedidos" className="flex w-fit items-center gap-2 text-sm font-semibold text-ink-700/70 hover:text-ink-900">
           <ArrowLeft size={16} /> Voltar para Pedidos
         </Link>
-        <p className="text-sm text-ink-700/60">Pedido não encontrado.</p>
+        <p className="text-sm text-ink-muted">Pedido não encontrado.</p>
       </div>
     );
   }
@@ -314,7 +314,7 @@ export function OrderEditorPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold text-forest-950">{order ? `Pedido ${order.number}` : "Novo pedido"}</h1>
-          <p className="text-sm text-ink-700/60">
+          <p className="text-sm text-ink-muted">
             {order ? "Edite os produtos, o cliente ou os dados do pedido." : "Crie um pedido manualmente selecionando um cliente já cadastrado."}
           </p>
         </div>
@@ -375,7 +375,7 @@ export function OrderEditorPage() {
       )}
 
       <section className="flex flex-col gap-3 rounded-3xl border border-forest-950/10 bg-white p-6">
-        <p className="text-xs font-bold uppercase tracking-wide text-ink-700/50">Cliente</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Cliente</p>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="flex flex-col gap-3">
             <CustomerPicker selectedCustomer={selectedCustomer} onSelect={(customer) => void handleSelectCustomer(customer)} onClear={() => setSelectedCustomer(null)} />
@@ -405,7 +405,7 @@ export function OrderEditorPage() {
       </section>
 
       <section className="flex flex-col gap-4 rounded-3xl border border-forest-950/10 bg-white p-6">
-        <p className="text-xs font-bold uppercase tracking-wide text-ink-700/50">Produtos</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Produtos</p>
 
         <div className="relative">
           <Search size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-700/40" />
@@ -431,7 +431,7 @@ export function OrderEditorPage() {
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-ink-900">{formatProductTitle(product)}</p>
-                  <p className="text-xs text-ink-700/60">
+                  <p className="text-xs text-ink-muted">
                     Pack de {product.packQuantity} un · {formatCurrency(product.unitPrice)}/unid
                   </p>
                 </div>
@@ -444,13 +444,13 @@ export function OrderEditorPage() {
         )}
 
         {items.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-ink-900/15 p-6 text-center text-sm text-ink-700/60">
+          <p className="rounded-2xl border border-dashed border-ink-900/15 p-6 text-center text-sm text-ink-muted">
             Nenhum produto adicionado ainda. Busque acima pra adicionar.
           </p>
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-forest-950/10">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-forest-950/10 text-xs uppercase tracking-wide text-ink-700/50">
+              <thead className="border-b border-forest-950/10 text-xs uppercase tracking-wide text-ink-muted">
                 <tr>
                   <th className="px-3 py-2">Imagem</th>
                   <th className="px-3 py-2">Produto</th>
@@ -470,7 +470,7 @@ export function OrderEditorPage() {
                     </td>
                     <td className="px-3 py-2">
                       <p className="font-semibold text-ink-900">{item.name}</p>
-                      <p className="text-xs text-ink-700/60">
+                      <p className="text-xs text-ink-muted">
                         {item.presentation} · {item.weight}
                       </p>
                     </td>
@@ -501,10 +501,10 @@ export function OrderEditorPage() {
               </tbody>
               <tfoot>
                 <tr className="border-t border-forest-950/10 bg-forest-950/[0.02]">
-                  <td colSpan={2} className="px-3 py-3 text-xs font-semibold text-ink-700/60">
+                  <td colSpan={2} className="px-3 py-3 text-xs font-semibold text-ink-muted">
                     Itens no pedido: {items.length}
                   </td>
-                  <td className="px-3 py-3 text-center text-xs font-semibold text-ink-700/60">Qtde. total: {calculateItemCount(items)}</td>
+                  <td className="px-3 py-3 text-center text-xs font-semibold text-ink-muted">Qtde. total: {calculateItemCount(items)}</td>
                   <td colSpan={3} className="px-3 py-3 text-right text-sm font-extrabold text-forest-950">
                     Valor total: {formatCurrency(calculateCartTotal(items))}
                   </td>
@@ -516,14 +516,14 @@ export function OrderEditorPage() {
       </section>
 
       <section className="flex flex-col gap-3 rounded-3xl border border-forest-950/10 bg-white p-6">
-        <p className="text-xs font-bold uppercase tracking-wide text-ink-700/50">Cupom (opcional)</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Cupom (opcional)</p>
         <CouponField appliedCoupon={coupon} onApply={setCoupon} onRemove={() => setCoupon(null)} />
       </section>
 
       <section className="flex flex-col gap-3">
-        <p className="text-xs font-bold uppercase tracking-wide text-ink-700/50">Revisão</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Revisão</p>
         {items.length === 0 ? (
-          <p className="rounded-2xl border border-forest-950/10 bg-white p-6 text-sm text-ink-700/60">
+          <p className="rounded-2xl border border-forest-950/10 bg-white p-6 text-sm text-ink-muted">
             Adicione produtos para ver o resumo do pedido.
           </p>
         ) : (
@@ -583,10 +583,10 @@ export function OrderEditorPage() {
                   className="flex flex-col items-start px-4 py-3 text-left hover:bg-forest-950/5"
                 >
                   <span className="text-sm font-semibold text-ink-900">{getCustomerDisplayName(customer)}</span>
-                  <span className="text-xs text-ink-700/60">{getCustomerSecondaryLine(customer)}</span>
+                  <span className="text-xs text-ink-muted">{getCustomerSecondaryLine(customer)}</span>
                 </button>
               ))}
-            {registeredCustomers.length === 0 && <p className="px-4 py-6 text-center text-sm text-ink-700/60">Nenhum cliente cadastrado ainda.</p>}
+            {registeredCustomers.length === 0 && <p className="px-4 py-6 text-center text-sm text-ink-muted">Nenhum cliente cadastrado ainda.</p>}
           </div>
         </div>
       </Sheet>

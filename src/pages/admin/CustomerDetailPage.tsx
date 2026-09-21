@@ -74,7 +74,7 @@ export function CustomerDetailPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold text-forest-950">{getCustomerDisplayName(customer)}</h1>
-          <p className="text-sm text-ink-700/60">{customer.name}</p>
+          <p className="text-sm text-ink-muted">{customer.name}</p>
         </div>
         <div className="flex gap-2">
           <Link to={`/admin/clientes/${customer.id}/editar`}>
@@ -90,22 +90,22 @@ export function CustomerDetailPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-forest-950/10 bg-white p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-ink-700/50">Pedidos</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Pedidos</p>
           <p className="text-xl font-extrabold text-forest-950">{summary.count}</p>
         </div>
         <div className="rounded-2xl border border-forest-950/10 bg-white p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-ink-700/50">Total comprado</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Total comprado</p>
           <p className="text-xl font-extrabold text-forest-950">{formatCurrency(summary.total)}</p>
         </div>
         <div className="rounded-2xl border border-forest-950/10 bg-white p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-ink-700/50">Último pedido</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Último pedido</p>
           <p className="text-xl font-extrabold text-forest-950">{summary.lastOrderAt ? formatOrderDate(summary.lastOrderAt) : "-----"}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="flex flex-col gap-2 rounded-3xl border border-forest-950/10 bg-white p-6">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-700/50">Dados do cliente</p>
+          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-muted">Dados do cliente</p>
           <p className="text-sm text-ink-700/70">Telefone: <span className="font-semibold text-ink-900">{customer.phone}</span></p>
           <p className="text-sm text-ink-700/70">E-mail: <span className="font-semibold text-ink-900">{customer.email || "-----"}</span></p>
           <p className="text-sm text-ink-700/70">Nome fantasia: <span className="font-semibold text-ink-900">{customer.tradeName || "-----"}</span></p>
@@ -120,9 +120,9 @@ export function CustomerDetailPage() {
         </div>
 
         <div className="flex flex-col gap-2 rounded-3xl border border-forest-950/10 bg-white p-6">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-700/50">Histórico de pedidos</p>
+          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-muted">Histórico de pedidos</p>
           {customerOrders.length === 0 ? (
-            <p className="text-sm text-ink-700/60">Este cliente ainda não tem pedidos.</p>
+            <p className="text-sm text-ink-muted">Este cliente ainda não tem pedidos.</p>
           ) : (
             <div className="flex flex-col divide-y divide-forest-950/5">
               {customerOrders.map((order) => (
@@ -133,7 +133,7 @@ export function CustomerDetailPage() {
                 >
                   <div>
                     <p className="text-sm font-semibold text-ink-900">{order.number}</p>
-                    <p className="text-xs text-ink-700/60">{formatOrderDate(order.createdAt)}</p>
+                    <p className="text-xs text-ink-muted">{formatOrderDate(order.createdAt)}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-bold text-ink-900">{formatCurrency(order.total)}</span>

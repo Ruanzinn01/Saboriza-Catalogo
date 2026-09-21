@@ -10,6 +10,7 @@ import { cn } from "@/lib/cn";
 import { AdminState } from "@/components/admin/AdminState";
 import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
 import { RevenueByDayChart } from "@/components/admin/RevenueByDayChart";
+import { ProductionSummaryCard } from "@/components/admin/ProductionSummaryCard";
 
 const MONTHS_BACK = 6;
 const monthLabelFormatter = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" });
@@ -47,12 +48,12 @@ function ComparisonCard({ label, value, delta }: { label: string; value: string;
 
   return (
     <div className="rounded-3xl border border-forest-950/10 bg-white p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-ink-700/50">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{label}</p>
       <p className="mt-2 text-2xl font-extrabold text-forest-950">{value}</p>
       <div
         className={cn(
           "mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold",
-          isFlat ? "bg-ink-900/5 text-ink-700/60" : isUp ? "bg-forest-700/10 text-forest-800" : "bg-red-100 text-red-700"
+          isFlat ? "bg-ink-900/5 text-ink-muted" : isUp ? "bg-forest-700/10 text-forest-800" : "bg-red-100 text-red-700"
         )}
       >
         <Icon size={12} />
@@ -138,7 +139,7 @@ export function IndicatorsPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-extrabold text-forest-950">Indicadores</h1>
-        <p className="text-sm text-ink-700/60">Visão geral e comparativo da operação da Saboriza.</p>
+        <p className="text-sm text-ink-muted">Visão geral e comparativo da operação da Saboriza.</p>
       </div>
 
       {isLoading ? (
@@ -149,7 +150,7 @@ export function IndicatorsPage() {
             {cards.map((card) => (
               <div key={card.label} className="flex items-start justify-between gap-3 rounded-3xl border border-forest-950/10 bg-white p-5">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-700/50">{card.label}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{card.label}</p>
                   <p className="mt-2 text-2xl font-extrabold text-forest-950">{card.value}</p>
                 </div>
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-500/15 text-gold-600">
@@ -173,6 +174,8 @@ export function IndicatorsPage() {
             />
           </div>
 
+          <ProductionSummaryCard />
+
           {hasRevenueThisMonth ? (
             <RevenueByDayChart data={dailyRevenue} monthLabel={monthLabelFormatter.format(now)} />
           ) : (
@@ -193,7 +196,7 @@ export function IndicatorsPage() {
                         style={{ height: `${heightPct}%` }}
                       />
                     </div>
-                    <span className="text-[11px] font-semibold uppercase text-ink-700/50">{point.label}</span>
+                    <span className="text-[11px] font-semibold uppercase text-ink-muted">{point.label}</span>
                     <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-max -translate-x-1/2 rounded-lg bg-forest-950 px-2.5 py-1.5 text-xs text-cream-50 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
                       <span className="block font-bold">{formatCurrency(point.revenue)}</span>
                       <span className="block text-cream-100/70">{point.ordersCount} pedido(s)</span>
@@ -206,11 +209,11 @@ export function IndicatorsPage() {
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_1fr]">
             <div className="rounded-3xl border border-forest-950/10 bg-white p-5">
-              <p className="mb-3 text-xs font-bold uppercase tracking-wide text-ink-700/50">Pedidos recentes</p>
+              <p className="mb-3 text-xs font-bold uppercase tracking-wide text-ink-muted">Pedidos recentes</p>
               {recentOrders.length === 0 ? (
                 <div className="py-6 text-center">
                   <p className="text-sm font-semibold text-ink-900">Você ainda não recebeu pedidos.</p>
-                  <p className="mt-1 text-xs text-ink-700/60">Quando um pedido chegar, ele aparecerá aqui.</p>
+                  <p className="mt-1 text-xs text-ink-muted">Quando um pedido chegar, ele aparecerá aqui.</p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
@@ -222,10 +225,10 @@ export function IndicatorsPage() {
                     >
                       <div>
                         <p className="text-sm font-bold text-ink-900">{order.number}</p>
-                        <p className="text-xs text-ink-700/60">
+                        <p className="text-xs text-ink-muted">
                           {order.customer.name} · {order.customer.company}
                         </p>
-                        <p className="text-xs text-ink-700/50">{formatOrderDate(order.createdAt)}</p>
+                        <p className="text-xs text-ink-muted">{formatOrderDate(order.createdAt)}</p>
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         <span className="text-sm font-bold text-ink-900">{formatCurrency(order.total)}</span>
@@ -239,7 +242,7 @@ export function IndicatorsPage() {
 
             <div className="flex flex-col gap-6">
               <div className="rounded-3xl border border-forest-950/10 bg-white p-5">
-                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-ink-700/50">Resumo</p>
+                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-ink-muted">Resumo</p>
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-ink-700/70">Produtos ativos</span>
@@ -253,16 +256,16 @@ export function IndicatorsPage() {
               </div>
 
               <div className="rounded-3xl border border-forest-950/10 bg-white p-5">
-                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-ink-700/50">Produtos mais vendidos no mês</p>
+                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-ink-muted">Produtos mais vendidos no mês</p>
                 {topProducts.length === 0 ? (
-                  <p className="text-sm text-ink-700/60">Nenhuma venda registrada neste mês ainda.</p>
+                  <p className="text-sm text-ink-muted">Nenhuma venda registrada neste mês ainda.</p>
                 ) : (
                   <div className="flex flex-col gap-3">
                     {topProducts.map(([name, units]) => (
                       <div key={name}>
                         <div className="mb-1 flex items-center justify-between gap-2 text-xs font-semibold text-ink-900">
                           <span className="truncate">{name}</span>
-                          <span className="shrink-0 text-ink-700/60">{units}x</span>
+                          <span className="shrink-0 text-ink-muted">{units}x</span>
                         </div>
                         <div className="h-2 w-full overflow-hidden rounded-full bg-forest-950/5">
                           <div

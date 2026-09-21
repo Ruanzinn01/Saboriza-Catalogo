@@ -19,7 +19,7 @@ export function ProductImageSheet({ productId, onClose }: ProductImageSheetProps
           <div className="aspect-square w-full overflow-hidden rounded-2xl border border-forest-950/10">
             <ProductImage imageUrl={product.imageUrl} name={product.name} />
           </div>
-          <p className="text-xs font-bold uppercase tracking-wide text-ink-700/50">
+          <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">
             {product.imageUrl ? "Alterar imagem" : "Adicionar imagem"}
           </p>
           <ImageUploader onUploaded={(url) => updateProduct(product.id, { imageUrl: url })} />

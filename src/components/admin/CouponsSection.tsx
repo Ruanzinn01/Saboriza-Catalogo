@@ -50,7 +50,7 @@ export function CouponsSection() {
   return (
     <div className="rounded-3xl border border-forest-950/10 bg-white p-6">
       <p className="mb-1 text-lg font-extrabold text-forest-950">Cupons</p>
-      <p className="mb-4 text-sm text-ink-700/60">Promoções simples aplicáveis no checkout — percentual ou valor fixo.</p>
+      <p className="mb-4 text-sm text-ink-muted">Promoções simples aplicáveis no checkout — percentual ou valor fixo.</p>
 
       <form onSubmit={handleSubmit} className="mb-6 flex flex-wrap items-end gap-3 rounded-2xl border border-forest-950/10 bg-cream-50 p-4">
         <Input
@@ -94,7 +94,7 @@ export function CouponsSection() {
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-forest-950/10">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-forest-950/10 text-xs uppercase tracking-wide text-ink-700/50">
+            <thead className="border-b border-forest-950/10 text-xs uppercase tracking-wide text-ink-muted">
               <tr>
                 <th className="px-4 py-3">Código</th>
                 <th className="px-4 py-3">Desconto</th>
@@ -114,7 +114,7 @@ export function CouponsSection() {
                       className={
                         coupon.active
                           ? "rounded-full bg-forest-700/10 px-3 py-1 text-xs font-bold text-forest-800"
-                          : "rounded-full bg-ink-900/10 px-3 py-1 text-xs font-bold text-ink-700/60"
+                          : "rounded-full bg-ink-900/10 px-3 py-1 text-xs font-bold text-ink-muted"
                       }
                     >
                       {coupon.active ? "Ativo" : "Inativo"}
