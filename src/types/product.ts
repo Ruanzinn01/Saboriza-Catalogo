@@ -20,6 +20,7 @@ export interface Product {
   badge?: ProductBadge;
   currentStock: number;
   minStock: number;
+  maxStock: number;
   targetMarginPct: number;
   gtin: string;
   brand: string;

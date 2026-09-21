@@ -117,6 +117,7 @@ export function RawMaterialDetailPage() {
             Saldo: <span className="font-semibold text-ink-900">{material.currentStock} {material.controlUnit}</span>
           </p>
           <p className="text-sm text-ink-700/70">Mínimo: <span className="font-semibold text-ink-900">{material.minStock} {material.controlUnit}</span></p>
+          <p className="text-sm text-ink-700/70">Máximo: <span className="font-semibold text-ink-900">{material.maxStock > 0 ? `${material.maxStock} ${material.controlUnit}` : "-----"}</span></p>
           <p className="text-sm text-ink-700/70">Custo médio: <span className="font-semibold text-ink-900">{formatCurrency(material.avgCost)}</span></p>
           <p className="text-sm text-ink-700/70">
             Fornecedor: <span className="font-semibold text-ink-900">{material.primarySupplierId ? supplierName(material.primarySupplierId) : "-----"}</span>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Plus, Search, SlidersHorizontal } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useCatalogStore } from "@/store/catalog-store";
@@ -18,14 +18,17 @@ import { ProductsKpiCards } from "@/components/admin/ProductsKpiCards";
 import { ProductsMobileList } from "@/components/admin/ProductsMobileList";
 import { ProductsTable } from "@/components/admin/ProductsTable";
 import { paginate } from "@/lib/pagination";
+import { useRefreshOnFocus } from "@/lib/use-refresh-on-focus";
 import { buildDuplicateDraft } from "@/lib/product-duplicate";
 import {
   EMPTY_FILTERS,
-  buildKpis,
+  buildProductKpis,
+  countIncompleteSetup,
   buildProductRows,
   countActiveFilters,
   filterRows,
   sortRows,
+  type ProductBucket,
   type ProductFilters,
   type SortKey,
   type SortState,
@@ -58,8 +61,9 @@ export function ProductsPage() {
     stock: "all",
     margin: "all",
     supplierId: "",
+    setup: "all",
   });
-  const [sort, setSort] = useState<SortState>({ key: "code", dir: "asc" });
+  const [sort, setSort] = useState<SortState>({ key: "status", dir: "asc" });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -75,6 +79,8 @@ export function ProductsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useRefreshOnFocus(() => void fetchCatalog());
+
   const missingRecipeKey = allProducts
     .filter((product) => recipesByProduct[product.id] === undefined)
     .map((product) => product.id)
@@ -85,7 +91,7 @@ export function ProductsPage() {
   }, [missingRecipeKey, fetchRecipesFor]);
 
   const filters: ProductFilters = { ...localFilters, categoryId: searchParams.get("categoria") ?? "" };
-  const advancedCount = Number(filters.margin !== "all") + Number(filters.supplierId !== "");
+  const advancedCount = Number(filters.margin !== "all") + Number(filters.supplierId !== "") + Number(filters.setup !== "all");
   const activeFilterCount = countActiveFilters(filters);
 
   function patchFilters(patch: Partial<ProductFilters>) {
@@ -97,7 +103,7 @@ export function ProductsPage() {
 
   function clearFilters() {
     setSearchParams({});
-    setLocalFilters({ search: "", active: "all", stock: "all", margin: "all", supplierId: "" });
+    setLocalFilters({ search: "", active: "all", stock: "all", margin: "all", supplierId: "", setup: "all" });
     setPage(1);
   }
 
@@ -105,13 +111,24 @@ export function ProductsPage() {
     () => buildProductRows(allProducts, categories, suppliers, recipesByProduct, materials),
     [allProducts, categories, suppliers, recipesByProduct, materials]
   );
-  const kpis = useMemo(() => buildKpis(allProducts), [allProducts]);
+  const kpis = useMemo(() => buildProductKpis(allProducts), [allProducts]);
+  const incompleteCount = useMemo(() => countIncompleteSetup(rows), [rows]);
   const visibleRows = useMemo(
     () => sortRows(filterRows(rows, filters), sort),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [rows, localFilters, searchParams, sort]
   );
   const pageData = paginate(visibleRows, page, pageSize);
+
+  function handleKpiSelect(bucket: ProductBucket) {
+    patchFilters({ stock: filters.stock === bucket ? "all" : bucket });
+    requestAnimationFrame(() => document.getElementById("lista-produtos")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+
+  function handleSetupSelect() {
+    patchFilters({ setup: filters.setup === "incomplete" ? "all" : "incomplete" });
+    requestAnimationFrame(() => document.getElementById("lista-produtos")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
 
   function handleSort(key: SortKey) {
     setSort((current) => (current.key === key ? { key, dir: current.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
@@ -169,20 +186,33 @@ export function ProductsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-center">
-        <div className="2xl:w-72 2xl:shrink-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
           <h1 className="text-2xl font-extrabold text-forest-950 sm:text-3xl">Produtos</h1>
           <p className="text-sm text-ink-muted">Gerencie os produtos disponíveis no catálogo.</p>
         </div>
-        <div className="2xl:flex-1">
-          <ProductsKpiCards kpis={kpis} />
+        <div className="flex flex-col gap-2 sm:items-end">
+          <Link to="/admin/categorias" className="w-full sm:w-auto">
+            <Button size="md" variant="outline" className="w-full">
+              <Tag size={16} /> Categorias
+            </Button>
+          </Link>
+          <Link to="/admin/produtos/novo" className="w-full sm:w-auto">
+            <Button size="lg" className="w-full">
+              <Plus size={18} /> Novo produto
+            </Button>
+          </Link>
         </div>
-        <Link to="/admin/produtos/novo" className="2xl:shrink-0">
-          <Button size="lg" className="w-full 2xl:w-auto">
-            <Plus size={18} /> Novo produto
-          </Button>
-        </Link>
       </div>
+
+      <ProductsKpiCards
+        kpis={kpis}
+        selected={filters.stock === "all" ? null : filters.stock}
+        onSelect={handleKpiSelect}
+        incomplete={incompleteCount}
+        incompleteSelected={filters.setup === "incomplete"}
+        onSelectIncomplete={handleSetupSelect}
+      />
 
       <div className="flex flex-col gap-3 xl:flex-row">
         <div className="relative flex-1">
@@ -232,6 +262,7 @@ export function ProductsPage() {
             <option value="ok">Em estoque</option>
             <option value="low">Estoque baixo</option>
             <option value="out">Sem estoque</option>
+            <option value="over">Estoque máximo (acima)</option>
           </select>
           <Button type="button" variant="outline" className="h-11 border-ink-900/15 bg-white xl:h-12" onClick={() => setFiltersOpen(true)}>
             <SlidersHorizontal size={16} /> Filtros
@@ -262,7 +293,7 @@ export function ProductsPage() {
       ) : visibleRows.length === 0 ? (
         <AdminState variant="empty" message="Nenhum produto encontrado." />
       ) : (
-        <div className="overflow-hidden rounded-3xl border border-forest-950/10 bg-white">
+        <div id="lista-produtos" className="scroll-mt-4 overflow-hidden rounded-3xl border border-forest-950/10 bg-white">
           {selectedIds.size > 0 && (
             <div role="status" className="flex flex-wrap items-center justify-between gap-2 border-b border-forest-950/10 bg-forest-700/10 px-4 py-2.5">
               <span className="text-sm font-semibold text-forest-900">

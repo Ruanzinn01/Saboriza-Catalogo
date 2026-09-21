@@ -51,7 +51,7 @@ export function CategoriesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-extrabold text-forest-950">Categorias</h1>
+      <h1 className="text-2xl font-extrabold text-forest-950">Categoria de Produtos</h1>
 
       <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3 rounded-3xl border border-forest-950/10 bg-white p-5">
         <Input

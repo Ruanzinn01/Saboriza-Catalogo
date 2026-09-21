@@ -454,6 +454,7 @@ export type Database = {
           id: string
           image_url: string
           is_active: boolean
+          max_stock: number
           min_stock: number
           name: string
           ncm: string
@@ -479,6 +480,7 @@ export type Database = {
           id?: string
           image_url?: string
           is_active?: boolean
+          max_stock?: number
           min_stock?: number
           name: string
           ncm?: string
@@ -504,6 +506,7 @@ export type Database = {
           id?: string
           image_url?: string
           is_active?: boolean
+          max_stock?: number
           min_stock?: number
           name?: string
           ncm?: string
@@ -533,6 +536,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      raw_material_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       raw_material_entries: {
         Row: {
@@ -1051,6 +1072,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      rename_raw_material_category: {
+        Args: { p_id: string; p_name: string }
+        Returns: undefined
       }
       reverse_raw_material_entry: {
         Args: { p_entry_id: string; p_reason: string }

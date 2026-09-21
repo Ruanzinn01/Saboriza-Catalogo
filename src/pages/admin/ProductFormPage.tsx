@@ -10,6 +10,7 @@ import { ImageUploader } from "@/components/admin/ImageUploader";
 import { ProductProfitabilityCard } from "@/components/admin/ProductProfitabilityCard";
 import { ProductRecipeEditor } from "@/components/admin/ProductRecipeEditor";
 import { ProductStockStatusBar } from "@/components/admin/ProductStockStatusBar";
+import { StockRangeGauge } from "@/components/admin/StockRangeGauge";
 import { cn } from "@/lib/cn";
 import { buildDuplicateDraft, type ProductDraft } from "@/lib/product-duplicate";
 import { useCatalogStore } from "@/store/catalog-store";
@@ -47,6 +48,7 @@ function createEmptyForm(categoryId: string): ProductForm {
     badge: undefined,
     currentStock: 0,
     minStock: 0,
+    maxStock: 0,
     targetMarginPct: 40,
     gtin: "",
     brand: "",
@@ -113,8 +115,16 @@ export function ProductFormPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  const stockRangeError =
+    form.maxStock > 0 && form.maxStock < form.minStock ? "O estoque máximo não pode ser menor que o estoque mínimo." : "";
+
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    if (stockRangeError) {
+      toast.error(stockRangeError);
+      setMinStockOpen(true);
+      return;
+    }
     if (isEditing && existingProduct) {
       updateProduct(existingProduct.id, form);
     } else {
@@ -359,7 +369,12 @@ export function ProductFormPage() {
             </div>
           </Card>
 
-          <ProductStockStatusBar currentStock={form.currentStock} minStock={form.minStock} onConfigure={() => setMinStockOpen(true)} />
+          <ProductStockStatusBar
+            currentStock={form.currentStock}
+            minStock={form.minStock}
+            maxStock={form.maxStock}
+            onConfigure={() => setMinStockOpen(true)}
+          />
 
           <div className="flex gap-3 lg:hidden">
             <Button type="submit" size="lg" variant="secondary" className="flex-1">
@@ -400,24 +415,37 @@ export function ProductFormPage() {
       <Sheet
         open={minStockOpen}
         onClose={() => setMinStockOpen(false)}
-        title="Estoque mínimo"
+        title="Configuração de estoque"
         footer={
-          <Button type="button" size="lg" className="w-full" onClick={() => setMinStockOpen(false)}>
+          <Button type="button" size="lg" className="w-full" disabled={Boolean(stockRangeError)} onClick={() => setMinStockOpen(false)}>
             Concluído
           </Button>
         }
       >
         <div className="flex flex-col gap-4">
           <p className="text-sm text-ink-700/80">
-            Abaixo desse valor o produto aparece como "Estoque baixo" e entra na lista "O que precisa produzir". Salve o produto para gravar a mudança.
+            Abaixo do mínimo o produto aparece como "Estoque baixo" e entra na lista "O que precisa produzir". Acima do máximo ele aparece como
+            "Estoque máximo". Salve o produto para gravar a mudança.
           </p>
-          <Input
-            label="Estoque mínimo (un)"
-            type="number"
-            min="0"
-            value={form.minStock}
-            onChange={(e) => handleChange("minStock", Number(e.target.value))}
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Estoque mínimo (un)"
+              type="number"
+              min="0"
+              value={form.minStock}
+              onChange={(e) => handleChange("minStock", Number(e.target.value))}
+            />
+            <Input
+              label="Estoque máximo (un)"
+              type="number"
+              min="0"
+              value={form.maxStock}
+              onChange={(e) => handleChange("maxStock", Number(e.target.value))}
+              error={stockRangeError || undefined}
+            />
+          </div>
+          <p className="-mt-2 text-xs text-ink-muted">Use 0 no máximo quando não houver limite.</p>
+          <StockRangeGauge currentStock={form.currentStock} minStock={form.minStock} maxStock={form.maxStock} />
           {isEditing && <Input label="Estoque atual" value={`${form.currentStock} un`} disabled />}
         </div>
       </Sheet>

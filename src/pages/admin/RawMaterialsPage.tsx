@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { PackagePlus, Plus, Search } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { PackagePlus, Plus, Search, Tag } from "lucide-react";
 import { useRawMaterialsStore } from "@/store/raw-materials-store";
 import { useSuppliersStore } from "@/store/suppliers-store";
 import { AdminState } from "@/components/admin/AdminState";
@@ -10,10 +10,11 @@ import { RawMaterialsMobileList } from "@/components/admin/RawMaterialsMobileLis
 import { RawMaterialsTable } from "@/components/admin/RawMaterialsTable";
 import { Button } from "@/components/ui/Button";
 import { paginate } from "@/lib/pagination";
-import { buildKpis } from "@/lib/product-list";
+import { useRefreshOnFocus } from "@/lib/use-refresh-on-focus";
 import { materialCategories } from "@/lib/raw-material-entry";
 import {
   EMPTY_MATERIAL_FILTERS,
+  buildMaterialKpis,
   buildMaterialRows,
   countMaterialFilters,
   filterMaterialRows,
@@ -33,7 +34,11 @@ export function RawMaterialsPage() {
   const suppliers = useSuppliersStore((state) => state.suppliers);
   const fetchSuppliers = useSuppliersStore((state) => state.fetchSuppliers);
 
-  const [filters, setFilters] = useState<RawMaterialFilters>(EMPTY_MATERIAL_FILTERS);
+  const [searchParams] = useSearchParams();
+  const [filters, setFilters] = useState<RawMaterialFilters>(() => ({
+    ...EMPTY_MATERIAL_FILTERS,
+    category: searchParams.get("categoria") ?? "",
+  }));
   const [sort, setSort] = useState<MaterialListSort>({ key: "code", dir: "asc" });
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -44,9 +49,11 @@ export function RawMaterialsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchMaterials]);
 
+  useRefreshOnFocus(() => void fetchMaterials());
+
   const categories = useMemo(() => materialCategories(materials), [materials]);
   const rows = useMemo(() => buildMaterialRows(materials, suppliers), [materials, suppliers]);
-  const kpis = useMemo(() => buildKpis(materials), [materials]);
+  const kpis = useMemo(() => buildMaterialKpis(materials), [materials]);
   const visibleRows = useMemo(() => sortMaterialRows(filterMaterialRows(rows, filters), sort), [rows, filters, sort]);
   const pageData = paginate(visibleRows, page, pageSize);
   const activeFilterCount = countMaterialFilters(filters);
@@ -76,17 +83,24 @@ export function RawMaterialsPage() {
             onSelect={(bucket) => patchFilters({ stock: filters.stock === bucket ? "all" : bucket })}
           />
         </div>
-        <div className="flex flex-wrap gap-2 2xl:shrink-0">
-          <Link to="/admin/materias-primas/entrada" className="flex-1 2xl:flex-none">
-            <Button size="lg" variant="secondary" className="w-full">
-              <PackagePlus size={18} /> Nova entrada
+        <div className="flex flex-col gap-2 sm:items-end 2xl:shrink-0">
+          <Link to="/admin/materias-primas/categorias" className="w-full sm:w-auto">
+            <Button size="md" variant="outline" className="w-full">
+              <Tag size={16} /> Categorias de matérias-primas
             </Button>
           </Link>
-          <Link to="/admin/materias-primas/novo" className="flex-1 2xl:flex-none">
-            <Button size="lg" className="w-full">
-              <Plus size={18} /> Novo insumo
-            </Button>
-          </Link>
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+            <Link to="/admin/materias-primas/entrada" className="flex-1">
+              <Button size="lg" variant="secondary" className="w-full">
+                <PackagePlus size={18} /> Nova entrada
+              </Button>
+            </Link>
+            <Link to="/admin/materias-primas/novo" className="flex-1">
+              <Button size="lg" className="w-full">
+                <Plus size={18} /> Novo insumo
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -133,6 +147,7 @@ export function RawMaterialsPage() {
             <option value="ok">Em estoque</option>
             <option value="low">Estoque baixo</option>
             <option value="out">Sem estoque</option>
+            <option value="over">Estoque máximo (acima)</option>
           </select>
         </div>
       </div>

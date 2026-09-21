@@ -1,19 +1,19 @@
 import type { RawMaterial } from "@/types/raw-material";
 import { rawMaterialStockStatus } from "@/types/raw-material";
 import type { Supplier } from "@/types/supplier";
-import type { StockBucket } from "@/lib/product-list";
+import { stockFillPct, type ProductBucket, type ProductKpis } from "@/lib/product-list";
 
 export interface RawMaterialRow {
   material: RawMaterial;
   supplierName: string | null;
-  bucket: StockBucket;
+  bucket: ProductBucket;
 }
 
 export interface RawMaterialFilters {
   search: string;
   category: string;
   active: "all" | "active" | "inactive";
-  stock: "all" | StockBucket;
+  stock: "all" | ProductBucket;
 }
 
 export const EMPTY_MATERIAL_FILTERS: RawMaterialFilters = { search: "", category: "", active: "all", stock: "all" };
@@ -24,14 +24,29 @@ export interface MaterialListSort {
   dir: "asc" | "desc";
 }
 
-const BUCKET_ORDER: Record<StockBucket, number> = { out: 0, low: 1, ok: 2 };
+const BUCKET_ORDER: Record<ProductBucket, number> = { out: 0, low: 1, over: 2, ok: 3 };
+
+export function materialBucket(material: Pick<RawMaterial, "currentStock" | "minStock" | "maxStock">): ProductBucket {
+  const status = rawMaterialStockStatus(material);
+  return status === "ok" && material.maxStock > 0 && material.currentStock > material.maxStock ? "over" : status;
+}
+
+export interface MaterialKpis extends ProductKpis {
+  over: number;
+}
+
+export function buildMaterialKpis(materials: Pick<RawMaterial, "currentStock" | "minStock" | "maxStock">[]): MaterialKpis {
+  const kpis: MaterialKpis = { total: materials.length, ok: 0, low: 0, out: 0, over: 0 };
+  for (const material of materials) kpis[materialBucket(material)] += 1;
+  return kpis;
+}
 
 export function buildMaterialRows(materials: RawMaterial[], suppliers: Supplier[]): RawMaterialRow[] {
   const supplierNameById = new Map(suppliers.map((supplier) => [supplier.id, supplier.tradeName || supplier.companyName]));
   return materials.map((material) => ({
     material,
     supplierName: material.primarySupplierId ? (supplierNameById.get(material.primarySupplierId) ?? null) : null,
-    bucket: rawMaterialStockStatus(material),
+    bucket: materialBucket(material),
   }));
 }
 
@@ -64,7 +79,11 @@ function compare(a: RawMaterialRow, b: RawMaterialRow, key: MaterialListSortKey)
     case "cost":
       return a.material.avgCost - b.material.avgCost;
     case "status":
-      return BUCKET_ORDER[a.bucket] - BUCKET_ORDER[b.bucket];
+      return (
+        BUCKET_ORDER[a.bucket] - BUCKET_ORDER[b.bucket] ||
+        stockFillPct({ currentStock: a.material.currentStock, minStock: a.material.minStock, maxStock: a.material.maxStock }) -
+          stockFillPct({ currentStock: b.material.currentStock, minStock: b.material.minStock, maxStock: b.material.maxStock })
+      );
   }
 }
 

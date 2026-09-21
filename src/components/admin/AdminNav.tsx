@@ -7,7 +7,6 @@ import {
   Factory,
   Package,
   Settings,
-  Tag,
   TrendingUp,
   Truck,
   Users,
@@ -27,6 +26,7 @@ export interface NavItem {
   icon: LucideIcon;
   end?: boolean;
   excludePrefixes?: string[];
+  alsoActiveFor?: string[];
   badge?: NavBadgeKey;
   highlight?: boolean;
 }
@@ -47,8 +47,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Cadastros",
     items: [
-      { to: "/admin/produtos", label: "Produtos", icon: Package },
-      { to: "/admin/categorias", label: "Categorias", icon: Tag },
+      { to: "/admin/produtos", label: "Produtos", icon: Package, alsoActiveFor: ["/admin/categorias"] },
       { to: "/admin/clientes", label: "Clientes", icon: Users },
       { to: "/admin/fornecedores", label: "Fornecedores", icon: Truck },
     ],
@@ -74,6 +73,7 @@ export const SETTINGS_ITEM: NavItem = { to: "/admin/configuracoes", label: "Conf
 
 export function isNavItemActive(pathname: string, item: NavItem): boolean {
   if (item.excludePrefixes?.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) return false;
+  if (item.alsoActiveFor?.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) return true;
   if (item.end) return pathname === item.to;
   return pathname === item.to || pathname.startsWith(`${item.to}/`);
 }

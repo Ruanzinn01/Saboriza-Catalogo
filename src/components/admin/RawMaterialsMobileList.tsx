@@ -32,7 +32,7 @@ export function RawMaterialsMobileList({ rows }: { rows: RawMaterialRow[] }) {
             </div>
 
             <div className="mt-3 flex items-end justify-between gap-3">
-              <StockMeter name={material.name} currentStock={material.currentStock} minStock={material.minStock} unit={material.controlUnit} bucket={row.bucket} />
+              <StockMeter name={material.name} currentStock={material.currentStock} minStock={material.minStock} maxStock={material.maxStock} unit={material.controlUnit} bucket={row.bucket} />
               <div className="text-right">
                 <p className="text-sm font-bold text-ink-900">{formatCurrency(material.avgCost)}</p>
                 <p className="text-xs text-ink-muted">custo médio</p>

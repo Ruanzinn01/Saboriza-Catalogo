@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Copy, ImagePlus, Pencil } from "lucide-react";
-import { MarginChip, StockMeter, StockStatusPill } from "@/components/admin/ProductListParts";
+import { MarginChip, SetupAlertChip, StockMeter, StockStatusPill } from "@/components/admin/ProductListParts";
 import { ProductRowMenu, type ProductRowActions } from "@/components/admin/ProductRowMenu";
 import { SortableHeader } from "@/components/admin/SortableHeader";
 import { ProductImage } from "@/components/catalog/ProductImage";
@@ -97,6 +97,7 @@ export function ProductsTable({ rows, sort, onSort, selectedIds, onToggleRow, on
                 <td className="px-3 py-3">
                   <p className="font-semibold text-ink-900">{product.name}</p>
                   <p className="text-xs text-ink-muted">{[product.presentation, product.weight].filter(Boolean).join(" - ")}</p>
+                  <SetupAlertChip gaps={row.gaps} />
                   {!product.active && (
                     <span className="mt-1 inline-block rounded-full bg-ink-900/10 px-2 py-0.5 text-[11px] font-bold text-ink-700">Inativo</span>
                   )}
@@ -107,7 +108,7 @@ export function ProductsTable({ rows, sort, onSort, selectedIds, onToggleRow, on
                 </td>
                 <td className="px-3 py-3">
                   <Link to={`/admin/estoque/${product.id}`} title="Ver histórico de movimentação" className="block rounded-lg hover:bg-forest-950/5">
-                    <StockMeter name={product.name} currentStock={product.currentStock} minStock={product.minStock} bucket={row.bucket} />
+                    <StockMeter name={product.name} currentStock={product.currentStock} minStock={product.minStock} maxStock={product.maxStock} bucket={row.bucket} />
                   </Link>
                 </td>
                 <td className="whitespace-nowrap px-3 py-3">

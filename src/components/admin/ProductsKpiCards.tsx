@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
-import { Box, CheckCircle2, TriangleAlert } from "lucide-react";
+import { ArrowUpToLine, Box, CheckCircle2, FileWarning, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { percentOf, type ProductKpis, type StockBucket } from "@/lib/product-list";
+import { percentOf, type ProductBucket, type ProductKpis } from "@/lib/product-list";
 
 interface CardProps {
   icon: ReactNode;
@@ -45,16 +45,30 @@ function KpiCard({ icon, iconClass, barClass, label, value, percent, selected, o
 }
 
 interface ProductsKpiCardsProps {
-  kpis: ProductKpis;
+  kpis: ProductKpis & { over?: number };
+  incomplete?: number;
+  incompleteSelected?: boolean;
+  onSelectIncomplete?: () => void;
   totalLabel?: string;
-  selected?: StockBucket | null;
-  onSelect?: (bucket: StockBucket) => void;
+  selected?: ProductBucket | null;
+  onSelect?: (bucket: ProductBucket) => void;
 }
 
-export function ProductsKpiCards({ kpis, totalLabel = "Total de Produtos", selected, onSelect }: ProductsKpiCardsProps) {
-  const pick = (bucket: StockBucket) => (onSelect ? () => onSelect(bucket) : undefined);
+export function ProductsKpiCards({
+  kpis,
+  incomplete,
+  incompleteSelected,
+  onSelectIncomplete,
+  totalLabel = "Total de Produtos",
+  selected,
+  onSelect,
+}: ProductsKpiCardsProps) {
+  const pick = (bucket: ProductBucket) => (onSelect ? () => onSelect(bucket) : undefined);
+  const hasOver = kpis.over !== undefined;
+  const hasIncomplete = incomplete !== undefined;
+  const columns = 4 + Number(hasOver) + Number(hasIncomplete);
   return (
-    <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+    <div className={cn("grid grid-cols-2 gap-3", columns >= 5 ? "sm:grid-cols-3" : "", columns === 6 ? "xl:grid-cols-6" : columns === 5 ? "xl:grid-cols-5" : "xl:grid-cols-4")}>
       <KpiCard icon={<Box size={22} />} iconClass="bg-ink-900/5 text-ink-700" label={totalLabel} value={kpis.total} />
       <KpiCard
         icon={<CheckCircle2 size={22} />}
@@ -86,6 +100,30 @@ export function ProductsKpiCards({ kpis, totalLabel = "Total de Produtos", selec
         selected={selected === "out"}
         onSelect={pick("out")}
       />
+      {hasOver && (
+        <KpiCard
+          icon={<ArrowUpToLine size={22} />}
+          iconClass="bg-blue-500/10 text-blue-600"
+          barClass="bg-blue-500"
+          label="Estoque Máximo"
+          value={kpis.over ?? 0}
+          percent={percentOf(kpis.over ?? 0, kpis.total)}
+          selected={selected === "over"}
+          onSelect={pick("over")}
+        />
+      )}
+      {hasIncomplete && (
+        <KpiCard
+          icon={<FileWarning size={22} />}
+          iconClass="bg-violet-500/10 text-violet-600"
+          barClass="bg-violet-500"
+          label="Sem Ficha Técnica"
+          value={incomplete ?? 0}
+          percent={percentOf(incomplete ?? 0, kpis.total)}
+          selected={incompleteSelected}
+          onSelect={onSelectIncomplete}
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,6 @@
 import { Input } from "@/components/ui/Input";
+import { RawMaterialCategoryField } from "@/components/admin/RawMaterialCategoryField";
+import { StockRangeGauge } from "@/components/admin/StockRangeGauge";
 import { CONTROL_UNITS, COST_BASES, COST_BASIS_LABELS } from "@/types/raw-material";
 import type { RawMaterialInput } from "@/types/raw-material";
 import type { Supplier } from "@/types/supplier";
@@ -9,17 +11,19 @@ export type RawMaterialFormField =
   | "defaultReorderQty"
   | "minPurchaseQty"
   | "purchaseMultiple"
+  | "maxStock"
   | "manualCost";
 
 interface RawMaterialFormFieldsProps {
   form: RawMaterialInput;
   errors: Partial<Record<RawMaterialFormField, string>>;
   unitLocked: boolean;
+  currentStock?: number;
   suppliers: Supplier[];
   onChange: <K extends keyof RawMaterialInput>(key: K, value: RawMaterialInput[K]) => void;
 }
 
-export function RawMaterialFormFields({ form, errors, unitLocked, suppliers, onChange }: RawMaterialFormFieldsProps) {
+export function RawMaterialFormFields({ form, errors, unitLocked, currentStock = 0, suppliers, onChange }: RawMaterialFormFieldsProps) {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Identificação</p>
@@ -30,7 +34,7 @@ export function RawMaterialFormFields({ form, errors, unitLocked, suppliers, onC
         onChange={(e) => onChange("description", e.target.value)}
       />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Input label="Categoria" value={form.category} onChange={(e) => onChange("category", e.target.value)} />
+        <RawMaterialCategoryField value={form.category} onChange={(name) => onChange("category", name)} />
         <Input label="Imagem (URL)" value={form.imageUrl} onChange={(e) => onChange("imageUrl", e.target.value)} placeholder="https://..." />
       </div>
 
@@ -69,16 +73,6 @@ export function RawMaterialFormFields({ form, errors, unitLocked, suppliers, onC
         onChange={(e) => onChange("purchaseUnitFactor", Number(e.target.value))}
       />
 
-      <p className="mt-2 text-xs font-bold uppercase tracking-wide text-ink-muted">Estoque</p>
-      <Input
-        label={`Estoque máximo (${form.controlUnit})`}
-        type="number"
-        min={0}
-        step="any"
-        value={form.maxStock}
-        onChange={(e) => onChange("maxStock", Number(e.target.value))}
-      />
-
       <p className="mt-2 text-xs font-bold uppercase tracking-wide text-ink-muted">Reposição / Compras</p>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Input
@@ -89,6 +83,19 @@ export function RawMaterialFormFields({ form, errors, unitLocked, suppliers, onC
           value={form.minStock}
           onChange={(e) => onChange("minStock", Number(e.target.value))}
         />
+        <Input
+          label={`Estoque máximo (${form.controlUnit})`}
+          type="number"
+          min={0}
+          step="any"
+          value={form.maxStock}
+          onChange={(e) => onChange("maxStock", Number(e.target.value))}
+          error={errors.maxStock}
+        />
+      </div>
+      <p className="-mt-2 text-xs text-ink-muted">Use 0 no máximo quando não houver limite.</p>
+      <StockRangeGauge currentStock={currentStock} minStock={form.minStock} maxStock={form.maxStock} unit={form.controlUnit} />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Input
           label="Prazo médio de reposição (dias)"
           type="number"

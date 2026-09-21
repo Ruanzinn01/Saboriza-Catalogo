@@ -14,6 +14,7 @@ import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 import { IndicatorsPage } from "@/pages/admin/IndicatorsPage";
 import { ProductsPage } from "@/pages/admin/ProductsPage";
 import { ProductFormPage } from "@/pages/admin/ProductFormPage";
+import { RawMaterialCategoriesPage } from "@/pages/admin/RawMaterialCategoriesPage";
 import { CategoriesPage } from "@/pages/admin/CategoriesPage";
 import { CustomersPage } from "@/pages/admin/CustomersPage";
 import { CustomerFormPage } from "@/pages/admin/CustomerFormPage";
@@ -64,6 +65,7 @@ export function App() {
             <Route path="clientes/:customerId/editar" element={<CustomerFormPage />} />
             <Route path="materias-primas" element={<RawMaterialsPage />} />
             <Route path="materias-primas/novo" element={<RawMaterialFormPage />} />
+            <Route path="materias-primas/categorias" element={<RawMaterialCategoriesPage />} />
             <Route path="materias-primas/entrada" element={<RawMaterialEntryPage />} />
             <Route path="materias-primas/:rawMaterialId" element={<RawMaterialDetailPage />} />
             <Route path="materias-primas/:rawMaterialId/editar" element={<RawMaterialFormPage />} />

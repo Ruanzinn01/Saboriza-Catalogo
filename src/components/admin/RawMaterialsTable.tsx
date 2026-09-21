@@ -76,7 +76,7 @@ export function RawMaterialsTable({ rows, sort, onSort }: RawMaterialsTableProps
                 </td>
                 <td className="px-3 py-3 text-ink-700/80">{material.category || "-----"}</td>
                 <td className="px-3 py-3">
-                  <StockMeter name={material.name} currentStock={material.currentStock} minStock={material.minStock} unit={material.controlUnit} bucket={row.bucket} />
+                  <StockMeter name={material.name} currentStock={material.currentStock} minStock={material.minStock} maxStock={material.maxStock} unit={material.controlUnit} bucket={row.bucket} />
                 </td>
                 <td className="whitespace-nowrap px-3 py-3 font-bold text-ink-900">{formatCurrency(material.avgCost)}</td>
                 <td className="px-3 py-3 text-ink-700/80">{row.supplierName ?? "-----"}</td>

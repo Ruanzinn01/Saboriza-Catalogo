@@ -101,6 +101,9 @@ export function RawMaterialFormPage() {
     if (!form.name.trim()) nextErrors.name = "Informe o nome";
     if (!form.controlUnit) nextErrors.controlUnit = "Selecione a unidade";
 
+    if (form.maxStock > 0 && form.maxStock < form.minStock) {
+      nextErrors.maxStock = "Não pode ser menor que o estoque mínimo";
+    }
     if (form.minPurchaseQty > 0 && form.defaultReorderQty > 0 && form.defaultReorderQty < form.minPurchaseQty) {
       nextErrors.defaultReorderQty = "Não pode ser menor que a quantidade mínima de compra";
     }
@@ -148,6 +151,7 @@ export function RawMaterialFormPage() {
             form={form}
             errors={errors}
             unitLocked={isEditing && (existingMaterial?.unitLocked ?? false)}
+            currentStock={existingMaterial?.currentStock ?? 0}
             suppliers={suppliers}
             onChange={handleChange}
           />
@@ -174,6 +178,9 @@ export function RawMaterialFormPage() {
             </p>
             <p className="text-sm text-ink-700/70">
               Mínimo: <span className="font-semibold text-ink-900">{existingMaterial.minStock} {existingMaterial.controlUnit}</span>
+            </p>
+            <p className="text-sm text-ink-700/70">
+              Máximo: <span className="font-semibold text-ink-900">{existingMaterial.maxStock > 0 ? `${existingMaterial.maxStock} ${existingMaterial.controlUnit}` : "-----"}</span>
             </p>
             <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${stockStatusClasses[rawMaterialStockStatus(existingMaterial)]}`}>
               {stockStatusLabel[rawMaterialStockStatus(existingMaterial)]}

@@ -43,7 +43,18 @@ export function ProductsFilterSheet({ open, onClose, filters, suppliers, onChang
             <option value="all">Todas</option>
             <option value="on-target">Dentro da meta</option>
             <option value="below-target">Abaixo da meta</option>
-            <option value="none">Sem ficha técnica</option>
+            <option value="none">Margem indisponível</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold text-ink-900">Cadastro do produto</span>
+          <select
+            value={filters.setup}
+            onChange={(e) => onChange({ setup: e.target.value as ProductFilters["setup"] })}
+            className={selectClasses}
+          >
+            <option value="all">Todos</option>
+            <option value="incomplete">Sem ficha técnica (falta preço, ficha, imposto ou matéria-prima)</option>
           </select>
         </label>
         <label className="flex flex-col gap-1.5">

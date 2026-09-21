@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Copy, Pencil } from "lucide-react";
-import { MarginChip, StockMeter, StockStatusPill } from "@/components/admin/ProductListParts";
+import { MarginChip, SetupAlertChip, StockMeter, StockStatusPill } from "@/components/admin/ProductListParts";
 import { ProductRowMenu, type ProductRowActions } from "@/components/admin/ProductRowMenu";
 import { ProductImage } from "@/components/catalog/ProductImage";
 import { formatCurrency } from "@/lib/currency";
@@ -29,6 +29,7 @@ export function ProductsMobileList({ rows, actions }: { rows: ProductRow[]; acti
                     {product.code || "—"} · {row.categoryName}
                   </p>
                   <p className="text-xs text-ink-muted">{[product.presentation, product.weight].filter(Boolean).join(" - ")}</p>
+                  <SetupAlertChip gaps={row.gaps} />
                   {!product.active && (
                     <span className="mt-1 inline-block rounded-full bg-ink-900/10 px-2 py-0.5 text-[11px] font-bold text-ink-700">Inativo</span>
                   )}
@@ -39,7 +40,7 @@ export function ProductsMobileList({ rows, actions }: { rows: ProductRow[]; acti
 
             <div className="mt-3 flex items-end justify-between gap-3">
               <Link to={`/admin/estoque/${product.id}`} className="rounded-lg">
-                <StockMeter name={product.name} currentStock={product.currentStock} minStock={product.minStock} bucket={row.bucket} />
+                <StockMeter name={product.name} currentStock={product.currentStock} minStock={product.minStock} maxStock={product.maxStock} bucket={row.bucket} />
               </Link>
               <div className="text-right">
                 <p className="text-sm font-bold text-ink-900">{formatCurrency(product.unitPrice)}/un</p>
