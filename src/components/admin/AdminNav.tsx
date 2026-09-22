@@ -3,11 +3,12 @@ import { Link, useLocation } from "react-router-dom";
 import {
   BarChart3,
   Boxes,
-  ChevronDown,
   ClipboardCheck,
   ClipboardList,
   Factory,
+  Minus,
   Package,
+  Plus,
   Settings,
   TrendingUp,
   Truck,
@@ -101,7 +102,7 @@ const variantClasses: Record<
     item: "text-cream-100/85",
     active: "bg-cream-50/10 text-cream-50 before:bg-gold-500",
     idle: "hover:bg-cream-50/5 hover:text-cream-50",
-    group: "text-gold-400 before:bg-gold-500/70",
+    group: "text-cream-50 before:bg-gold-500/70",
     groupHover: "hover:bg-cream-50/5",
     badge: { newOrders: "bg-gold-500 text-forest-950", criticalStock: "bg-red-500 text-white" },
     dot: "bg-gold-500",
@@ -111,7 +112,7 @@ const variantClasses: Record<
     item: "text-ink-900",
     active: "bg-forest-950/5 text-forest-950 before:bg-gold-500",
     idle: "hover:bg-ink-900/5",
-    group: "text-gold-700 before:bg-gold-600/70",
+    group: "text-ink-900 before:bg-gold-600/70",
     groupHover: "hover:bg-ink-900/5",
     badge: { newOrders: "bg-gold-500 text-forest-950", criticalStock: "bg-red-600 text-white" },
     dot: "bg-gold-600",
@@ -240,7 +241,7 @@ export function AdminNav({ variant, onNavigate }: AdminNavProps) {
             >
               <span className="flex-1 truncate">{group.label}</span>
               {!isOpen && pendingBadge && <span aria-hidden className={cn("h-1.5 w-1.5 shrink-0 rounded-full", styles.dot)} />}
-              <ChevronDown size={14} aria-hidden className={cn("shrink-0 transition-transform duration-200", isOpen && "rotate-180")} />
+              {isOpen ? <Minus size={14} aria-hidden className="shrink-0" /> : <Plus size={14} aria-hidden className="shrink-0" />}
             </button>
             <div
               id={panelId}
