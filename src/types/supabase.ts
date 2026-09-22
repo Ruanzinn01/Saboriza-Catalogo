@@ -152,6 +152,57 @@ export type Database = {
         }
         Relationships: []
       }
+      order_adjustment_requests: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          message: string
+          order_id: string
+          order_item_id: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message: string
+          order_id: string
+          order_item_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message?: string
+          order_id?: string
+          order_item_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_adjustment_requests_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_adjustment_requests_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
@@ -162,6 +213,7 @@ export type Database = {
           presentation: string
           product_id: string | null
           product_name: string
+          separated_at: string | null
           total_price: number
           total_units: number
           unit_price: number
@@ -176,6 +228,7 @@ export type Database = {
           presentation: string
           product_id?: string | null
           product_name: string
+          separated_at?: string | null
           total_price: number
           total_units: number
           unit_price: number
@@ -190,6 +243,7 @@ export type Database = {
           presentation?: string
           product_id?: string | null
           product_name?: string
+          separated_at?: string | null
           total_price?: number
           total_units?: number
           unit_price?: number
@@ -235,6 +289,12 @@ export type Database = {
           order_number: string
           payment_terms: string
           phone: string
+          separation_completed_by: string | null
+          separation_finished_at: string | null
+          separation_queued_at: string | null
+          separation_responsible: string | null
+          separation_started_at: string | null
+          separation_started_by: string | null
           status: Database["public"]["Enums"]["order_status"]
           subtotal_amount: number
           total_amount: number
@@ -263,6 +323,12 @@ export type Database = {
           order_number?: string
           payment_terms?: string
           phone: string
+          separation_completed_by?: string | null
+          separation_finished_at?: string | null
+          separation_queued_at?: string | null
+          separation_responsible?: string | null
+          separation_started_at?: string | null
+          separation_started_by?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_amount?: number
           total_amount?: number
@@ -291,6 +357,12 @@ export type Database = {
           order_number?: string
           payment_terms?: string
           phone?: string
+          separation_completed_by?: string | null
+          separation_finished_at?: string | null
+          separation_queued_at?: string | null
+          separation_responsible?: string | null
+          separation_started_at?: string | null
+          separation_started_by?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal_amount?: number
           total_amount?: number
@@ -1247,3 +1319,11 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      order_status: ["NEW", "IN_REVIEW", "CONFIRMED", "COMPLETED", "CANCELLED"],
+    },
+  },
+} as const

@@ -33,6 +33,8 @@ import { StockInsightsPage } from "@/pages/admin/StockInsightsPage";
 import { ProductStockDetailPage } from "@/pages/admin/ProductStockDetailPage";
 import { OrdersPage } from "@/pages/admin/OrdersPage";
 import { OrderEditorPage } from "@/pages/admin/OrderEditorPage";
+import { SeparaConferePage } from "@/pages/admin/SeparaConferePage";
+import { SeparaConfereOrderPage } from "@/pages/admin/SeparaConfereOrderPage";
 import { SettingsPage } from "@/pages/admin/SettingsPage";
 import { WhatsAppFloatingButton } from "@/components/layout/WhatsAppFloatingButton";
 
@@ -81,6 +83,8 @@ export function App() {
             <Route path="pedidos" element={<OrdersPage />} />
             <Route path="pedidos/novo" element={<OrderEditorPage />} />
             <Route path="pedidos/:orderId" element={<OrderEditorPage />} />
+            <Route path="separa-confere" element={<SeparaConferePage />} />
+            <Route path="separa-confere/:orderId" element={<SeparaConfereOrderPage />} />
             <Route path="configuracoes" element={<SettingsPage />} />
           </Route>
         </Route>
