@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatNumber } from "@/lib/number";
 import { useParams } from "react-router-dom";
 import { ArrowRightLeft, PackagePlus } from "lucide-react";
 import { useCatalogStore } from "@/store/catalog-store";
@@ -97,8 +98,8 @@ export function ProductStockDetailPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Estoque atual" value={`${product.currentStock} un`} />
-        <StatCard label="Mínimo" value={`${product.minStock} un`} />
+        <StatCard label="Estoque atual" value={`${formatNumber(product.currentStock)} un`} />
+        <StatCard label="Mínimo" value={`${formatNumber(product.minStock)} un`} />
         <StatCard
           label="Situação"
           value={<StatusBadge tone={situationTone(product)}>{situationLabel(product)}</StatusBadge>}

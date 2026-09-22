@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/Button";
 import { ProductionAlertList } from "@/components/admin/ProductionAlertList";
 import type { LineAlerts, ProductionLine } from "@/lib/production-alerts";
 import type { Product } from "@/types/product";
+import { formatNumber } from "@/lib/number";
 
 interface ProductionListProps {
   lines: ProductionLine[];
@@ -55,7 +56,7 @@ export function ProductionList({
         <>
           <div className="hidden flex-col gap-3 rounded-2xl border border-forest-950/10 bg-white p-4 lg:flex">
             <p className="text-sm font-semibold text-ink-700/70">
-              Total: <span className="text-lg font-extrabold text-forest-950">{totalUnits} un</span> em {lines.length} produto{lines.length > 1 ? "s" : ""}
+              Total: <span className="text-lg font-extrabold text-forest-950">{formatNumber(totalUnits)} un</span> em {lines.length} produto{lines.length > 1 ? "s" : ""}
             </p>
             <Button size="lg" disabled={saving} onClick={onSubmit}>
               <Send size={18} /> {saving ? "Registrando..." : "Enviar para produção"}
@@ -81,8 +82,8 @@ export function ProductionList({
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold text-ink-900">{product.name}</p>
                       <p className="text-xs text-ink-muted">
-                        {line.packs} pack{line.packs > 1 ? "s" : ""} × {product.packQuantity} un ={" "}
-                        <span className="font-semibold text-ink-900">{line.packs * product.packQuantity} unidades</span>
+                        {formatNumber(line.packs)} pack{line.packs > 1 ? "s" : ""} × {formatNumber(product.packQuantity)} un ={" "}
+                        <span className="font-semibold text-ink-900">{formatNumber(line.packs * product.packQuantity)} unidades</span>
                       </p>
                     </div>
                     <button

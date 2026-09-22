@@ -1,6 +1,7 @@
 import { ArrowUpToLine, CheckCircle2, Settings, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
+import { formatNumber } from "@/lib/number";
 import { productBucket, type ProductBucket } from "@/lib/product-list";
 
 interface ProductStockStatusBarProps {
@@ -8,6 +9,9 @@ interface ProductStockStatusBarProps {
   minStock: number;
   maxStock: number;
   onConfigure: () => void;
+  level?: ProductBucket;
+  unit?: string;
+  subject?: string;
 }
 
 const items: { level: ProductBucket; title: string; iconClass: string; circleClass: string; titleClass: string }[] = [
@@ -17,14 +21,14 @@ const items: { level: ProductBucket; title: string; iconClass: string; circleCla
   { level: "over", title: "Estoque máximo", iconClass: "text-blue-600", circleClass: "bg-blue-500/10", titleClass: "text-blue-700" },
 ];
 
-export function ProductStockStatusBar({ currentStock, minStock, maxStock, onConfigure }: ProductStockStatusBarProps) {
-  const active = productBucket({ currentStock, minStock, maxStock });
+export function ProductStockStatusBar({ currentStock, minStock, maxStock, onConfigure, level, unit = "unid.", subject = "Produto" }: ProductStockStatusBarProps) {
+  const active = level ?? productBucket({ currentStock, minStock, maxStock });
 
   function detail(level: ProductBucket) {
-    if (level === "ok") return `${currentStock} unid. em estoque`;
-    if (level === "low") return `Mínimo: ${minStock} unid.`;
-    if (level === "over") return maxStock > 0 ? `Máximo: ${maxStock} unid.` : "Máximo não definido";
-    return "Produto indisponível";
+    if (level === "ok") return `${formatNumber(currentStock)} ${unit} em estoque`;
+    if (level === "low") return `Mínimo: ${formatNumber(minStock)} ${unit}`;
+    if (level === "over") return maxStock > 0 ? `Máximo: ${formatNumber(maxStock)} ${unit}` : "Máximo não definido";
+    return `${subject} indisponível`;
   }
 
   return (

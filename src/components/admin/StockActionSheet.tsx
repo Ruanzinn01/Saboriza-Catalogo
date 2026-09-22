@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatNumber } from "@/lib/number";
 import { Sheet } from "@/components/ui/Sheet";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -58,7 +59,7 @@ export function StockActionSheet({ mode, product, onClose }: StockActionSheetPro
       <div className="flex flex-col gap-4">
         <div className="rounded-2xl border border-forest-950/10 bg-white p-4">
           <p className="text-sm font-semibold text-ink-900">{product.name}</p>
-          <p className="text-xs text-ink-muted">{product.code} · Estoque atual: {product.currentStock} un</p>
+          <p className="text-xs text-ink-muted">{product.code} · Estoque atual: {formatNumber(product.currentStock)} un</p>
         </div>
 
         {mode === "entry" ? (
@@ -81,8 +82,8 @@ export function StockActionSheet({ mode, product, onClose }: StockActionSheetPro
 
         {diff !== null && !Number.isNaN(diff) && (
           <p className={`text-sm font-semibold ${diff < 0 ? "text-red-600" : diff > 0 ? "text-forest-700" : "text-ink-muted"}`}>
-            {product.currentStock} → {quantity || 0} · diferença de {diff > 0 ? "+" : ""}
-            {diff}
+            {formatNumber(product.currentStock)} → {formatNumber(Number(quantity) || 0)} · diferença de {diff > 0 ? "+" : ""}
+            {formatNumber(diff)}
           </p>
         )}
 

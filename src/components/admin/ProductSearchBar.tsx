@@ -3,6 +3,7 @@ import { QrCode, Search } from "lucide-react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { situationLabel, situationTone } from "@/lib/stock-insights";
 import type { Product } from "@/types/product";
+import { formatNumber } from "@/lib/number";
 
 interface ProductSearchBarProps {
   products: Product[];
@@ -75,7 +76,7 @@ export function ProductSearchBar({ products, onPick, onOpenScanner }: ProductSea
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-ink-900">{product.name}</p>
                     <p className="font-mono text-xs text-ink-muted">
-                      {product.code} · Pack de {product.packQuantity} un · Estoque {product.currentStock} un
+                      {product.code} · Pack de {formatNumber(product.packQuantity)} un · Estoque {formatNumber(product.currentStock)} un
                     </p>
                   </div>
                   <StatusBadge tone={situationTone(product)} className="shrink-0">

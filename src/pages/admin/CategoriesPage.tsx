@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowDown, ArrowLeft, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
@@ -51,7 +51,13 @@ export function CategoriesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-extrabold text-forest-950">Categoria de Produtos</h1>
+      <div>
+        <Link to="/admin/produtos" className="mb-2 flex w-fit items-center gap-2 text-sm font-semibold text-ink-700/70 hover:text-ink-900">
+          <ArrowLeft size={16} /> Voltar para Produtos
+        </Link>
+        <h1 className="text-2xl font-extrabold text-forest-950 sm:text-3xl">Categoria de Produtos</h1>
+        <p className="mt-1 text-sm text-ink-muted">Organize o catálogo por categoria. Os produtos aparecem para o cliente agrupados por elas.</p>
+      </div>
 
       <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3 rounded-3xl border border-forest-950/10 bg-white p-5">
         <Input

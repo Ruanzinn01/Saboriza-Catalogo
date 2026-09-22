@@ -32,7 +32,7 @@ const iconToneClasses: Record<Tone, string> = {
   red: "text-red-600",
 };
 
-function MetricTile({
+export function MetricTile({
   icon,
   label,
   tone = "white",

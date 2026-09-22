@@ -1,25 +1,17 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
+import { ArrowLeft, Copy, PackagePlus, Save } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { FormPageHeader } from "@/components/admin/FormPageHeader";
+import { ProductStockStatusBar } from "@/components/admin/ProductStockStatusBar";
+import { RawMaterialCostCard } from "@/components/admin/RawMaterialCostCard";
 import { RawMaterialFormFields, type RawMaterialFormField } from "@/components/admin/RawMaterialFormFields";
+import { RawMaterialSummaryCard } from "@/components/admin/RawMaterialSummaryCard";
+import { materialBucket } from "@/lib/raw-material-list";
 import { useRawMaterialsStore } from "@/store/raw-materials-store";
 import { useSuppliersStore } from "@/store/suppliers-store";
-import { formatCurrency } from "@/lib/currency";
-import { rawMaterialStockStatus } from "@/types/raw-material";
-import type { RawMaterialInput } from "@/types/raw-material";
-
-const stockStatusLabel: Record<ReturnType<typeof rawMaterialStockStatus>, string> = {
-  ok: "Estoque OK",
-  low: "Estoque baixo",
-  out: "Sem estoque",
-};
-
-const stockStatusClasses: Record<ReturnType<typeof rawMaterialStockStatus>, string> = {
-  ok: "bg-forest-700/10 text-forest-800",
-  low: "bg-amber-500/10 text-amber-700",
-  out: "bg-red-500/10 text-red-700",
-};
+import type { RawMaterial, RawMaterialInput } from "@/types/raw-material";
 
 const emptyForm: RawMaterialInput = {
   name: "",
@@ -41,6 +33,28 @@ const emptyForm: RawMaterialInput = {
   isActive: true,
 };
 
+function toInput(material: RawMaterial): RawMaterialInput {
+  return {
+    name: material.name,
+    description: material.description,
+    category: material.category,
+    controlUnit: material.controlUnit,
+    imageUrl: material.imageUrl,
+    purchaseUnitLabel: material.purchaseUnitLabel,
+    purchaseUnitFactor: material.purchaseUnitFactor,
+    minStock: material.minStock,
+    maxStock: material.maxStock,
+    minPurchaseQty: material.minPurchaseQty,
+    defaultReorderQty: material.defaultReorderQty,
+    purchaseMultiple: material.purchaseMultiple,
+    leadTimeDays: material.leadTimeDays,
+    costBasis: material.costBasis,
+    manualCost: material.manualCost,
+    primarySupplierId: material.primarySupplierId,
+    isActive: material.isActive,
+  };
+}
+
 function isMultipleOf(value: number, base: number) {
   const ratio = value / base;
   return Math.abs(ratio - Math.round(ratio)) < 1e-9;
@@ -50,6 +64,7 @@ export function RawMaterialFormPage() {
   const { rawMaterialId } = useParams();
   const isEditing = rawMaterialId !== undefined;
   const navigate = useNavigate();
+  const location = useLocation();
   const materials = useRawMaterialsStore((state) => state.materials);
   const fetchMaterials = useRawMaterialsStore((state) => state.fetchMaterials);
   const createMaterial = useRawMaterialsStore((state) => state.createMaterial);
@@ -65,31 +80,26 @@ export function RawMaterialFormPage() {
 
   const existingMaterial = useMemo(() => materials.find((item) => item.id === rawMaterialId), [materials, rawMaterialId]);
 
-  const [form, setForm] = useState<RawMaterialInput>(emptyForm);
+  const [form, setForm] = useState<RawMaterialInput>(() => {
+    if (isEditing && existingMaterial) return toInput(existingMaterial);
+    return (location.state as { duplicateOf?: RawMaterialInput } | null)?.duplicateOf ?? emptyForm;
+  });
   const [errors, setErrors] = useState<Partial<Record<RawMaterialFormField, string>>>({});
   const [saving, setSaving] = useState(false);
+  const hydratedIdRef = useRef<string | undefined>(isEditing ? existingMaterial?.id : undefined);
 
   useEffect(() => {
-    if (!isEditing || !existingMaterial) return;
-    setForm({
-      name: existingMaterial.name,
-      description: existingMaterial.description,
-      category: existingMaterial.category,
-      controlUnit: existingMaterial.controlUnit,
-      imageUrl: existingMaterial.imageUrl,
-      purchaseUnitLabel: existingMaterial.purchaseUnitLabel,
-      purchaseUnitFactor: existingMaterial.purchaseUnitFactor,
-      minStock: existingMaterial.minStock,
-      maxStock: existingMaterial.maxStock,
-      minPurchaseQty: existingMaterial.minPurchaseQty,
-      defaultReorderQty: existingMaterial.defaultReorderQty,
-      purchaseMultiple: existingMaterial.purchaseMultiple,
-      leadTimeDays: existingMaterial.leadTimeDays,
-      costBasis: existingMaterial.costBasis,
-      manualCost: existingMaterial.manualCost,
-      primarySupplierId: existingMaterial.primarySupplierId,
-      isActive: existingMaterial.isActive,
-    });
+    if (isEditing) return;
+    const seed = (location.state as { duplicateOf?: RawMaterialInput } | null)?.duplicateOf;
+    setForm(seed ?? emptyForm);
+    setErrors({});
+    hydratedIdRef.current = undefined;
+  }, [isEditing, location.key, location.state]);
+
+  useEffect(() => {
+    if (!isEditing || !existingMaterial || hydratedIdRef.current === existingMaterial.id) return;
+    hydratedIdRef.current = existingMaterial.id;
+    setForm(toInput(existingMaterial));
   }, [isEditing, existingMaterial]);
 
   function handleChange<K extends keyof RawMaterialInput>(key: K, value: RawMaterialInput[K]) {
@@ -124,7 +134,10 @@ export function RawMaterialFormPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!validate()) return;
+    if (!validate()) {
+      toast.error("Confira os campos destacados");
+      return;
+    }
 
     setSaving(true);
     const result = isEditing && existingMaterial ? await updateMaterial(existingMaterial.id, form) : await createMaterial(form);
@@ -132,64 +145,77 @@ export function RawMaterialFormPage() {
     if (result) navigate("/admin/materias-primas");
   }
 
+  function handleDuplicate() {
+    const seed: RawMaterialInput = { ...form, name: `${form.name} (cópia)`, isActive: false };
+    toast.info("Cópia aberta. Ajuste os dados e salve. O saldo e o custo médio começam zerados.");
+    navigate("/admin/materias-primas/novo", { state: { duplicateOf: seed } });
+  }
+
+  function scrollToReplenishment() {
+    document.getElementById("reposicao")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  const pageTitle = isEditing ? "Editar insumo" : "Novo insumo";
+  const currentStock = existingMaterial?.currentStock ?? 0;
+  const bucket = materialBucket({ currentStock, minStock: form.minStock, maxStock: form.maxStock });
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-extrabold text-forest-950">{isEditing ? "Editar insumo" : "Novo insumo"}</h1>
+      <FormPageHeader title={pageTitle} crumbs={[{ label: "Matérias-primas", to: "/admin/materias-primas" }, { label: pageTitle }]}>
+        <Button type="button" variant="outline" onClick={() => navigate("/admin/materias-primas")}>
+          <ArrowLeft size={16} /> Voltar
+        </Button>
         {isEditing && existingMaterial && (
           <Link to={`/admin/materias-primas/entrada?insumo=${existingMaterial.id}`}>
-            <Button variant="secondary">
-              <Plus size={16} /> Nova entrada
+            <Button type="button" variant="outline">
+              <PackagePlus size={16} /> Nova entrada
             </Button>
           </Link>
         )}
-      </div>
+        {isEditing && (
+          <Button type="button" variant="outline" onClick={handleDuplicate}>
+            <Copy size={16} /> Duplicar
+          </Button>
+        )}
+        <Button type="submit" form="material-form" variant="secondary" disabled={saving}>
+          <Save size={16} /> {saving ? "Salvando..." : "Salvar insumo"}
+        </Button>
+      </FormPageHeader>
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        <form onSubmit={handleSubmit} className="flex w-full max-w-2xl flex-col gap-4 rounded-3xl border border-forest-950/10 bg-white p-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-start">
+        <form id="material-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
           <RawMaterialFormFields
             form={form}
             errors={errors}
             unitLocked={isEditing && (existingMaterial?.unitLocked ?? false)}
-            currentStock={existingMaterial?.currentStock ?? 0}
+            currentStock={currentStock}
+            code={existingMaterial?.code ?? ""}
+            isEditing={isEditing}
             suppliers={suppliers}
             onChange={handleChange}
           />
 
-          <div className="mt-2 flex gap-3">
-            <Button type="submit" size="lg" disabled={saving}>
-              {saving ? "Salvando..." : "Salvar insumo"}
-            </Button>
-            <Button type="button" variant="outline" size="lg" onClick={() => navigate("/admin/materias-primas")}>
-              Cancelar
+          <ProductStockStatusBar
+            currentStock={currentStock}
+            minStock={form.minStock}
+            maxStock={form.maxStock}
+            level={bucket}
+            unit={form.controlUnit}
+            subject="Insumo"
+            onConfigure={scrollToReplenishment}
+          />
+
+          <div className="flex gap-3 lg:hidden">
+            <Button type="submit" size="lg" variant="secondary" className="flex-1" disabled={saving}>
+              <Save size={18} /> {saving ? "Salvando..." : "Salvar insumo"}
             </Button>
           </div>
         </form>
 
-        {isEditing && existingMaterial && (
-          <div className="flex w-full flex-col gap-3 rounded-3xl border border-forest-950/10 bg-white p-6 lg:w-72 lg:shrink-0">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Resumo (somente leitura)</p>
-            <p className="font-mono text-xs text-ink-muted">{existingMaterial.code}</p>
-            <p className="text-sm text-ink-700/70">
-              Saldo atual: <span className="font-semibold text-ink-900">{existingMaterial.currentStock} {existingMaterial.controlUnit}</span>
-            </p>
-            <p className="text-sm text-ink-700/70">
-              Custo médio atual: <span className="font-semibold text-ink-900">{formatCurrency(existingMaterial.avgCost)}</span>
-            </p>
-            <p className="text-sm text-ink-700/70">
-              Mínimo: <span className="font-semibold text-ink-900">{existingMaterial.minStock} {existingMaterial.controlUnit}</span>
-            </p>
-            <p className="text-sm text-ink-700/70">
-              Máximo: <span className="font-semibold text-ink-900">{existingMaterial.maxStock > 0 ? `${existingMaterial.maxStock} ${existingMaterial.controlUnit}` : "-----"}</span>
-            </p>
-            <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${stockStatusClasses[rawMaterialStockStatus(existingMaterial)]}`}>
-              {stockStatusLabel[rawMaterialStockStatus(existingMaterial)]}
-            </span>
-            <p className="text-xs text-ink-muted">
-              Saldo e custo médio só mudam por entrada confirmada. Use "Nova entrada" acima.
-            </p>
-          </div>
-        )}
+        <div className="flex flex-col gap-6">
+          <RawMaterialSummaryCard form={form} material={existingMaterial} bucket={isEditing ? bucket : undefined} />
+          <RawMaterialCostCard form={form} material={existingMaterial} />
+        </div>
       </div>
     </div>
   );

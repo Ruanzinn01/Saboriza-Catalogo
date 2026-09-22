@@ -1,3 +1,4 @@
+import { formatNumber } from "@/lib/number";
 const RADIUS = 54;
 const STROKE = 14;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -62,7 +63,7 @@ export function StockHealthDonut({ green, yellow, red, outOfStock = 0, onSelect,
               })}
         </svg>
         <div className="absolute flex flex-col items-center">
-          <span className="text-2xl font-extrabold text-forest-950">{total}</span>
+          <span className="text-2xl font-extrabold text-forest-950">{formatNumber(total)}</span>
           <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-muted">Itens</span>
         </div>
       </div>
@@ -80,9 +81,9 @@ export function StockHealthDonut({ green, yellow, red, outOfStock = 0, onSelect,
           >
             <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: colors[segment.level] }} />
             <span className="text-ink-900">{segment.label}</span>
-            <span className="font-bold text-ink-900">{segment.value}</span>
+            <span className="font-bold text-ink-900">{formatNumber(segment.value)}</span>
             {segment.level === "red" && outOfStock > 0 && (
-              <span className="rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-semibold text-white">{outOfStock} sem estoque</span>
+              <span className="rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-semibold text-white">{formatNumber(outOfStock)} sem estoque</span>
             )}
           </button>
         ))}

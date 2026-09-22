@@ -4,6 +4,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { ProductionAlertList } from "@/components/admin/ProductionAlertList";
 import type { LineAlerts, ProductionLine } from "@/lib/production-alerts";
 import type { Product } from "@/types/product";
+import { formatNumber } from "@/lib/number";
 
 interface ProductionReviewSheetProps {
   open: boolean;
@@ -54,7 +55,7 @@ export function ProductionReviewSheet({
 
         <div className="rounded-2xl border border-forest-950/10 bg-white p-4">
           <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">Total a registrar</p>
-          <p className="mt-1 text-2xl font-extrabold text-forest-950">{totalUnits} un</p>
+          <p className="mt-1 text-2xl font-extrabold text-forest-950">{formatNumber(totalUnits)} un</p>
           <p className="text-xs text-ink-muted">
             {lines.length} produto{lines.length > 1 ? "s" : ""}
           </p>
@@ -75,11 +76,11 @@ export function ProductionReviewSheet({
               <li key={line.productId} className="rounded-2xl border border-forest-950/10 bg-white p-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="min-w-0 truncate font-semibold text-ink-900">{product.name}</p>
-                  <p className="shrink-0 text-sm font-extrabold text-forest-950">{line.packs * product.packQuantity} un</p>
+                  <p className="shrink-0 text-sm font-extrabold text-forest-950">{formatNumber(line.packs * product.packQuantity)} un</p>
                 </div>
                 <p className="text-xs text-ink-muted">
-                  {line.packs} pack{line.packs > 1 ? "s" : ""} × {product.packQuantity} un · Estoque {product.currentStock} un para{" "}
-                  {product.currentStock + line.packs * product.packQuantity} un
+                  {formatNumber(line.packs)} pack{line.packs > 1 ? "s" : ""} × {formatNumber(product.packQuantity)} un · Estoque {formatNumber(product.currentStock)} un para{" "}
+                  {formatNumber(product.currentStock + line.packs * product.packQuantity)} un
                 </p>
                 <ProductionAlertList lineAlerts={alertsByProduct[line.productId]} />
               </li>

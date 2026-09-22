@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { formatNumber } from "@/lib/number";
 import { pageNumbers } from "@/lib/pagination";
 
 interface PaginationProps {
@@ -43,7 +44,7 @@ export function Pagination({
           ))}
         </select>
         <span>
-          de {total} {itemLabel}
+          de {formatNumber(total)} {itemLabel}
         </span>
       </div>
 

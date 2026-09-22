@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatNumber } from "@/lib/number";
 import { Link } from "react-router-dom";
 import { ArrowRightLeft, BarChart3, Eye, PackagePlus, Search } from "lucide-react";
 import { useCatalogStore } from "@/store/catalog-store";
@@ -114,8 +115,8 @@ export function StockPage() {
                         {product.name}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-ink-700/70">{product.currentStock} un</td>
-                    <td className="px-4 py-3 text-ink-700/70">{product.minStock}</td>
+                    <td className="px-4 py-3 text-ink-700/70">{formatNumber(product.currentStock)} un</td>
+                    <td className="px-4 py-3 text-ink-700/70">{formatNumber(product.minStock)}</td>
                     <td className="px-4 py-3 text-ink-700/70">{formatCurrency(product.unitPrice)}</td>
                     <td className="px-4 py-3">
                       <StatusBadge tone={situationTone(product)}>{situationLabel(product)}</StatusBadge>
@@ -161,7 +162,7 @@ export function StockPage() {
                 </div>
                 <div className="mt-2 flex items-center justify-between text-xs text-ink-muted">
                   <span>
-                    {product.currentStock} un · mínimo {product.minStock}
+                    {formatNumber(product.currentStock)} un · mínimo {formatNumber(product.minStock)}
                   </span>
                   <span>{formatCurrency(product.unitPrice)}</span>
                 </div>

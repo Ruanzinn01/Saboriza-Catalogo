@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { formatNumber } from "@/lib/number";
 import { Link } from "react-router-dom";
 import { Factory } from "lucide-react";
 import { useProductionStore } from "@/store/production-store";
@@ -30,7 +31,7 @@ export function ProductionSummaryCard() {
           Ver tudo
         </Link>
       </div>
-      <p className="text-2xl font-extrabold text-forest-950">{totalWeek} un</p>
+      <p className="text-2xl font-extrabold text-forest-950">{formatNumber(totalWeek)} un</p>
       <div className="flex h-10 items-end gap-1">
         {weeklyData.map((point) => (
           <div key={point.day} className="flex-1 rounded-t bg-forest-700/60" style={{ height: `${(point.units / max) * 100}%` }} />

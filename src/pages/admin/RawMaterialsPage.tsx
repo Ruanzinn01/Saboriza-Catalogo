@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatNumber } from "@/lib/number";
 import { Link, useSearchParams } from "react-router-dom";
 import { PackagePlus, Plus, Search, Tag } from "lucide-react";
 import { useRawMaterialsStore } from "@/store/raw-materials-store";
@@ -155,7 +156,7 @@ export function RawMaterialsPage() {
       {activeFilterCount > 0 && (
         <div className="-mt-3 flex items-center gap-3 text-sm text-ink-700">
           <span>
-            {visibleRows.length} de {materials.length} insumos
+            {formatNumber(visibleRows.length)} de {formatNumber(materials.length)} insumos
           </span>
           <button
             type="button"

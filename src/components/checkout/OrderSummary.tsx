@@ -1,4 +1,5 @@
 import { calculateCartTotal, calculateLineTotal } from "@/lib/pricing";
+import { formatNumber } from "@/lib/number";
 import { calculateDiscount } from "@/lib/coupon";
 import { formatCurrency } from "@/lib/currency";
 import type { CartItem } from "@/types/cart";
@@ -25,7 +26,7 @@ export function OrderSummary({ items, coupon }: OrderSummaryProps) {
                 {item.name} · {item.presentation} · {item.weight}
               </p>
               <p className="text-xs text-ink-700/60">
-                {item.packs} {item.packs === 1 ? "pack" : "packs"} × {item.packQuantity} un
+                {formatNumber(item.packs)} {item.packs === 1 ? "pack" : "packs"} × {formatNumber(item.packQuantity)} un
               </p>
             </div>
             <span className="shrink-0 font-bold text-forest-900">

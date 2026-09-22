@@ -1,18 +1,23 @@
-import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, ChevronRight, Copy, ExternalLink, Save } from "lucide-react";
+import { ArrowLeft, Copy, ExternalLink, Save } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import { ActiveStatusSelect } from "@/components/admin/ActiveStatusSelect";
+import { FormCard } from "@/components/admin/FormCard";
+import { FormPageHeader } from "@/components/admin/FormPageHeader";
 import { ImageUploader } from "@/components/admin/ImageUploader";
+import { ReadOnlyCodeField } from "@/components/admin/ReadOnlyCodeField";
 import { ProductProfitabilityCard } from "@/components/admin/ProductProfitabilityCard";
 import { ProductRecipeEditor } from "@/components/admin/ProductRecipeEditor";
 import { ProductStockStatusBar } from "@/components/admin/ProductStockStatusBar";
 import { StockRangeGauge } from "@/components/admin/StockRangeGauge";
 import { cn } from "@/lib/cn";
 import { buildDuplicateDraft, type ProductDraft } from "@/lib/product-duplicate";
+import { formatNumber } from "@/lib/number";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useSuppliersStore } from "@/store/suppliers-store";
 import type { PackagingType, Product, ProductBadge } from "@/types/product";
@@ -59,18 +64,6 @@ function createEmptyForm(categoryId: string): ProductForm {
 function toForm(product: Product): ProductForm {
   const { id: _id, ...rest } = product;
   return rest;
-}
-
-function Card({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
-  return (
-    <section className="flex flex-col gap-4 rounded-3xl border border-forest-950/10 bg-white p-5 sm:p-6">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xs font-bold uppercase tracking-wide text-ink-900">{title}</h2>
-        {action}
-      </div>
-      {children}
-    </section>
-  );
 }
 
 export function ProductFormPage() {
@@ -139,95 +132,33 @@ export function ProductFormPage() {
     navigate("/admin/produtos/novo", { state: { duplicateOf: seed } });
   }
 
-  async function handleCopyCode() {
-    if (!form.code) return;
-    try {
-      await navigator.clipboard.writeText(form.code);
-      toast.success("Código copiado");
-    } catch {
-      toast.error("Não foi possível copiar o código");
-    }
-  }
-
   const pageTitle = isEditing ? "Editar produto" : "Novo produto";
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <h1 className="text-2xl font-extrabold text-forest-950 sm:text-3xl">{pageTitle}</h1>
-          <nav aria-label="Trilha de navegação" className="mt-1 flex flex-wrap items-center gap-1 text-xs text-ink-muted">
-            <Link to="/admin" className="hover:text-forest-800 hover:underline">
-              Início
-            </Link>
-            <ChevronRight size={12} aria-hidden />
-            <Link to="/admin/produtos" className="hover:text-forest-800 hover:underline">
-              Produtos
-            </Link>
-            <ChevronRight size={12} aria-hidden />
-            <span aria-current="page">{pageTitle}</span>
-          </nav>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" onClick={() => navigate("/admin/produtos")}>
-            <ArrowLeft size={16} /> Voltar
+      <FormPageHeader title={pageTitle} crumbs={[{ label: "Produtos", to: "/admin/produtos" }, { label: pageTitle }]}>
+        <Button type="button" variant="outline" onClick={() => navigate("/admin/produtos")}>
+          <ArrowLeft size={16} /> Voltar
+        </Button>
+        {isEditing && (
+          <Button type="button" variant="outline" onClick={handleDuplicate}>
+            <Copy size={16} /> Duplicar
           </Button>
-          {isEditing && (
-            <Button type="button" variant="outline" onClick={handleDuplicate}>
-              <Copy size={16} /> Duplicar
-            </Button>
-          )}
-          <Button type="submit" form="product-form" variant="secondary">
-            <Save size={16} /> Salvar produto
-          </Button>
-        </div>
-      </div>
+        )}
+        <Button type="submit" form="product-form" variant="secondary">
+          <Save size={16} /> Salvar produto
+        </Button>
+      </FormPageHeader>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-start">
         <form id="product-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <Card
+          <FormCard
             title="Informações básicas"
-            action={
-              <select
-                aria-label="Situação do produto no catálogo"
-                value={form.active ? "active" : "inactive"}
-                onChange={(e) => handleChange("active", e.target.value === "active")}
-                className={cn(
-                  "h-9 rounded-full border px-3 text-sm font-semibold outline-none",
-                  form.active ? "border-forest-700/30 bg-forest-700/10 text-forest-800" : "border-ink-900/20 bg-ink-900/5 text-ink-700"
-                )}
-              >
-                <option value="active">Ativo</option>
-                <option value="inactive">Inativo</option>
-              </select>
-            }
+            action={<ActiveStatusSelect value={form.active} onChange={(active) => handleChange("active", active)} ariaLabel="Situação do produto no catálogo" />}
           >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1.7fr_1fr]">
               <Input label="Nome do produto *" value={form.name} onChange={(e) => handleChange("name", e.target.value)} required />
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="product-sku" className="text-sm font-semibold text-ink-900">
-                  Código Referência / SKU
-                </label>
-                <div className="relative">
-                  <input
-                    id="product-sku"
-                    value={form.code}
-                    disabled
-                    placeholder={isEditing ? "" : "Gerado ao salvar"}
-                    className={cn(selectClasses, "w-full bg-ink-900/5 pr-12 text-ink-700 disabled:cursor-not-allowed")}
-                  />
-                  {isEditing && form.code && (
-                    <button
-                      type="button"
-                      onClick={() => void handleCopyCode()}
-                      aria-label="Copiar código"
-                      className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-ink-700 hover:bg-ink-900/10"
-                    >
-                      <Copy size={16} />
-                    </button>
-                  )}
-                </div>
-              </div>
+              <ReadOnlyCodeField label="Código Referência / SKU" value={form.code} placeholder={isEditing ? "" : "Gerado ao salvar"} />
             </div>
 
             <label className="flex flex-col gap-1.5">
@@ -278,9 +209,9 @@ export function ProductFormPage() {
                 placeholder="ou cole a URL da imagem: https://..."
               />
             </div>
-          </Card>
+          </FormCard>
 
-          <Card title="Apresentação">
+          <FormCard title="Apresentação">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input
                 label="Apresentação"
@@ -313,9 +244,9 @@ export function ProductFormPage() {
                 </select>
               </label>
             </div>
-          </Card>
+          </FormCard>
 
-          <Card title="Venda">
+          <FormCard title="Venda">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Input
                 label="Preço unitário (R$) *"
@@ -347,9 +278,9 @@ export function ProductFormPage() {
                 </select>
               </label>
             </div>
-          </Card>
+          </FormCard>
 
-          <Card title="Informações fiscais">
+          <FormCard title="Informações fiscais">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <Input
                 label="GTIN/EAN Código de Barras"
@@ -367,7 +298,7 @@ export function ProductFormPage() {
                 placeholder="2103.90.21"
               />
             </div>
-          </Card>
+          </FormCard>
 
           <ProductStockStatusBar
             currentStock={form.currentStock}
@@ -446,7 +377,7 @@ export function ProductFormPage() {
           </div>
           <p className="-mt-2 text-xs text-ink-muted">Use 0 no máximo quando não houver limite.</p>
           <StockRangeGauge currentStock={form.currentStock} minStock={form.minStock} maxStock={form.maxStock} />
-          {isEditing && <Input label="Estoque atual" value={`${form.currentStock} un`} disabled />}
+          {isEditing && <Input label="Estoque atual" value={`${formatNumber(form.currentStock)} un`} disabled />}
         </div>
       </Sheet>
     </div>

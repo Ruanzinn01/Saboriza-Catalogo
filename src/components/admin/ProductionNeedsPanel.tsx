@@ -6,6 +6,7 @@ import { StockHealthDonut } from "@/components/admin/StockHealthDonut";
 import { countProductHealth, type ProductionSuggestion } from "@/lib/production-suggestions";
 import type { HealthLevel } from "@/lib/stock-insights";
 import type { Product } from "@/types/product";
+import { formatNumber } from "@/lib/number";
 
 interface ProductionNeedsPanelProps {
   products: Product[];
@@ -76,11 +77,11 @@ export function ProductionNeedsPanel({ products, suggestions, queuedProductIds, 
                       <StatusBadge tone={demandDriven ? "warning" : item.tone}>{demandDriven ? "Pedido pendente" : item.label}</StatusBadge>
                     </div>
                     <p className="mt-0.5 text-xs text-ink-muted">
-                      Estoque <span className="font-semibold text-ink-900">{item.product.currentStock} un</span> · Mínimo {item.product.minStock} un
-                      {item.demandUnits > 0 && <> · Pedidos confirmados {item.demandUnits} un</>}
+                      Estoque <span className="font-semibold text-ink-900">{formatNumber(item.product.currentStock)} un</span> · Mínimo {formatNumber(item.product.minStock)} un
+                      {item.demandUnits > 0 && <> · Pedidos confirmados {formatNumber(item.demandUnits)} un</>}
                     </p>
                     <p className="text-xs text-ink-muted">
-                      Faltam <span className="font-semibold text-ink-900">{Math.ceil(item.missingUnits)} un</span> · Pack de {item.product.packQuantity} un
+                      Faltam <span className="font-semibold text-ink-900">{formatNumber(Math.ceil(item.missingUnits))} un</span> · Pack de {formatNumber(item.product.packQuantity)} un
                     </p>
                   </div>
                 </div>
@@ -90,7 +91,7 @@ export function ProductionNeedsPanel({ products, suggestions, queuedProductIds, 
                   </span>
                 ) : (
                   <Button variant="primary" size="md" onClick={() => onSend(item.product.id, item.suggestedPacks)}>
-                    <Send size={16} /> Enviar {item.suggestedPacks} pack{item.suggestedPacks > 1 ? "s" : ""}
+                    <Send size={16} /> Enviar {formatNumber(item.suggestedPacks)} pack{item.suggestedPacks > 1 ? "s" : ""}
                   </Button>
                 )}
               </li>

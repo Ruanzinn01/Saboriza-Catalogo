@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatNumber } from "@/lib/number";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Plus } from "lucide-react";
 import { useRawMaterialsStore } from "@/store/raw-materials-store";
@@ -114,10 +115,10 @@ export function RawMaterialDetailPage() {
           <p className="text-sm text-ink-700/70">Categoria: <span className="font-semibold text-ink-900">{material.category || "-----"}</span></p>
           <p className="text-sm text-ink-700/70">Unidade: <span className="font-semibold text-ink-900">{material.controlUnit}</span></p>
           <p className="text-sm text-ink-700/70">
-            Saldo: <span className="font-semibold text-ink-900">{material.currentStock} {material.controlUnit}</span>
+            Saldo: <span className="font-semibold text-ink-900">{formatNumber(material.currentStock)} {material.controlUnit}</span>
           </p>
-          <p className="text-sm text-ink-700/70">Mínimo: <span className="font-semibold text-ink-900">{material.minStock} {material.controlUnit}</span></p>
-          <p className="text-sm text-ink-700/70">Máximo: <span className="font-semibold text-ink-900">{material.maxStock > 0 ? `${material.maxStock} ${material.controlUnit}` : "-----"}</span></p>
+          <p className="text-sm text-ink-700/70">Mínimo: <span className="font-semibold text-ink-900">{formatNumber(material.minStock)} {material.controlUnit}</span></p>
+          <p className="text-sm text-ink-700/70">Máximo: <span className="font-semibold text-ink-900">{material.maxStock > 0 ? `${formatNumber(material.maxStock)} ${material.controlUnit}` : "-----"}</span></p>
           <p className="text-sm text-ink-700/70">Custo médio: <span className="font-semibold text-ink-900">{formatCurrency(material.avgCost)}</span></p>
           <p className="text-sm text-ink-700/70">
             Fornecedor: <span className="font-semibold text-ink-900">{material.primarySupplierId ? supplierName(material.primarySupplierId) : "-----"}</span>
@@ -166,7 +167,7 @@ export function RawMaterialDetailPage() {
                         {entryStatusLabel[entry.status]}
                       </span>
                       <span className="text-sm font-semibold text-ink-900">
-                        {entry.packagesQuantity} {material.purchaseUnitLabel || "un"} · Lote {entry.batch}
+                        {formatNumber(entry.packagesQuantity)} {material.purchaseUnitLabel || "un"} · Lote {entry.batch}
                       </span>
                     </div>
                     <p className="text-xs text-ink-muted">
@@ -175,7 +176,7 @@ export function RawMaterialDetailPage() {
                     </p>
                     {entry.status === "confirmed" && entry.previousBalance !== null && entry.newBalance !== null && (
                       <p className="text-xs text-ink-muted">
-                        Saldo {entry.previousBalance} → {entry.newBalance} {material.controlUnit}
+                        Saldo {formatNumber(entry.previousBalance)} → {formatNumber(entry.newBalance)} {material.controlUnit}
                       </p>
                     )}
                     {entry.status === "reversed" && (

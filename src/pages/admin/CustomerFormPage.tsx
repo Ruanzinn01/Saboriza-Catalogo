@@ -1,6 +1,8 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Save } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { FormPageHeader } from "@/components/admin/FormPageHeader";
 import { CustomerFormFields } from "@/components/admin/CustomerFormFields";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { useCustomersStore } from "@/store/customers-store";
@@ -98,12 +100,22 @@ export function CustomerFormPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-extrabold text-forest-950">{isEditing ? "Editar cliente" : "Novo cliente"}</h1>
+      <FormPageHeader
+        title={isEditing ? "Editar cliente" : "Novo cliente"}
+        crumbs={[{ label: "Clientes", to: "/admin/clientes" }, { label: isEditing ? "Editar cliente" : "Novo cliente" }]}
+      >
+        <Button type="button" variant="outline" onClick={() => navigate("/admin/clientes")}>
+          <ArrowLeft size={16} /> Voltar
+        </Button>
+        <Button type="submit" form="customer-form" variant="secondary" disabled={saving}>
+          <Save size={16} /> {saving ? "Salvando..." : "Salvar cliente"}
+        </Button>
+      </FormPageHeader>
 
-      <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-4 rounded-3xl border border-forest-950/10 bg-white p-6">
+      <form id="customer-form" onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-4 rounded-3xl border border-forest-950/10 bg-white p-6">
         <CustomerFormFields form={form} errors={errors} onChange={handleChange} />
 
-        <div className="mt-2 flex gap-3">
+        <div className="mt-2 flex gap-3 lg:hidden">
           <Button type="submit" size="lg" disabled={saving}>
             {saving ? "Salvando..." : "Salvar cliente"}
           </Button>

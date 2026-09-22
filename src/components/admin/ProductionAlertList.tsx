@@ -1,5 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import type { LineAlerts } from "@/lib/production-alerts";
+import { formatNumber } from "@/lib/number";
 
 interface ProductionAlertListProps {
   lineAlerts?: LineAlerts;
@@ -26,7 +27,7 @@ export function ProductionAlertList({ lineAlerts }: ProductionAlertListProps) {
           }`}
         >
           <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-          {alert.name}: precisa {alert.needed.toFixed(2)} {alert.controlUnit}, tem {alert.available.toFixed(2)}
+          {alert.name}: precisa {formatNumber(alert.needed, 2)} {alert.controlUnit}, tem {formatNumber(alert.available, 2)}
         </div>
       ))}
     </div>

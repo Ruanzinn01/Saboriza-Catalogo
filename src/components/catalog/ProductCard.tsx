@@ -2,6 +2,7 @@ import { Package, Plus } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatProductTitle } from "@/lib/product-title";
 import { formatCurrency } from "@/lib/currency";
+import { formatNumber } from "@/lib/number";
 import { ProductBadgeTag } from "@/components/ui/Badge";
 import { ProductImage } from "./ProductImage";
 import type { Product } from "@/types/product";
@@ -33,7 +34,7 @@ export function ProductCard({ product, onAdd, embedded = false }: ProductCardPro
             {formatCurrency(product.unitPrice)} <span className="text-xs font-medium text-ink-700/60">/ unid</span>
           </span>
           <span className="flex items-center gap-1 font-mono text-xs text-ink-700/60">
-            <Package size={12} /> Pack de {product.packQuantity} un
+            <Package size={12} /> Pack de {formatNumber(product.packQuantity)} un
           </span>
         </div>
         <button

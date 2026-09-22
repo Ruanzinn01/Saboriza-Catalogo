@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 import { ArrowUpToLine, Box, CheckCircle2, FileWarning, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { formatNumber } from "@/lib/number";
 import { percentOf, type ProductBucket, type ProductKpis } from "@/lib/product-list";
 
 interface CardProps {
@@ -31,7 +32,7 @@ function KpiCard({ icon, iconClass, barClass, label, value, percent, selected, o
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs text-ink-700">{label}</p>
         <div className="flex items-baseline justify-between gap-2">
-          <p className="text-2xl font-extrabold leading-tight text-ink-900">{value}</p>
+          <p className="text-2xl font-extrabold leading-tight text-ink-900">{typeof value === "number" ? formatNumber(value) : value}</p>
           {percent !== undefined && <p className="text-xs font-semibold text-ink-700">{percent}%</p>}
         </div>
         {percent !== undefined && (

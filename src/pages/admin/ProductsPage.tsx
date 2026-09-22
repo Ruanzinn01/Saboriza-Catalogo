@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatNumber } from "@/lib/number";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, Search, SlidersHorizontal, Tag } from "lucide-react";
 import { toast } from "sonner";
@@ -278,7 +279,7 @@ export function ProductsPage() {
       {activeFilterCount > 0 && (
         <div className="-mt-3 flex items-center gap-3 text-sm text-ink-700">
           <span>
-            {visibleRows.length} de {allProducts.length} produtos
+            {formatNumber(visibleRows.length)} de {formatNumber(allProducts.length)} produtos
           </span>
           <button type="button" onClick={clearFilters} className="min-h-9 font-semibold text-forest-800 hover:underline">
             Limpar filtros

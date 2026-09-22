@@ -1,5 +1,6 @@
 import type { WeeklyProductionPoint } from "@/lib/weekly-production";
 import { cn } from "@/lib/cn";
+import { formatNumber } from "@/lib/number";
 
 interface WeeklyProductionChartProps {
   data: WeeklyProductionPoint[];
@@ -17,7 +18,7 @@ export function WeeklyProductionChart({ data, selectedDate, onSelectDay }: Weekl
       <div className="flex items-baseline justify-between gap-3">
         <p className="text-sm font-bold text-forest-950">Produção da semana</p>
         <p className="text-xs font-semibold text-ink-muted">
-          <span className="text-base font-extrabold text-forest-950">{total}</span> un no total
+          <span className="text-base font-extrabold text-forest-950">{formatNumber(total)}</span> un no total
         </p>
       </div>
       <div className="mt-4 flex items-end gap-1.5 sm:gap-2">
@@ -30,7 +31,7 @@ export function WeeklyProductionChart({ data, selectedDate, onSelectDay }: Weekl
               key={point.date.toISOString()}
               type="button"
               disabled={!onSelectDay}
-              aria-label={`${point.day}: ${point.units} unidades${isToday ? " (hoje)" : ""}`}
+              aria-label={`${point.day}: ${formatNumber(point.units)} unidades${isToday ? " (hoje)" : ""}`}
               onClick={onSelectDay ? () => onSelectDay(point.date) : undefined}
               className={cn(
                 "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl py-1 transition-colors disabled:cursor-default",
@@ -44,7 +45,7 @@ export function WeeklyProductionChart({ data, selectedDate, onSelectDay }: Weekl
                   point.units > 0 ? (isToday ? "bg-gold-500/20 text-forest-950" : "bg-forest-700/10 text-forest-950") : "text-ink-muted"
                 )}
               >
-                {point.units}
+                {formatNumber(point.units)}
               </span>
               <div className="flex h-24 w-full items-end rounded-t-md bg-forest-950/5">
                 <div

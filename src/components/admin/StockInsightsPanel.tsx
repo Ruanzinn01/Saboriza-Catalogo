@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatNumber } from "@/lib/number";
 import { useSearchParams } from "react-router-dom";
 import { AlertTriangle, ChevronDown, Download, FileSpreadsheet, Printer, Search } from "lucide-react";
 import { useCatalogStore } from "@/store/catalog-store";
@@ -583,7 +584,7 @@ export function StockInsightsPanel() {
                     </button>
                     {expandedTurnoverId === row.item.id && (
                       <div className="ml-5 mb-1 rounded-lg bg-forest-950/5 px-3 py-2 text-xs text-ink-700/70">
-                        Saldo atual: <strong className="text-ink-900">{row.item.currentStock} {row.item.controlUnit}</strong>
+                        Saldo atual: <strong className="text-ink-900">{formatNumber(row.item.currentStock)} {row.item.controlUnit}</strong>
                         {" · "}Última movimentação: <strong className="text-ink-900">{formatDateTime(row.lastMovementAt)}</strong>
                       </div>
                     )}
@@ -620,7 +621,7 @@ export function StockInsightsPanel() {
                     </button>
                     {expandedTurnoverId === row.item.id && (
                       <div className="ml-5 mb-1 rounded-lg bg-forest-950/5 px-3 py-2 text-xs text-ink-700/70">
-                        Saldo atual: <strong className="text-ink-900">{row.item.currentStock} {row.item.controlUnit}</strong>
+                        Saldo atual: <strong className="text-ink-900">{formatNumber(row.item.currentStock)} {row.item.controlUnit}</strong>
                         {" · "}Entradas no período: <strong className="text-ink-900">{row.entriesInPeriod}</strong>
                         {" · "}Saídas no período: <strong className="text-ink-900">{row.exitsInPeriod}</strong>
                       </div>
@@ -844,9 +845,9 @@ export function StockInsightsPanel() {
                       <td className="px-4 py-3 font-semibold text-ink-900">{item.name}</td>
                       <td className="px-4 py-3 text-ink-700/70">{item.groupLabel}</td>
                       <td className="px-4 py-3 text-ink-700/70">
-                        {item.currentStock} {item.controlUnit}
+                        {formatNumber(item.currentStock)} {item.controlUnit}
                       </td>
-                      <td className="px-4 py-3 text-ink-700/70">{item.minStock}</td>
+                      <td className="px-4 py-3 text-ink-700/70">{formatNumber(item.minStock)}</td>
                       <td className="px-4 py-3">
                         <StatusBadge tone={situationTone(item)}>{situationLabel(item)}</StatusBadge>
                       </td>
