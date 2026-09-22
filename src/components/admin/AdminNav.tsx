@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
+  Archive,
   BarChart3,
   Boxes,
+  Building2,
   ClipboardCheck,
   ClipboardList,
+  Database,
   Factory,
+  LayoutDashboard,
   Minus,
   Package,
   Plus,
@@ -37,12 +41,14 @@ export interface NavItem {
 
 export interface NavGroup {
   label: string;
+  icon: LucideIcon;
   items: NavItem[];
 }
 
 export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Visão geral",
+    icon: LayoutDashboard,
     items: [
       { to: "/admin", label: "Indicadores", icon: TrendingUp, end: true },
       { to: "/admin/pedidos", label: "Pedidos", icon: ClipboardList, badge: "newOrders" },
@@ -50,6 +56,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Cadastros",
+    icon: Database,
     items: [
       { to: "/admin/produtos", label: "Produtos", icon: Package, alsoActiveFor: ["/admin/categorias"] },
       { to: "/admin/clientes", label: "Clientes", icon: Users },
@@ -58,6 +65,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Fábrica",
+    icon: Building2,
     items: [
       { to: "/admin/materias-primas", label: "Matérias-primas", icon: Boxes },
       { to: "/admin/produzir", label: "Produziu, Registra", icon: ClipboardCheck, highlight: true },
@@ -66,6 +74,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Estoque",
+    icon: Archive,
     items: [
       { to: "/admin/estoque", label: "Estoque", icon: Warehouse, excludePrefixes: ["/admin/estoque/indicadores"], badge: "criticalStock" },
       { to: "/admin/estoque/indicadores", label: "Indicadores de estoque", icon: BarChart3 },
@@ -234,11 +243,14 @@ export function AdminNav({ variant, onNavigate }: AdminNavProps) {
               aria-expanded={isOpen}
               aria-controls={panelId}
               className={cn(
-                "relative flex min-h-9 w-full items-center gap-2 rounded-lg px-3 text-left font-mono text-xs font-extrabold uppercase tracking-[0.2em] transition-colors before:absolute before:bottom-2 before:left-0 before:top-2 before:w-[3px] before:rounded-full",
+                "relative flex min-h-9 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold transition-colors before:absolute before:bottom-2 before:left-0 before:top-2 before:w-[3px] before:rounded-full",
                 styles.group,
                 styles.groupHover
               )}
             >
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg">
+                <group.icon size={18} />
+              </span>
               <span className="flex-1 truncate">{group.label}</span>
               {!isOpen && pendingBadge && <span aria-hidden className={cn("h-1.5 w-1.5 shrink-0 rounded-full", styles.dot)} />}
               {isOpen ? <Minus size={14} aria-hidden className="shrink-0" /> : <Plus size={14} aria-hidden className="shrink-0" />}
