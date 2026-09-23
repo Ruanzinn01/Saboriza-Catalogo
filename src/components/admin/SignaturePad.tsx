@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { Eraser } from "lucide-react";
+import { cn } from "@/lib/cn";
 
 export interface SignaturePadHandle {
   isEmpty: () => boolean;
@@ -7,7 +8,11 @@ export interface SignaturePadHandle {
   clear: () => void;
 }
 
-export const SignaturePad = forwardRef<SignaturePadHandle>((_, ref) => {
+interface SignaturePadProps {
+  className?: string;
+}
+
+export const SignaturePad = forwardRef<SignaturePadHandle, SignaturePadProps>(({ className }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
   const hasStrokeRef = useRef(false);
@@ -87,11 +92,11 @@ export const SignaturePad = forwardRef<SignaturePadHandle>((_, ref) => {
   }));
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="relative h-48 w-full overflow-hidden rounded-2xl border-2 border-dashed border-ink-900/20 bg-white touch-none">
+    <div className={cn("flex flex-col gap-2", className)}>
+      <div className="relative min-h-48 w-full flex-1 overflow-hidden rounded-2xl border-2 border-dashed border-ink-900/20 bg-white touch-none">
         <canvas
           ref={canvasRef}
-          className="h-full w-full touch-none"
+          className="absolute inset-0 h-full w-full touch-none"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}

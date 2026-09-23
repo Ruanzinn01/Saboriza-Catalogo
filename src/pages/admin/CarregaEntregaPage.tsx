@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Truck } from "lucide-react";
 import packageJson from "../../../package.json";
 import { AdminState } from "@/components/admin/AdminState";
+import { DeliveryOrderCard } from "@/components/admin/DeliveryOrderCard";
 import { FulfillmentOrderCard } from "@/components/admin/FulfillmentOrderCard";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { cn } from "@/lib/cn";
@@ -65,7 +66,7 @@ export function CarregaEntregaPage() {
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {loadingQueue.map((order) => (
-              <FulfillmentOrderCard key={order.id} order={order} phase="carregar" />
+              <FulfillmentOrderCard key={order.id} order={order} />
             ))}
           </div>
         ))}
@@ -80,7 +81,7 @@ export function CarregaEntregaPage() {
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {deliveryQueue.map((order) => (
-              <FulfillmentOrderCard key={order.id} order={order} phase="entregar" />
+              <DeliveryOrderCard key={order.id} order={order} />
             ))}
           </div>
         ))}

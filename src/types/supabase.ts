@@ -290,6 +290,7 @@ export type Database = {
           delivery_confirmed_at: string | null
           delivery_confirmed_by: string | null
           delivery_signature_url: string | null
+          delivery_result: string | null
           discount_amount: number
           id: string
           loading_completed_by: string | null
@@ -333,6 +334,7 @@ export type Database = {
           delivery_confirmed_at?: string | null
           delivery_confirmed_by?: string | null
           delivery_signature_url?: string | null
+          delivery_result?: string | null
           discount_amount?: number
           id?: string
           loading_completed_by?: string | null
@@ -376,6 +378,7 @@ export type Database = {
           delivery_confirmed_at?: string | null
           delivery_confirmed_by?: string | null
           delivery_signature_url?: string | null
+          delivery_result?: string | null
           discount_amount?: number
           id?: string
           loading_completed_by?: string | null
@@ -1050,6 +1053,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      finalize_delivery: {
+        Args: {
+          p_doc: string
+          p_doc_type: string
+          p_er_code: string
+          p_items: Json
+          p_notes: string
+          p_order_id: string
+          p_pdf_path: string
+          p_receiver_name: string
+          p_result: string
+          p_role: string
+          p_signature_path: string
+        }
+        Returns: string
+      }
+      reserve_delivery_er: {
+        Args: { p_order_id: string }
+        Returns: { er_code: string; reserved_at: string }[]
+      }
       adjust_stock: {
         Args: {
           p_counted_stock: number

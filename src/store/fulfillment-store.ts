@@ -4,6 +4,9 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
 import type { AdjustmentRequest } from "@/types/separation";
+import { generateDeliveryReceiptPdf } from "@/lib/delivery-receipt-pdf";
+import { useSettingsStore } from "@/store/settings-store";
+import type { DeliveryFormData } from "@/types/delivery";
 import type { FulfillmentItem, FulfillmentOrder } from "@/types/fulfillment";
 
 interface OrderRow {
@@ -20,6 +23,7 @@ interface OrderRow {
   customer_city: string;
   customer_state: string;
   total_amount: number;
+  payment_terms: string;
   status: "COMPLETED" | "FINALIZADO" | "CONFIRMED" | "NEW" | "IN_REVIEW" | "CANCELLED";
   loading_queued_at: string | null;
   loading_started_at: string | null;
@@ -42,6 +46,7 @@ interface ItemRow {
   total_units: number;
   packs_quantity: number;
   pack_quantity: number;
+  total_price: number;
   loaded_at: string | null;
 }
 
@@ -92,6 +97,7 @@ function buildOrders(
           totalUnits: item.total_units,
           packsQuantity: item.packs_quantity,
           packQuantity: item.pack_quantity,
+          packPrice: item.packs_quantity > 0 ? Math.round((item.total_price / item.packs_quantity) * 100) / 100 : 0,
           loadedAt: item.loaded_at,
         };
       });
@@ -121,6 +127,7 @@ function buildOrders(
       city: row.customer_city,
       state: row.customer_state,
       totalAmount: row.total_amount,
+      paymentTerms: row.payment_terms ?? "",
       deliveryCountForCustomer: row.customer_id ? (deliveryCountByCustomer.get(row.customer_id) ?? 0) : 0,
       status: row.status as FulfillmentOrder["status"],
       loadingQueuedAt: row.loading_queued_at,
@@ -145,7 +152,7 @@ async function loadOrderDetails(orderRows: OrderRow[]) {
   const [{ data: itemRows, error: itemError }, { data: adjustmentRows, error: adjustmentError }] = await Promise.all([
     supabase
       .from("order_items")
-      .select("id, order_id, product_id, product_name, presentation, weight_volume, total_units, packs_quantity, pack_quantity, loaded_at")
+      .select("id, order_id, product_id, product_name, presentation, weight_volume, total_units, packs_quantity, pack_quantity, total_price, loaded_at")
       .in("order_id", orderIds),
     supabase
       .from("order_adjustment_requests")
@@ -186,7 +193,17 @@ interface FulfillmentState {
   undoLoadingItem: (orderId: string, itemId: string) => Promise<void>;
   requestAdjustment: (orderId: string, itemId: string | null, message: string) => Promise<void>;
   resolveAdjustment: (adjustmentId: string) => Promise<void>;
-  confirmDelivery: (orderId: string, signatureBlob: Blob) => Promise<boolean>;
+  reserveDeliveryEr: (orderId: string) => Promise<DeliveryEr | null>;
+  submitDelivery: (order: FulfillmentOrder, form: DeliveryFormData, signature: Blob, er: DeliveryEr) => Promise<boolean>;
+}
+
+export interface DeliveryEr {
+  erCode: string;
+  registeredAt: Date;
+}
+
+function isAlreadyStored(error: { message?: string; statusCode?: string } | null): boolean {
+  return Boolean(error) && (error?.statusCode === "409" || /already exists|duplicate/i.test(error?.message ?? ""));
 }
 
 export const useFulfillmentStore = create<FulfillmentState>()((set, get) => ({
@@ -260,7 +277,7 @@ export const useFulfillmentStore = create<FulfillmentState>()((set, get) => ({
       const [{ data: itemRows, error: itemError }, { data: adjustmentRows, error: adjustmentError }] = await Promise.all([
         supabase
           .from("order_items")
-          .select("id, order_id, product_id, product_name, presentation, weight_volume, total_units, packs_quantity, pack_quantity, loaded_at")
+          .select("id, order_id, product_id, product_name, presentation, weight_volume, total_units, packs_quantity, pack_quantity, total_price, loaded_at")
           .eq("order_id", orderId),
         supabase
           .from("order_adjustment_requests")
@@ -416,37 +433,73 @@ export const useFulfillmentStore = create<FulfillmentState>()((set, get) => ({
     if (orderId && get().currentOrder?.id === orderId) await get().fetchOrder(orderId);
   },
 
-  confirmDelivery: async (orderId, signatureBlob) => {
-    const path = `${orderId}-${Date.now()}.png`;
-    const { error: uploadError } = await supabase.storage.from("delivery-signatures").upload(path, signatureBlob, { contentType: "image/png" });
-    if (uploadError) {
+  reserveDeliveryEr: async (orderId) => {
+    const { data, error } = await supabase.rpc("reserve_delivery_er", { p_order_id: orderId });
+    const row = data?.[0];
+    if (error || !row) {
+      toast.error(error?.message || "Não foi possível iniciar o registro da entrega");
+      return null;
+    }
+    return { erCode: row.er_code, registeredAt: new Date(row.reserved_at) };
+  },
+
+  submitDelivery: async (order, form, signature, er) => {
+    const settingsStore = useSettingsStore.getState();
+    if (!settingsStore.settings) await settingsStore.fetchSettings();
+
+    let receipt: Blob;
+    try {
+      receipt = await generateDeliveryReceiptPdf({
+        order,
+        settings: useSettingsStore.getState().settings,
+        erCode: er.erCode,
+        registeredAt: er.registeredAt,
+        operator: currentOperatorName(),
+        form,
+        signature,
+      });
+    } catch {
+      toast.error("Não foi possível gerar o comprovante");
+      return false;
+    }
+
+    const signaturePath = `${order.id}/${er.erCode}.png`;
+    const pdfPath = `${order.id}/${er.erCode}.pdf`;
+    const { error: signatureError } = await supabase.storage.from("delivery-signatures").upload(signaturePath, signature, { contentType: "image/png" });
+    if (signatureError && !isAlreadyStored(signatureError)) {
       toast.error("Não foi possível salvar a assinatura");
       return false;
     }
-
-    const { data, error } = await supabase
-      .from("orders")
-      .update({
-        status: "FINALIZADO",
-        delivery_confirmed_at: new Date().toISOString(),
-        delivery_confirmed_by: currentOperatorName(),
-        delivery_signature_url: path,
-      })
-      .eq("id", orderId)
-      .eq("status", "COMPLETED")
-      .select("id")
-      .maybeSingle();
-
-    if (error) {
-      toast.error("Não foi possível confirmar a entrega");
+    const { error: pdfError } = await supabase.storage.from("delivery-receipts").upload(pdfPath, receipt, { contentType: "application/pdf" });
+    if (pdfError && !isAlreadyStored(pdfError)) {
+      toast.error("Não foi possível salvar o comprovante");
       return false;
     }
-    if (!data) {
-      toast.success("Entrega já estava confirmada");
-      await get().fetchDeliveryQueue();
-      return true;
+
+    const { error } = await supabase.rpc("finalize_delivery", {
+      p_order_id: order.id,
+      p_er_code: er.erCode,
+      p_result: form.result,
+      p_receiver_name: form.receiverName,
+      p_doc_type: form.docType,
+      p_doc: form.doc,
+      p_role: form.role,
+      p_notes: form.notes,
+      p_signature_path: signaturePath,
+      p_pdf_path: pdfPath,
+      p_items: form.divergences.map((item) => ({
+        order_item_id: item.orderItemId,
+        packs_not_delivered: item.packsNotDelivered,
+        reason: item.reason,
+        reason_detail: item.reasonDetail,
+      })),
+    });
+    if (error) {
+      toast.error(error.message || "Não foi possível confirmar a entrega");
+      return false;
     }
-    toast.success("Entrega confirmada");
+
+    toast.success(form.result === "PARTIAL" ? `Entrega parcial registrada (${er.erCode})` : `Entrega confirmada (${er.erCode})`);
     await get().fetchDeliveryQueue();
     return true;
   },

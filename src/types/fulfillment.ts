@@ -14,6 +14,7 @@ export interface FulfillmentOrder {
   city: string;
   state: string;
   totalAmount: number;
+  paymentTerms: string;
   deliveryCountForCustomer: number;
   status: "COMPLETED" | "FINALIZADO";
   loadingQueuedAt: string | null;
@@ -41,5 +42,6 @@ export interface FulfillmentItem {
   totalUnits: number;
   packsQuantity: number;
   packQuantity: number;
+  packPrice: number;
   loadedAt: string | null;
 }
