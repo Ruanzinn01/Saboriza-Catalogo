@@ -108,8 +108,8 @@ export function IndicatorsPage() {
 
   const cards = [
     { label: "Novos pedidos", value: newOrders, icon: Inbox },
-    { label: "Em análise", value: inReviewOrders, icon: Clock },
-    { label: "Confirmados", value: confirmedOrders, icon: CheckCircle2 },
+    { label: "Orçamentos", value: inReviewOrders, icon: Clock },
+    { label: "Pedidos confirmados", value: confirmedOrders, icon: CheckCircle2 },
   ];
 
   const recentOrders = [...orders]

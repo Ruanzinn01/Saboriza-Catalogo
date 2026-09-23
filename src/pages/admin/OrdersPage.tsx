@@ -78,6 +78,7 @@ export function OrdersPage() {
       IN_REVIEW: 0,
       CONFIRMED: 0,
       COMPLETED: 0,
+      FINALIZADO: 0,
       CANCELLED: 0,
     };
     orders.forEach((order) => {
@@ -91,9 +92,15 @@ export function OrdersPage() {
     ...ORDER_STATUS_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
   ];
 
-  // "Novo" plural fica estranho ("Novos" já é o rótulo natural pra essa aba)
-  const tabLabel = (tab: (typeof filterTabs)[number]) =>
-    tab.value === "NEW" ? "Novos" : tab.value === "CONFIRMED" ? "Confirmados" : tab.value === "COMPLETED" ? "Finalizados" : tab.label;
+  // Plural fica mais natural que o singular do enum pra rótulo de aba
+  const tabPluralLabels: Partial<Record<OrderStatus, string>> = {
+    NEW: "Novos",
+    IN_REVIEW: "Orçamentos",
+    CONFIRMED: "Pedidos",
+    COMPLETED: "Faturados",
+    FINALIZADO: "Finalizados",
+  };
+  const tabLabel = (tab: (typeof filterTabs)[number]) => tabPluralLabels[tab.value as OrderStatus] ?? tab.label;
 
   return (
     <div className="flex flex-col gap-6">

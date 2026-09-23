@@ -62,16 +62,16 @@ export function SearchOverlay({ open, onClose, onSelectCategory }: SearchOverlay
         </div>
 
         {!normalizedQuery && (
-          <p className="py-8 text-center text-sm text-ink-700/50">Digite para buscar produtos ou categorias.</p>
+          <p className="py-8 text-center text-sm text-ink-muted">Digite para buscar produtos ou categorias.</p>
         )}
 
         {normalizedQuery && matchedCategories.length === 0 && matchedProducts.length === 0 && (
-          <p className="py-8 text-center text-sm text-ink-700/50">Nenhum resultado para "{query}".</p>
+          <p className="py-8 text-center text-sm text-ink-muted">Nenhum resultado para "{query}".</p>
         )}
 
         {matchedCategories.length > 0 && (
           <div className="flex flex-col gap-1.5">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-700/40">Categorias</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Categorias</p>
             {matchedCategories.map((category) => {
               const Icon = getCategoryIcon(category.slug);
               return (
@@ -90,7 +90,7 @@ export function SearchOverlay({ open, onClose, onSelectCategory }: SearchOverlay
 
         {matchedProducts.length > 0 && (
           <div className="flex flex-col gap-1.5">
-            <p className="text-xs font-bold uppercase tracking-wide text-ink-700/40">Produtos</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Produtos</p>
             {matchedProducts.map((product) => (
               <button
                 key={product.id}
@@ -102,7 +102,7 @@ export function SearchOverlay({ open, onClose, onSelectCategory }: SearchOverlay
                 </span>
                 <span className="flex flex-1 flex-col">
                   <span className="text-sm font-semibold text-ink-900">{formatProductTitle(product)}</span>
-                  <span className="text-xs text-ink-700/60">{formatCurrency(product.unitPrice)} / unid</span>
+                  <span className="text-xs text-ink-muted">{formatCurrency(product.unitPrice)} / unid</span>
                 </span>
               </button>
             ))}

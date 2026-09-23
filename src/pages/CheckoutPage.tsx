@@ -32,7 +32,7 @@ export function CheckoutPage() {
         </div>
         <div className="relative mx-auto flex max-w-md flex-col items-center gap-3 px-4 py-24 text-center">
           <p className="text-lg font-bold text-ink-900">Seu carrinho está vazio</p>
-          <p className="text-sm text-ink-700/60">Volte ao catálogo para adicionar produtos ao seu pedido.</p>
+          <p className="text-sm text-ink-muted">Volte ao catálogo para adicionar produtos ao seu pedido.</p>
         </div>
       </div>
     );

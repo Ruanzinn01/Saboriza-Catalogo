@@ -37,7 +37,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
       }
     >
       {items.length === 0 ? (
-        <div className="flex h-full flex-col items-center justify-center gap-2 py-16 text-center text-ink-700/60">
+        <div className="flex h-full flex-col items-center justify-center gap-2 py-16 text-center text-ink-muted">
           <p className="text-sm">Seu carrinho está vazio.</p>
           <p className="text-xs">Adicione produtos do catálogo para montar seu pedido.</p>
         </div>

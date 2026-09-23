@@ -21,13 +21,13 @@ export function CartLineItem({ item }: { item: CartItem }) {
           </p>
           <button
             onClick={() => removeItem(item.productId)}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-700/40 hover:bg-red-50 hover:text-red-600"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-red-50 hover:text-red-600"
             aria-label="Remover item"
           >
             <Trash2 size={16} />
           </button>
         </div>
-        <p className="text-xs text-ink-700/60">
+        <p className="text-xs text-ink-muted">
           {item.packs} {item.packs === 1 ? "pack" : "packs"} × {item.packQuantity} un ({formatCurrency(item.unitPrice)} / unid)
         </p>
         <div className="mt-1 flex items-center justify-between">

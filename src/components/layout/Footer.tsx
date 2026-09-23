@@ -50,11 +50,11 @@ export function Footer({ categories, onSelectCategory }: FooterProps) {
               href={whatsappLink}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-2 text-sm text-cream-100/60 transition-colors hover:text-cream-50"
+              className="flex min-h-11 items-center gap-2 text-sm text-cream-100/60 transition-colors hover:text-cream-50"
             >
               <MessageCircle size={15} /> {CONTACT.whatsappDisplay}
             </a>
-            <span className="flex cursor-not-allowed items-center gap-2 text-sm text-cream-100/30">
+            <span className="flex min-h-11 cursor-not-allowed items-center gap-2 text-sm text-cream-100/30">
               <Instagram size={15} /> Em breve
             </span>
           </div>

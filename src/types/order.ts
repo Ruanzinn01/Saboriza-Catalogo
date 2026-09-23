@@ -1,7 +1,7 @@
 import type { CartItem } from "./cart";
 import type { CouponDiscountType } from "./coupon";
 
-export type OrderStatus = "NEW" | "IN_REVIEW" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+export type OrderStatus = "NEW" | "IN_REVIEW" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | "FINALIZADO";
 
 export interface OrderCustomer {
   name: string;

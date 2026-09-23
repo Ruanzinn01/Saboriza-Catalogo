@@ -94,7 +94,7 @@ export function CatalogPage() {
               <h2 className="w-fit bg-linear-to-r from-forest-950 to-forest-700 bg-clip-text text-xl font-extrabold text-transparent">
                 Os queridinhos da Saboriza
               </h2>
-              <p className="text-sm text-ink-700/60">Os temperos que conquistam seus clientes.</p>
+              <p className="text-sm text-ink-muted">Os temperos que conquistam seus clientes.</p>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {bestSellers.map((product) => (

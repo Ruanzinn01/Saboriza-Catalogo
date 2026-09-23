@@ -15,7 +15,7 @@ interface PaginationProps {
 }
 
 const pageButton =
-  "flex h-9 min-w-9 items-center justify-center rounded-lg border px-2 text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-40";
+  "flex h-11 min-w-11 items-center justify-center rounded-lg border px-2 text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-40";
 
 export function Pagination({
   page,

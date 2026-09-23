@@ -50,7 +50,7 @@ export function WhatsAppFloatingButton() {
     <div ref={containerRef} className="fixed bottom-6 right-6 z-40 flex flex-col items-end">
       {open && (
         <div className="mb-3 w-72 overflow-hidden rounded-2xl border border-forest-950/10 bg-cream-50 p-2 shadow-2xl">
-          <p className="px-3 pb-2 pt-1 text-xs font-bold uppercase tracking-wide text-ink-700/50">
+          <p className="px-3 pb-2 pt-1 text-xs font-bold uppercase tracking-wide text-ink-muted">
             Como você prefere pedir?
           </p>
           <button
@@ -60,7 +60,7 @@ export function WhatsAppFloatingButton() {
             <ShoppingBag size={18} className="mt-0.5 shrink-0 text-forest-700" />
             <span className="flex flex-col">
               <span className="text-sm font-bold text-ink-900">Escolher produtos no catálogo</span>
-              <span className="text-xs text-ink-700/60">Monte o pedido e finalize por aqui</span>
+              <span className="text-xs text-ink-muted">Monte o pedido e finalize por aqui</span>
             </span>
           </button>
           <a
@@ -73,7 +73,7 @@ export function WhatsAppFloatingButton() {
             <MessageCircle size={18} className="mt-0.5 shrink-0 text-forest-700" />
             <span className="flex flex-col">
               <span className="text-sm font-bold text-ink-900">Falar no WhatsApp</span>
-              <span className="text-xs text-ink-700/60">Atendimento direto com um vendedor</span>
+              <span className="text-xs text-ink-muted">Atendimento direto com um vendedor</span>
             </span>
           </a>
         </div>

@@ -31,9 +31,9 @@ export function ProductCard({ product, onAdd, embedded = false }: ProductCardPro
         <p className="line-clamp-2 text-sm text-ink-700/70">{product.description}</p>
         <div className="mt-auto flex flex-col pt-2">
           <span className="text-lg font-extrabold text-forest-900">
-            {formatCurrency(product.unitPrice)} <span className="text-xs font-medium text-ink-700/60">/ unid</span>
+            {formatCurrency(product.unitPrice)} <span className="text-xs font-medium text-ink-muted">/ unid</span>
           </span>
-          <span className="flex items-center gap-1 font-mono text-xs text-ink-700/60">
+          <span className="flex items-center gap-1 font-mono text-xs text-ink-muted">
             <Package size={12} /> Pack de {formatNumber(product.packQuantity)} un
           </span>
         </div>

@@ -72,7 +72,7 @@ export function CustomerForm({ onSubmit, submitting }: CustomerFormProps) {
         error={errors.phone}
       />
 
-      <p className="text-xs text-ink-700/50">Empresas já cadastradas são reconhecidas automaticamente pelo nome.</p>
+      <p className="text-xs text-ink-muted">Empresas já cadastradas são reconhecidas automaticamente pelo nome.</p>
 
       <Button type="submit" size="lg" disabled={submitting}>
         {submitting ? "Enviando pedido..." : "Confirmar pedido"}

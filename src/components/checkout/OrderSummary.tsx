@@ -25,7 +25,7 @@ export function OrderSummary({ items, coupon }: OrderSummaryProps) {
               <p className="font-bold text-ink-900">
                 {item.name} · {item.presentation} · {item.weight}
               </p>
-              <p className="text-xs text-ink-700/60">
+              <p className="text-xs text-ink-muted">
                 {formatNumber(item.packs)} {item.packs === 1 ? "pack" : "packs"} × {formatNumber(item.packQuantity)} un
               </p>
             </div>

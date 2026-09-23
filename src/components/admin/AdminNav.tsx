@@ -249,7 +249,7 @@ export function AdminNav({ variant, onNavigate }: AdminNavProps) {
               aria-expanded={isOpen}
               aria-controls={panelId}
               className={cn(
-                "relative flex min-h-9 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold transition-colors before:absolute before:bottom-2 before:left-0 before:top-2 before:w-[3px] before:rounded-full",
+                "relative flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold transition-colors before:absolute before:bottom-2 before:left-0 before:top-2 before:w-[3px] before:rounded-full",
                 styles.group,
                 styles.groupHover
               )}
