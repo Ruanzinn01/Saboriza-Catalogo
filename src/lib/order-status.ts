@@ -46,7 +46,7 @@ export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
 export const ORDER_STATUS_BADGE_COLORS: Record<OrderStatus, string> = {
   NEW: "border-forest-700/40 bg-forest-700/10 text-forest-800",
   IN_REVIEW: "border-gold-500/50 bg-gold-500/15 text-gold-700",
-  CONFIRMED: "border-[#1DA851] bg-[#25D366] text-forest-950",
+  CONFIRMED: "border-[#0e6e3a]/40 bg-[#128C4A] text-cream-50",
   COMPLETED: "border-forest-900/40 bg-forest-900 text-cream-50",
   FINALIZADO: "border-gold-500/50 bg-forest-950 text-gold-400",
   CANCELLED: "border-red-300 bg-red-100 text-red-700",
