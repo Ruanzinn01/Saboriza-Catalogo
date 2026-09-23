@@ -23,6 +23,8 @@ export function FulfillmentOrderCard({ order, phase }: FulfillmentOrderCardProps
   const aging = agingLevel(days);
   const isMine = Boolean(order.loadingResponsible) && order.loadingResponsible === operatorName;
   const isTakenByOther = Boolean(order.loadingResponsible) && !isMine;
+  const loadedCount = order.items.filter((item) => item.loadedAt).length;
+  const totalCount = order.items.length;
 
   async function handleCarregar() {
     if (starting) return;
@@ -35,23 +37,13 @@ export function FulfillmentOrderCard({ order, phase }: FulfillmentOrderCardProps
     setStarting(false);
   }
 
-  const cardBody = (
-    <>
-      <div className={cn("flex items-center justify-between gap-3 px-4 py-3 sm:px-5", AGING_COLORS[aging])}>
-        <span className="text-base font-extrabold">{order.number}</span>
-        <span className="flex items-center gap-1 text-xs font-bold">
-          <Clock size={13} /> {formatDaysLabel(days)}
-        </span>
-      </div>
-      <div className="flex flex-col gap-2 px-4 py-4 sm:px-5">
-        <div className="flex items-center gap-2 text-sm font-semibold text-ink-900">
-          <Building2 size={15} className="shrink-0 text-ink-muted" />
-          {order.companyName || order.customerName}
-        </div>
-        <span className="text-sm font-bold text-ink-900">{formatCurrency(order.totalAmount)}</span>
-        {phase === "carregar" && isTakenByOther && <span className="text-xs font-semibold text-ink-muted">Com {order.loadingResponsible}</span>}
-      </div>
-    </>
+  const header = (
+    <div className={cn("flex items-center justify-between gap-3 px-4 py-3 sm:px-5", AGING_COLORS[aging])}>
+      <span className="text-base font-extrabold">{order.number}</span>
+      <span className="flex items-center gap-1 text-xs font-bold">
+        <Clock size={13} /> {formatDaysLabel(days)}
+      </span>
+    </div>
   );
 
   if (phase === "entregar") {
@@ -61,10 +53,61 @@ export function FulfillmentOrderCard({ order, phase }: FulfillmentOrderCardProps
         onClick={() => navigate(`/admin/carrega-entrega/entregar/${order.id}`)}
         className="flex flex-col overflow-hidden rounded-3xl border border-forest-950/10 bg-white text-left transition-colors hover:border-forest-700/30 hover:bg-forest-950/[0.02]"
       >
-        {cardBody}
+        {header}
+        <div className="flex flex-col gap-2 px-4 py-4 sm:px-5">
+          <div className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+            <Building2 size={15} className="shrink-0 text-ink-muted" />
+            {order.companyName || order.customerName}
+          </div>
+          <span className="text-sm font-bold text-ink-900">{formatCurrency(order.totalAmount)}</span>
+        </div>
         <div className="px-4 pb-4 sm:px-5">
           <span className="inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-blue-600 px-4 text-sm font-bold text-white">
             Entregar
+          </span>
+        </div>
+      </button>
+    );
+  }
+
+  const cardBody = (
+    <>
+      {header}
+      <div className="flex flex-col gap-2 px-4 py-4 sm:px-5">
+        <div className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+          <Building2 size={15} className="shrink-0 text-ink-muted" />
+          {order.companyName || order.customerName}
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-bold text-ink-900">
+            {loadedCount} de {totalCount} produtos
+          </span>
+          {order.pendingAdjustments.length > 0 && (
+            <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">Ajuste pendente</span>
+          )}
+        </div>
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-ink-900/10">
+          <div
+            className="h-full rounded-full bg-forest-700 transition-[width]"
+            style={{ width: totalCount > 0 ? `${(loadedCount / totalCount) * 100}%` : "0%" }}
+          />
+        </div>
+        {isTakenByOther && <span className="text-xs font-semibold text-ink-muted">Com {order.loadingResponsible}</span>}
+      </div>
+    </>
+  );
+
+  if (isMine) {
+    return (
+      <button
+        type="button"
+        onClick={() => navigate(`/admin/carrega-entrega/carregar/${order.id}`)}
+        className="flex flex-col overflow-hidden rounded-3xl border border-forest-950/10 bg-white text-left transition-colors hover:border-forest-700/30 hover:bg-forest-950/[0.02]"
+      >
+        {cardBody}
+        <div className="px-4 pb-4 sm:px-5">
+          <span className="inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-blue-600 px-4 text-sm font-bold text-white">
+            Continuar
           </span>
         </div>
       </button>

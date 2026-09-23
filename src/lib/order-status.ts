@@ -28,7 +28,7 @@ export const OPERATIONAL_SUBSTATUS_LABELS: Record<Exclude<OperationalSubstatus, 
   em_separacao: "Em separação",
   a_faturar: "A faturar",
   em_carregamento: "Em carregamento",
-  entrega: "Entrega",
+  entrega: "Em entrega",
 };
 
 // "em_*" (trabalho em andamento) usa vermelho pulsante; o resto (pronto pra próxima etapa) usa verde.

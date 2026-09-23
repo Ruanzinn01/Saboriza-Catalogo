@@ -207,6 +207,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          loaded_at: string | null
           order_id: string
           pack_quantity: number
           packs_quantity: number
@@ -222,6 +223,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          loaded_at?: string | null
           order_id: string
           pack_quantity: number
           packs_quantity: number
@@ -237,6 +239,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          loaded_at?: string | null
           order_id?: string
           pack_quantity?: number
           packs_quantity?: number
