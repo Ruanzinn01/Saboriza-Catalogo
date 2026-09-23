@@ -5,8 +5,16 @@ export interface FulfillmentOrder {
   number: string;
   createdAt: string;
   customerName: string;
+  customerTradeName: string;
+  customerId: string | null;
   companyName: string;
+  phone: string;
+  address: string;
+  neighborhood: string;
+  city: string;
+  state: string;
   totalAmount: number;
+  deliveryCountForCustomer: number;
   status: "COMPLETED" | "FINALIZADO";
   loadingQueuedAt: string | null;
   loadingStartedAt: string | null;

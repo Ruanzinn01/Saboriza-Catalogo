@@ -13,11 +13,14 @@ export const SignaturePad = forwardRef<SignaturePadHandle>((_, ref) => {
   const hasStrokeRef = useRef(false);
   const [hasStroke, setHasStroke] = useState(false);
 
-  useEffect(() => {
+  function setupCanvas() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
+    // Reatribuir width/height (em vez de só clearRect) força o navegador a descartar
+    // o bitmap inteiro e as transformações acumuladas — é o único jeito garantido
+    // pela spec do canvas de limpar de verdade um contexto já escalado por dpr.
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
     const ctx = canvas.getContext("2d");
@@ -27,6 +30,10 @@ export const SignaturePad = forwardRef<SignaturePadHandle>((_, ref) => {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.strokeStyle = "#0a2a1f";
+  }
+
+  useEffect(() => {
+    setupCanvas();
   }, []);
 
   function pointerPos(e: ReactPointerEvent<HTMLCanvasElement>) {
@@ -63,10 +70,7 @@ export const SignaturePad = forwardRef<SignaturePadHandle>((_, ref) => {
   }
 
   function clear() {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setupCanvas();
     hasStrokeRef.current = false;
     setHasStroke(false);
   }

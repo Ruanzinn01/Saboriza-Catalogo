@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Building2, Plus, Search, Tag } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
@@ -32,18 +32,6 @@ function OperationalSubstatusBadge({ order }: { order: Order }) {
 }
 
 function OrderCard({ order }: { order: Order }) {
-  const updateStatus = useOrdersStore((state) => state.updateStatus);
-  const [faturando, setFaturando] = useState(false);
-  const substatus = operationalSubstatus(order);
-
-  async function handleFaturar(e: MouseEvent) {
-    e.preventDefault();
-    if (faturando) return;
-    setFaturando(true);
-    await updateStatus(order.id, "COMPLETED");
-    setFaturando(false);
-  }
-
   return (
     <Link
       to={`/admin/pedidos/${order.id}`}
@@ -67,16 +55,6 @@ function OrderCard({ order }: { order: Order }) {
         </div>
         <span className="text-sm font-bold text-ink-900">{formatCurrency(order.total)}</span>
         <span className="text-xs text-ink-muted">{formatOrderDate(order.createdAt)}</span>
-        {substatus === "a_faturar" && (
-          <button
-            type="button"
-            disabled={faturando}
-            onClick={(e) => void handleFaturar(e)}
-            className="mt-1 inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-[#128C4A] px-4 text-sm font-bold text-cream-50 transition-colors hover:bg-[#0e6e3a] disabled:pointer-events-none disabled:opacity-40"
-          >
-            {faturando ? "Faturando..." : "FATURAR"}
-          </button>
-        )}
       </div>
     </Link>
   );

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Clock } from "lucide-react";
+import { Building2, Clock, MapPin, Phone, User } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/currency";
 import { AGING_COLORS, agingLevel, daysSince, formatDaysLabel } from "@/lib/separation";
@@ -47,6 +47,7 @@ export function FulfillmentOrderCard({ order, phase }: FulfillmentOrderCardProps
   );
 
   if (phase === "entregar") {
+    const cityLine = [order.neighborhood, order.city].filter(Boolean).join(", ");
     return (
       <button
         type="button"
@@ -54,16 +55,45 @@ export function FulfillmentOrderCard({ order, phase }: FulfillmentOrderCardProps
         className="flex flex-col overflow-hidden rounded-3xl border border-forest-950/10 bg-white text-left transition-colors hover:border-forest-700/30 hover:bg-forest-950/[0.02]"
       >
         {header}
-        <div className="flex flex-col gap-2 px-4 py-4 sm:px-5">
-          <div className="flex items-center gap-2 text-sm font-semibold text-ink-900">
-            <Building2 size={15} className="shrink-0 text-ink-muted" />
-            {order.companyName || order.customerName}
+        <div className="flex flex-col gap-3 px-4 py-4 sm:px-5">
+          {(order.address || cityLine) && (
+            <div className="flex items-start gap-2 rounded-2xl border border-forest-950/10 p-3 text-sm text-ink-900">
+              <MapPin size={16} className="mt-0.5 shrink-0 text-ink-muted" />
+              <div className="flex flex-col">
+                {order.address && <span className="font-semibold">{order.address}</span>}
+                {cityLine && <span className="text-ink-muted">{cityLine}</span>}
+              </div>
+            </div>
+          )}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+              <Building2 size={15} className="shrink-0 text-ink-muted" />
+              {order.companyName || order.customerName}
+            </div>
+            <span className="text-sm font-bold text-ink-900">{formatCurrency(order.totalAmount)}</span>
           </div>
-          <span className="text-sm font-bold text-ink-900">{formatCurrency(order.totalAmount)}</span>
+          {order.customerTradeName && <span className="text-xs text-ink-muted">{order.customerTradeName}</span>}
+          {order.customerName && (
+            <div className="flex items-center gap-2 text-sm text-ink-700/70">
+              <User size={15} className="shrink-0 text-ink-muted" />
+              {order.customerName}
+            </div>
+          )}
+          {order.phone && (
+            <div className="flex items-center gap-2 text-sm text-ink-700/70">
+              <Phone size={15} className="shrink-0 text-ink-muted" />
+              {order.phone}
+            </div>
+          )}
+          {order.deliveryCountForCustomer > 0 && (
+            <span className="text-xs text-ink-muted">
+              {order.deliveryCountForCustomer} {order.deliveryCountForCustomer === 1 ? "entrega realizada" : "entregas realizadas"}
+            </span>
+          )}
         </div>
         <div className="px-4 pb-4 sm:px-5">
-          <span className="inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-blue-600 px-4 text-sm font-bold text-white">
-            Entregar
+          <span className="inline-flex min-h-11 w-full items-center justify-center rounded-2xl bg-green-600 px-4 text-sm font-bold text-white">
+            ENTREGUE
           </span>
         </div>
       </button>

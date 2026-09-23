@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Building2, FileText, Wallet } from "lucide-react";
+import { Building2, FileText, MapPin, Phone, User, Wallet } from "lucide-react";
 import { AdminState } from "@/components/admin/AdminState";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -67,11 +67,37 @@ export function EntregaConfirmacaoPage() {
       <PageHeader title={`Confirmar entrega — Pedido ${order.number}`} back={{ to: "/admin/carrega-entrega", label: "Voltar" }} />
 
       <div className="flex flex-col gap-3 rounded-3xl border border-forest-950/10 bg-white p-5">
-        <div className="flex items-center gap-2 text-base font-bold text-ink-900">
-          <Building2 size={18} className="shrink-0 text-ink-muted" />
-          {order.companyName || order.customerName}
+        {(order.address || order.neighborhood || order.city) && (
+          <div className="flex items-start gap-2 rounded-2xl border border-forest-950/10 p-3 text-sm text-ink-900">
+            <MapPin size={16} className="mt-0.5 shrink-0 text-ink-muted" />
+            <div className="flex flex-col">
+              {order.address && <span className="font-semibold">{order.address}</span>}
+              {(order.neighborhood || order.city) && (
+                <span className="text-ink-muted">{[order.neighborhood, order.city].filter(Boolean).join(", ")}</span>
+              )}
+            </div>
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-base font-bold text-ink-900">
+            <Building2 size={18} className="shrink-0 text-ink-muted" />
+            {order.companyName || order.customerName}
+          </div>
+          <span className="text-lg font-extrabold text-forest-950">{formatCurrency(order.totalAmount)}</span>
         </div>
-        <span className="text-lg font-extrabold text-forest-950">{formatCurrency(order.totalAmount)}</span>
+        {order.customerTradeName && <span className="text-xs text-ink-muted">{order.customerTradeName}</span>}
+        {order.customerName && (
+          <div className="flex items-center gap-2 text-sm text-ink-700/70">
+            <User size={15} className="shrink-0 text-ink-muted" />
+            {order.customerName}
+          </div>
+        )}
+        {order.phone && (
+          <div className="flex items-center gap-2 text-sm text-ink-700/70">
+            <Phone size={15} className="shrink-0 text-ink-muted" />
+            {order.phone}
+          </div>
+        )}
       </div>
 
       <ComingSoonCard icon={<FileText size={18} />} title="Nota fiscal" />

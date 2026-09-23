@@ -9,6 +9,7 @@ import {
   Eye,
   MessageCircle,
   Plus,
+  Receipt,
   Search,
   Trash2,
   UserCheck,
@@ -30,7 +31,7 @@ import { useCustomersStore } from "@/store/customers-store";
 import { useSettingsStore } from "@/store/settings-store";
 import { submitOrder, updateOrderItems } from "@/lib/orders-api";
 import { copyOrderText, downloadOrderPdf, sendOrderWhatsApp } from "@/lib/order-actions";
-import { ORDER_STATUS_OPTIONS, ORDER_STATUS_TRANSITIONS } from "@/lib/order-status";
+import { ORDER_STATUS_OPTIONS, ORDER_STATUS_TRANSITIONS, operationalSubstatus } from "@/lib/order-status";
 import { getCustomerDisplayName, getCustomerSecondaryLine } from "@/lib/customer-display";
 import { calculateCartTotal, calculateItemCount, calculateLineTotal } from "@/lib/pricing";
 import { formatCurrency } from "@/lib/currency";
@@ -97,6 +98,7 @@ export function OrderEditorPage() {
   const [linkSearch, setLinkSearch] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
+  const [faturando, setFaturando] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   useEffect(() => {
@@ -341,6 +343,21 @@ export function OrderEditorPage() {
 
       {order && (
         <div className="flex flex-wrap gap-2 rounded-3xl border border-forest-950/10 bg-white p-4">
+          {operationalSubstatus(order) === "a_faturar" && (
+            <Button
+              type="button"
+              size="sm"
+              disabled={faturando}
+              className="bg-[#128C4A] text-cream-50 hover:bg-[#0e6e3a]"
+              onClick={async () => {
+                setFaturando(true);
+                await updateStatus(order.id, "COMPLETED");
+                setFaturando(false);
+              }}
+            >
+              <Receipt size={16} /> {faturando ? "Faturando..." : "Faturar"}
+            </Button>
+          )}
           <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
             <Eye size={16} /> Visualizar pedido
           </Button>

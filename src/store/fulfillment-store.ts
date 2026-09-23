@@ -10,8 +10,15 @@ interface OrderRow {
   id: string;
   order_number: string;
   created_at: string;
+  customer_id: string | null;
   customer_name: string;
+  customer_trade_name: string;
   company_name: string;
+  phone: string;
+  customer_address: string;
+  customer_neighborhood: string;
+  customer_city: string;
+  customer_state: string;
   total_amount: number;
   status: "COMPLETED" | "FINALIZADO" | "CONFIRMED" | "NEW" | "IN_REVIEW" | "CANCELLED";
   loading_queued_at: string | null;
@@ -60,7 +67,13 @@ function currentOperatorName(): string {
   return (session?.user.user_metadata?.name as string | undefined) || session?.user.email || "Operador";
 }
 
-function buildOrders(orderRows: OrderRow[], itemRows: ItemRow[], productRows: ProductRow[], adjustmentRows: AdjustmentRow[]): FulfillmentOrder[] {
+function buildOrders(
+  orderRows: OrderRow[],
+  itemRows: ItemRow[],
+  productRows: ProductRow[],
+  adjustmentRows: AdjustmentRow[],
+  deliveryCountByCustomer: Map<string, number> = new Map()
+): FulfillmentOrder[] {
   const productsById = new Map(productRows.map((product) => [product.id, product]));
   return orderRows.map((row) => {
     const items: FulfillmentItem[] = itemRows
@@ -98,9 +111,17 @@ function buildOrders(orderRows: OrderRow[], itemRows: ItemRow[], productRows: Pr
       id: row.id,
       number: row.order_number,
       createdAt: row.created_at,
+      customerId: row.customer_id,
       customerName: row.customer_name,
+      customerTradeName: row.customer_trade_name,
       companyName: row.company_name,
+      phone: row.phone,
+      address: row.customer_address,
+      neighborhood: row.customer_neighborhood,
+      city: row.customer_city,
+      state: row.customer_state,
       totalAmount: row.total_amount,
+      deliveryCountForCustomer: row.customer_id ? (deliveryCountByCustomer.get(row.customer_id) ?? 0) : 0,
       status: row.status as FulfillmentOrder["status"],
       loadingQueuedAt: row.loading_queued_at,
       loadingStartedAt: row.loading_started_at,
@@ -207,7 +228,21 @@ export const useFulfillmentStore = create<FulfillmentState>()((set, get) => ({
         .order("loading_finished_at", { ascending: true });
       if (error || !orderRows) throw error;
       const { itemRows, productRows, adjustmentRows } = await loadOrderDetails(orderRows as OrderRow[]);
-      set({ deliveryQueue: buildOrders(orderRows as OrderRow[], itemRows, productRows, adjustmentRows), deliveryQueueStatus: "ready" });
+
+      const customerIds = [...new Set((orderRows as OrderRow[]).map((row) => row.customer_id).filter((id): id is string => Boolean(id)))];
+      const deliveryCountByCustomer = new Map<string, number>();
+      if (customerIds.length > 0) {
+        const { data: pastDeliveries } = await supabase.from("orders").select("customer_id").eq("status", "FINALIZADO").in("customer_id", customerIds);
+        (pastDeliveries ?? []).forEach((row) => {
+          if (!row.customer_id) return;
+          deliveryCountByCustomer.set(row.customer_id, (deliveryCountByCustomer.get(row.customer_id) ?? 0) + 1);
+        });
+      }
+
+      set({
+        deliveryQueue: buildOrders(orderRows as OrderRow[], itemRows, productRows, adjustmentRows, deliveryCountByCustomer),
+        deliveryQueueStatus: "ready",
+      });
     } catch {
       toast.error("Não foi possível carregar a fila de entrega");
       set({ deliveryQueueStatus: "error" });
