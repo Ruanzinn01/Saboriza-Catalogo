@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { CheckCircle2, ImageOff, ScanLine, Undo2 } from "lucide-react";
@@ -9,53 +9,42 @@ import { BarcodeScannerModal } from "@/components/admin/BarcodeScannerModal";
 import { SeparationItemSheet } from "@/components/admin/SeparationItemSheet";
 import { useSeparationStore } from "@/store/separation-store";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
+import { packsLabel } from "@/lib/separation";
 import type { SeparationItem } from "@/types/separation";
 
 export function SeparaConfereOrderPage() {
   const { orderId } = useParams();
-  const navigate = useNavigate();
 
-  const queue = useSeparationStore((state) => state.queue);
-  const queueStatus = useSeparationStore((state) => state.queueStatus);
-  const fetchQueue = useSeparationStore((state) => state.fetchQueue);
-  const history = useSeparationStore((state) => state.history);
-  const historyStatus = useSeparationStore((state) => state.historyStatus);
-  const fetchHistory = useSeparationStore((state) => state.fetchHistory);
+  const order = useSeparationStore((state) => state.currentOrder);
+  const orderStatus = useSeparationStore((state) => state.currentOrderStatus);
+  const fetchOrder = useSeparationStore((state) => state.fetchOrder);
   const confirmItem = useSeparationStore((state) => state.confirmItem);
   const undoItem = useSeparationStore((state) => state.undoItem);
   const requestAdjustment = useSeparationStore((state) => state.requestAdjustment);
   const resolveAdjustment = useSeparationStore((state) => state.resolveAdjustment);
-  const finalizeOrder = useSeparationStore((state) => state.finalizeOrder);
   const releaseOrder = useSeparationStore((state) => state.releaseOrder);
   const operatorName = useAdminAuthStore((state) => state.session?.user.user_metadata?.name || state.session?.user.email);
 
   const [selectedItem, setSelectedItem] = useState<SeparationItem | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
-  const [finalizing, setFinalizing] = useState(false);
-
-  const order = useMemo(() => queue.find((o) => o.id === orderId) ?? history.find((o) => o.id === orderId), [queue, history, orderId]);
 
   useEffect(() => {
-    if (order) return;
-    if (queueStatus === "idle") fetchQueue();
-    if (historyStatus === "idle") fetchHistory();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [order]);
+    if (orderId) fetchOrder(orderId);
+  }, [orderId, fetchOrder]);
 
-  if (!order) {
-    const stillLoading = queueStatus === "loading" || historyStatus === "loading" || queueStatus === "idle" || historyStatus === "idle";
-    return stillLoading ? (
+  if (!order || order.id !== orderId) {
+    return orderStatus === "loading" || orderStatus === "idle" ? (
       <AdminState variant="loading" message="Carregando pedido..." />
     ) : (
       <AdminState variant="empty" message="Pedido não encontrado." />
     );
   }
 
-  const isMine = order.status === "CONFIRMED" && order.responsible === operatorName;
+  const separationDone = Boolean(order.finishedAt);
+  const isMine = order.status === "CONFIRMED" && order.responsible === operatorName && !separationDone;
   const readOnly = !isMine;
   const pendingItems = order.items.filter((item) => !item.separatedAt);
   const separatedItems = order.items.filter((item) => item.separatedAt);
-  const canFinalize = isMine && pendingItems.length === 0 && order.pendingAdjustments.length === 0;
 
   function handleScan(code: string) {
     setScannerOpen(false);
@@ -67,31 +56,25 @@ export function SeparaConfereOrderPage() {
     setSelectedItem(found);
   }
 
-  async function handleFinalize() {
-    if (!order) return;
-    setFinalizing(true);
-    const ok = await finalizeOrder(order.id);
-    setFinalizing(false);
-    if (ok) navigate("/admin/separa-confere");
-  }
-
   async function handleRelease() {
     if (!order) return;
     await releaseOrder(order.id);
-    navigate("/admin/separa-confere");
   }
+
+  const description =
+    order.status === "COMPLETED"
+      ? "Conferência finalizada"
+      : order.status === "CANCELLED"
+        ? "Pedido cancelado"
+        : separationDone
+          ? "Separação concluída — a faturar"
+          : `Faltam ${pendingItems.length} de ${order.items.length} produtos`;
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title={`Pedido ${order.number}`}
-        description={
-          order.status === "CONFIRMED"
-            ? `Faltam ${pendingItems.length} de ${order.items.length} produtos`
-            : order.status === "COMPLETED"
-              ? "Conferência finalizada"
-              : "Pedido cancelado"
-        }
+        description={description}
         back={{ to: "/admin/separa-confere", label: "Voltar" }}
         actions={
           isMine ? (
@@ -102,9 +85,6 @@ export function SeparaConfereOrderPage() {
               <Button variant="outline" onClick={() => void handleRelease()}>
                 Liberar separação
               </Button>
-              <Button disabled={!canFinalize || finalizing} onClick={() => void handleFinalize()}>
-                {finalizing ? "Finalizando..." : "FINALIZAR CONFERÊNCIA"}
-              </Button>
             </>
           ) : undefined
         }
@@ -112,7 +92,7 @@ export function SeparaConfereOrderPage() {
 
       {order.pendingAdjustments.length > 0 && (
         <div className="flex flex-col gap-2 rounded-2xl border border-red-200 bg-red-50 p-4">
-          <p className="text-sm font-bold text-red-700">Ajustes pendentes — finalização bloqueada</p>
+          <p className="text-sm font-bold text-red-700">Ajustes pendentes — separação não termina sozinha até resolver</p>
           {order.pendingAdjustments.map((adjustment) => (
             <div key={adjustment.id} className="flex items-center justify-between gap-3">
               <p className="text-sm text-red-700/90">{adjustment.message}</p>
@@ -153,7 +133,7 @@ export function SeparaConfereOrderPage() {
                     {item.presentation} · {item.weightVolume}
                   </p>
                 </div>
-                <span className="shrink-0 text-sm font-bold text-forest-950">{item.totalUnits} un</span>
+                <span className="shrink-0 text-sm font-bold text-forest-950">{packsLabel(item.packsQuantity, item.packQuantity)}</span>
               </button>
             ))}
           </div>
@@ -171,7 +151,7 @@ export function SeparaConfereOrderPage() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold text-ink-900">{item.productName}</p>
-                  <p className="truncate text-xs text-ink-muted">{item.totalUnits} un</p>
+                  <p className="truncate text-xs text-ink-muted">{packsLabel(item.packsQuantity, item.packQuantity)}</p>
                 </div>
                 {!readOnly && (
                   <button
@@ -199,4 +179,3 @@ export function SeparaConfereOrderPage() {
     </div>
   );
 }
-

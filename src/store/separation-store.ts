@@ -29,6 +29,8 @@ interface ItemRow {
   presentation: string;
   weight_volume: string;
   total_units: number;
+  packs_quantity: number;
+  pack_quantity: number;
   separated_at: string | null;
 }
 
@@ -71,6 +73,8 @@ function buildOrders(orderRows: OrderRow[], itemRows: ItemRow[], productRows: Pr
           code: product?.code ?? null,
           gtin: product?.gtin || null,
           totalUnits: item.total_units,
+          packsQuantity: item.packs_quantity,
+          packQuantity: item.pack_quantity,
           separatedAt: item.separated_at,
         };
       });
@@ -106,9 +110,10 @@ function buildOrders(orderRows: OrderRow[], itemRows: ItemRow[], productRows: Pr
   });
 }
 
-async function loadOrdersWithDetails(statuses: OrderRow["status"][], limit?: number) {
+async function loadOrdersWithDetails(statuses: OrderRow["status"][], options?: { limit?: number; onlyUnfinishedSeparation?: boolean }) {
   let query = supabase.from("orders").select("*").in("status", statuses).order("created_at", { ascending: statuses.includes("CONFIRMED") });
-  if (limit) query = query.limit(limit);
+  if (options?.onlyUnfinishedSeparation) query = query.is("separation_finished_at", null);
+  if (options?.limit) query = query.limit(options.limit);
   const { data: orderRows, error: orderError } = await query;
   if (orderError || !orderRows) throw orderError;
 
@@ -118,7 +123,7 @@ async function loadOrdersWithDetails(statuses: OrderRow["status"][], limit?: num
   const [{ data: itemRows, error: itemError }, { data: adjustmentRows, error: adjustmentError }] = await Promise.all([
     supabase
       .from("order_items")
-      .select("id, order_id, product_id, product_name, presentation, weight_volume, total_units, separated_at")
+      .select("id, order_id, product_id, product_name, presentation, weight_volume, total_units, packs_quantity, pack_quantity, separated_at")
       .in("order_id", orderIds),
     supabase
       .from("order_adjustment_requests")
@@ -143,11 +148,14 @@ interface SeparationState {
   queueStatus: "idle" | "loading" | "ready" | "error";
   history: SeparationOrder[];
   historyStatus: "idle" | "loading" | "ready" | "error";
+  currentOrder: SeparationOrder | null;
+  currentOrderStatus: "idle" | "loading" | "ready" | "error";
   unseenOrderIds: Set<string>;
   realtimeChannel: RealtimeChannel | null;
 
   fetchQueue: () => Promise<void>;
   fetchHistory: () => Promise<void>;
+  fetchOrder: (orderId: string) => Promise<void>;
   subscribeRealtime: () => void;
   unsubscribeRealtime: () => void;
   markSeen: (orderId: string) => void;
@@ -158,7 +166,6 @@ interface SeparationState {
   undoItem: (orderId: string, itemId: string) => Promise<void>;
   requestAdjustment: (orderId: string, itemId: string | null, message: string) => Promise<void>;
   resolveAdjustment: (adjustmentId: string) => Promise<void>;
-  finalizeOrder: (orderId: string) => Promise<boolean>;
 }
 
 export const useSeparationStore = create<SeparationState>()((set, get) => ({
@@ -166,13 +173,15 @@ export const useSeparationStore = create<SeparationState>()((set, get) => ({
   queueStatus: "idle",
   history: [],
   historyStatus: "idle",
+  currentOrder: null,
+  currentOrderStatus: "idle",
   unseenOrderIds: new Set(),
   realtimeChannel: null,
 
   fetchQueue: async () => {
     set({ queueStatus: "loading" });
     try {
-      const { orderRows, itemRows, productRows, adjustmentRows } = await loadOrdersWithDetails(["CONFIRMED"]);
+      const { orderRows, itemRows, productRows, adjustmentRows } = await loadOrdersWithDetails(["CONFIRMED"], { onlyUnfinishedSeparation: true });
       set({ queue: buildOrders(orderRows, itemRows, productRows, adjustmentRows), queueStatus: "ready" });
     } catch {
       toast.error("Não foi possível carregar a fila do Separa Confere");
@@ -183,7 +192,7 @@ export const useSeparationStore = create<SeparationState>()((set, get) => ({
   fetchHistory: async () => {
     set({ historyStatus: "loading" });
     try {
-      const { orderRows, itemRows, productRows, adjustmentRows } = await loadOrdersWithDetails(["COMPLETED", "CANCELLED"], 100);
+      const { orderRows, itemRows, productRows, adjustmentRows } = await loadOrdersWithDetails(["COMPLETED", "CANCELLED"], { limit: 100 });
       const history = buildOrders(orderRows, itemRows, productRows, adjustmentRows).sort((a, b) => {
         const aTime = new Date(a.finishedAt ?? a.createdAt).getTime();
         const bTime = new Date(b.finishedAt ?? b.createdAt).getTime();
@@ -193,6 +202,42 @@ export const useSeparationStore = create<SeparationState>()((set, get) => ({
     } catch {
       toast.error("Não foi possível carregar o histórico");
       set({ historyStatus: "error" });
+    }
+  },
+
+  fetchOrder: async (orderId) => {
+    set({ currentOrderStatus: "loading" });
+    const { data: orderRow, error: orderError } = await supabase.from("orders").select("*").eq("id", orderId).maybeSingle();
+    if (orderError || !orderRow) {
+      set({ currentOrder: null, currentOrderStatus: "error" });
+      return;
+    }
+    try {
+      const [{ data: itemRows, error: itemError }, { data: adjustmentRows, error: adjustmentError }] = await Promise.all([
+        supabase
+          .from("order_items")
+          .select("id, order_id, product_id, product_name, presentation, weight_volume, total_units, packs_quantity, pack_quantity, separated_at")
+          .eq("order_id", orderId),
+        supabase
+          .from("order_adjustment_requests")
+          .select("id, order_id, order_item_id, message, status, created_by, created_at")
+          .eq("order_id", orderId),
+      ]);
+      if (itemError || !itemRows) throw itemError;
+      if (adjustmentError || !adjustmentRows) throw adjustmentError;
+
+      const productIds = [...new Set(itemRows.map((item) => item.product_id).filter((id): id is string => Boolean(id)))];
+      const { data: productRows, error: productError } =
+        productIds.length > 0
+          ? await supabase.from("products").select("id, image_url, code, gtin").in("id", productIds)
+          : { data: [] as ProductRow[], error: null };
+      if (productError) throw productError;
+
+      const [order] = buildOrders([orderRow as OrderRow], itemRows as ItemRow[], (productRows ?? []) as ProductRow[], adjustmentRows as AdjustmentRow[]);
+      set({ currentOrder: order, currentOrderStatus: "ready" });
+    } catch {
+      toast.error("Não foi possível carregar o pedido");
+      set({ currentOrder: null, currentOrderStatus: "error" });
     }
   },
 
@@ -265,6 +310,7 @@ export const useSeparationStore = create<SeparationState>()((set, get) => ({
     }
     toast.success("Separação liberada");
     await get().fetchQueue();
+    if (get().currentOrder?.id === orderId) await get().fetchOrder(orderId);
   },
 
   confirmItem: async (orderId, itemId) => {
@@ -279,7 +325,23 @@ export const useSeparationStore = create<SeparationState>()((set, get) => ({
       toast.error("Não foi possível confirmar o item");
       return;
     }
+
+    // Sem itens pendentes nem ajuste em aberto: separação termina sozinha, sem
+    // precisar de um clique manual de "finalizar" — e sem tocar no status do pedido.
+    const [{ data: remainingItems }, { data: pendingAdjustments }] = await Promise.all([
+      supabase.from("order_items").select("id").eq("order_id", orderId).is("separated_at", null),
+      supabase.from("order_adjustment_requests").select("id").eq("order_id", orderId).eq("status", "pending"),
+    ]);
+    if ((remainingItems?.length ?? 0) === 0 && (pendingAdjustments?.length ?? 0) === 0) {
+      await supabase
+        .from("orders")
+        .update({ separation_finished_at: new Date().toISOString(), separation_completed_by: currentOperatorName() })
+        .eq("id", orderId)
+        .is("separation_finished_at", null);
+    }
+
     await get().fetchQueue();
+    if (get().currentOrder?.id === orderId) await get().fetchOrder(orderId);
   },
 
   undoItem: async (orderId, itemId) => {
@@ -289,6 +351,7 @@ export const useSeparationStore = create<SeparationState>()((set, get) => ({
       return;
     }
     await get().fetchQueue();
+    if (get().currentOrder?.id === orderId) await get().fetchOrder(orderId);
   },
 
   requestAdjustment: async (orderId, itemId, message) => {
@@ -304,9 +367,11 @@ export const useSeparationStore = create<SeparationState>()((set, get) => ({
     }
     toast.success("Ajuste solicitado");
     await get().fetchQueue();
+    if (get().currentOrder?.id === orderId) await get().fetchOrder(orderId);
   },
 
   resolveAdjustment: async (adjustmentId) => {
+    const orderId = get().currentOrder?.pendingAdjustments.find((adjustment) => adjustment.id === adjustmentId)?.orderId;
     const { data, error } = await supabase
       .from("order_adjustment_requests")
       .update({ status: "resolved", resolved_by: currentOperatorName() })
@@ -320,55 +385,6 @@ export const useSeparationStore = create<SeparationState>()((set, get) => ({
     }
     toast.success("Ajuste marcado como resolvido");
     await get().fetchQueue();
-  },
-
-  finalizeOrder: async (orderId) => {
-    const { data: items, error: itemsError } = await supabase.from("order_items").select("id, separated_at").eq("order_id", orderId);
-    if (itemsError) {
-      toast.error("Não foi possível verificar os itens do pedido");
-      return false;
-    }
-    if (items.some((item) => !item.separated_at)) {
-      toast.error("Ainda existem itens pendentes de separação");
-      return false;
-    }
-    const { data: adjustments, error: adjustmentsError } = await supabase
-      .from("order_adjustment_requests")
-      .select("id")
-      .eq("order_id", orderId)
-      .eq("status", "pending");
-    if (adjustmentsError) {
-      toast.error("Não foi possível verificar os ajustes do pedido");
-      return false;
-    }
-    if (adjustments.length > 0) {
-      toast.error("Existe ajuste pendente para esse pedido");
-      return false;
-    }
-
-    const { data, error } = await supabase
-      .from("orders")
-      .update({
-        status: "COMPLETED",
-        separation_finished_at: new Date().toISOString(),
-        separation_completed_by: currentOperatorName(),
-      })
-      .eq("id", orderId)
-      .eq("status", "CONFIRMED")
-      .select("id")
-      .maybeSingle();
-
-    if (error) {
-      toast.error("Não foi possível finalizar a conferência");
-      return false;
-    }
-    if (!data) {
-      toast.success("Conferência já estava finalizada");
-      await get().fetchQueue();
-      return true;
-    }
-    toast.success("Conferência finalizada");
-    await get().fetchQueue();
-    return true;
+    if (orderId && get().currentOrder?.id === orderId) await get().fetchOrder(orderId);
   },
 }));

@@ -33,4 +33,6 @@ export interface Order {
   couponType: CouponDiscountType | "";
   couponValue: number;
   discountAmount: number;
+  separationResponsible: string | null;
+  separationFinishedAt: string | null;
 }

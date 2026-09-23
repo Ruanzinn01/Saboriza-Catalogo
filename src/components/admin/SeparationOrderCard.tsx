@@ -27,11 +27,7 @@ export function SeparationOrderCard({ order }: SeparationOrderCardProps) {
   async function handleAccept() {
     if (accepting) return;
     setAccepting(true);
-    const ok = await acceptOrder(order.id);
-    if (ok) {
-      navigate(`/admin/separa-confere/${order.id}`);
-      return;
-    }
+    await acceptOrder(order.id);
     setAccepting(false);
   }
 

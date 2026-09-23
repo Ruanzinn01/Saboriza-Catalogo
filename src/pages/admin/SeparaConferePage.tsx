@@ -139,45 +139,74 @@ export function SeparaConferePage() {
           ) : history.length === 0 ? (
             <AdminState variant="empty" message="Nenhuma separação concluída ainda." />
           ) : (
-            <div className="overflow-x-auto rounded-3xl border border-forest-950/10 bg-white">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-forest-950/10 text-xs uppercase tracking-wide text-ink-muted">
-                  <tr>
-                    <th className="px-4 py-3">Pedido</th>
-                    <th className="px-4 py-3">Responsável</th>
-                    <th className="px-4 py-3">Duração</th>
-                    <th className="px-4 py-3">Concluído em</th>
-                    <th className="px-4 py-3">Situação</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.map((order) => (
-                    <tr key={order.id} className="border-b border-forest-950/5 last:border-none hover:bg-forest-950/5">
-                      <td className="px-4 py-3">
-                        <Link to={`/admin/separa-confere/${order.id}`} className="font-bold text-forest-950 hover:underline">
-                          {order.number}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3 text-ink-muted">{order.completedBy ?? order.startedBy ?? "-----"}</td>
-                      <td className="px-4 py-3 text-ink-muted">{durationLabel(order.startedAt, order.finishedAt)}</td>
-                      <td className="px-4 py-3 text-ink-muted">
-                        {order.finishedAt ? new Date(order.finishedAt).toLocaleString("pt-BR") : "-----"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={cn(
-                            "rounded-full px-2.5 py-1 text-xs font-bold",
-                            order.status === "COMPLETED" ? "bg-forest-950/10 text-forest-950" : "bg-red-100 text-red-700"
-                          )}
-                        >
-                          {order.status === "COMPLETED" ? "Finalizado" : "Cancelado"}
-                        </span>
-                      </td>
+            <>
+              <div className="hidden overflow-x-auto rounded-3xl border border-forest-950/10 bg-white lg:block">
+                <table className="w-full text-left text-sm">
+                  <thead className="border-b border-forest-950/10 text-xs uppercase tracking-wide text-ink-muted">
+                    <tr>
+                      <th className="px-4 py-3">Pedido</th>
+                      <th className="px-4 py-3">Responsável</th>
+                      <th className="px-4 py-3">Duração</th>
+                      <th className="px-4 py-3">Concluído em</th>
+                      <th className="px-4 py-3">Situação</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {history.map((order) => (
+                      <tr key={order.id} className="border-b border-forest-950/5 last:border-none hover:bg-forest-950/5">
+                        <td className="px-4 py-3">
+                          <Link to={`/admin/separa-confere/${order.id}`} className="font-bold text-forest-950 hover:underline">
+                            {order.number}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3 text-ink-muted">{order.completedBy ?? order.startedBy ?? "-----"}</td>
+                        <td className="px-4 py-3 text-ink-muted">{durationLabel(order.startedAt, order.finishedAt)}</td>
+                        <td className="px-4 py-3 text-ink-muted">
+                          {order.finishedAt ? new Date(order.finishedAt).toLocaleString("pt-BR") : "-----"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={cn(
+                              "rounded-full px-2.5 py-1 text-xs font-bold",
+                              order.status === "COMPLETED" ? "bg-forest-950/10 text-forest-950" : "bg-red-100 text-red-700"
+                            )}
+                          >
+                            {order.status === "COMPLETED" ? "Finalizado" : "Cancelado"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex flex-col gap-3 lg:hidden">
+                {history.map((order) => (
+                  <Link
+                    key={order.id}
+                    to={`/admin/separa-confere/${order.id}`}
+                    className="flex flex-col gap-2 rounded-2xl border border-forest-950/10 bg-white p-4"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-forest-950">{order.number}</span>
+                      <span
+                        className={cn(
+                          "rounded-full px-2.5 py-1 text-xs font-bold",
+                          order.status === "COMPLETED" ? "bg-forest-950/10 text-forest-950" : "bg-red-100 text-red-700"
+                        )}
+                      >
+                        {order.status === "COMPLETED" ? "Finalizado" : "Cancelado"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1 text-sm text-ink-muted">
+                      <span>Responsável: {order.completedBy ?? order.startedBy ?? "-----"}</span>
+                      <span>Duração: {durationLabel(order.startedAt, order.finishedAt)}</span>
+                      <span>Concluído em: {order.finishedAt ? new Date(order.finishedAt).toLocaleString("pt-BR") : "-----"}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}

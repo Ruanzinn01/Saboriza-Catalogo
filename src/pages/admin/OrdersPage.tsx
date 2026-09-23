@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Building2, Plus, Search, Tag } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
-import { ORDER_STATUS_OPTIONS, groupOrdersByDay } from "@/lib/order-status";
+import { ORDER_STATUS_OPTIONS, SEPARATION_SUBSTATUS_LABELS, groupOrdersByDay, separationSubstatus } from "@/lib/order-status";
 import { useOrdersStore } from "@/store/orders-store";
 import { AdminState } from "@/components/admin/AdminState";
 import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
@@ -19,6 +19,20 @@ function formatOrderDate(iso: string) {
   return isToday ? `Hoje, ${time}` : `${date.toLocaleDateString("pt-BR")}, ${time}`;
 }
 
+function SeparationSubstatusBadge({ order }: { order: Order }) {
+  const substatus = separationSubstatus(order);
+  if (!substatus) return null;
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-ink-700">
+      <span
+        className={cn("h-2 w-2 shrink-0 rounded-full", substatus === "em_separacao" ? "animate-pulse bg-red-500" : "bg-green-500")}
+        aria-hidden
+      />
+      {SEPARATION_SUBSTATUS_LABELS[substatus]}
+    </span>
+  );
+}
+
 function OrderCard({ order }: { order: Order }) {
   return (
     <Link
@@ -27,7 +41,10 @@ function OrderCard({ order }: { order: Order }) {
     >
       <div className="flex items-center justify-between gap-3 bg-ink-900/5 px-4 py-3 sm:px-5">
         <span className="text-base font-extrabold text-forest-950">{order.number}</span>
-        <OrderStatusBadge status={order.status} />
+        <div className="flex flex-col items-end gap-1">
+          <OrderStatusBadge status={order.status} />
+          <SeparationSubstatusBadge order={order} />
+        </div>
       </div>
       <div className="flex flex-col gap-2 px-4 py-4 sm:px-5">
         <div className="flex items-center gap-2 text-sm font-semibold text-ink-900">

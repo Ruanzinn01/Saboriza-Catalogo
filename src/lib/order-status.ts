@@ -1,5 +1,21 @@
 import type { Order, OrderStatus } from "@/types/order";
 
+export type SeparationSubstatus = "em_separacao" | "a_faturar" | null;
+
+// Substatus operacional da separação: nunca muda o status principal do pedido
+// (fica sempre "Pedido"/CONFIRMED). É só um indicador visual na tela de Pedidos.
+export function separationSubstatus(order: Pick<Order, "status" | "separationResponsible" | "separationFinishedAt">): SeparationSubstatus {
+  if (order.status !== "CONFIRMED") return null;
+  if (order.separationFinishedAt) return "a_faturar";
+  if (order.separationResponsible) return "em_separacao";
+  return null;
+}
+
+export const SEPARATION_SUBSTATUS_LABELS: Record<Exclude<SeparationSubstatus, null>, string> = {
+  em_separacao: "Em separação",
+  a_faturar: "A faturar",
+};
+
 export const ORDER_STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: "NEW", label: "Novo" },
   { value: "IN_REVIEW", label: "Orçamento" },

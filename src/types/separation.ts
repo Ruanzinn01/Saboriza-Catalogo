@@ -26,6 +26,8 @@ export interface SeparationItem {
   code: string | null;
   gtin: string | null;
   totalUnits: number;
+  packsQuantity: number;
+  packQuantity: number;
   separatedAt: string | null;
 }
 

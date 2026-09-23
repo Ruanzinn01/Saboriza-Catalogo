@@ -30,6 +30,10 @@ export function formatDaysLabel(days: number): string {
   return `${days} dias`;
 }
 
+export function packsLabel(packs: number, packQuantity: number): string {
+  return `${packs} ${packs === 1 ? "pack" : "packs"} × ${packQuantity} un`;
+}
+
 export function durationLabel(startIso: string | null, endIso: string | null): string {
   if (!startIso) return "-----";
   const start = new Date(startIso).getTime();

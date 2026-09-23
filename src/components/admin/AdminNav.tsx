@@ -102,7 +102,9 @@ function activeGroupFor(pathname: string): NavGroup | undefined {
 
 export function useNavBadges(): Record<NavBadgeKey, number> {
   const newOrders = useOrdersStore((state) => state.orders.filter((order) => order.status === "NEW").length);
-  const pendingSeparation = useOrdersStore((state) => state.orders.filter((order) => order.status === "CONFIRMED").length);
+  const pendingSeparation = useOrdersStore(
+    (state) => state.orders.filter((order) => order.status === "CONFIRMED" && !order.separationFinishedAt).length
+  );
   const criticalStock = useCatalogStore((state) => state.products.filter((product) => product.active && healthLevel(product) === "red").length);
   return { newOrders, criticalStock, pendingSeparation };
 }

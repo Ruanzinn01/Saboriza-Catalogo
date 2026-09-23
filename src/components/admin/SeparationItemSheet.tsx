@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ImageOff } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
+import { packsLabel } from "@/lib/separation";
 import type { SeparationItem } from "@/types/separation";
 
 interface SeparationItemSheetProps {
@@ -65,7 +66,7 @@ export function SeparationItemSheet({ item, readOnly, onClose, onConfirm, onRequ
             ) : (
               <>
                 <Button disabled={saving} className="w-full" onClick={() => void handleConfirm()}>
-                  {saving ? "Confirmando..." : "CONFIRMAR SEPARAÇÃO"}
+                  {saving ? "Confirmando..." : "FINALIZAR"}
                 </Button>
                 <Button variant="outline" className="w-full" onClick={() => setAdjustmentOpen(true)}>
                   Solicitar ajuste
@@ -88,11 +89,14 @@ export function SeparationItemSheet({ item, readOnly, onClose, onConfirm, onRequ
           <p className="text-sm text-ink-muted">
             {item.presentation} · {item.weightVolume}
           </p>
-          <p className="text-2xl font-extrabold text-forest-950">
-            {item.totalUnits} de {item.totalUnits}
-          </p>
-          <p className="text-xs text-ink-muted">unidades pedidas</p>
+          <p className="text-2xl font-extrabold text-forest-950">{packsLabel(item.packsQuantity, item.packQuantity)}</p>
+          <p className="text-xs text-ink-muted">quantidade pedida</p>
         </div>
+        {!item.separatedAt && !readOnly && (
+          <p className="text-sm font-semibold text-ink-900">
+            {item.packsQuantity > 1 ? `Você encontrou os ${item.packsQuantity} packs?` : "Você encontrou a quantidade solicitada?"}
+          </p>
+        )}
         {item.separatedAt && (
           <p className="rounded-xl bg-forest-950/10 px-3 py-2 text-sm font-semibold text-forest-950">
             Separação confirmada em {new Date(item.separatedAt).toLocaleString("pt-BR")}
