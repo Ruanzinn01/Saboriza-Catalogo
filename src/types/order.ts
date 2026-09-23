@@ -35,4 +35,6 @@ export interface Order {
   discountAmount: number;
   separationResponsible: string | null;
   separationFinishedAt: string | null;
+  loadingResponsible: string | null;
+  loadingFinishedAt: string | null;
 }

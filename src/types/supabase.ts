@@ -284,8 +284,17 @@ export type Database = {
           customer_neighborhood: string
           customer_state: string
           customer_trade_name: string
+          delivery_confirmed_at: string | null
+          delivery_confirmed_by: string | null
+          delivery_signature_url: string | null
           discount_amount: number
           id: string
+          loading_completed_by: string | null
+          loading_finished_at: string | null
+          loading_queued_at: string | null
+          loading_responsible: string | null
+          loading_started_at: string | null
+          loading_started_by: string | null
           order_number: string
           payment_terms: string
           phone: string
@@ -318,8 +327,17 @@ export type Database = {
           customer_neighborhood?: string
           customer_state?: string
           customer_trade_name?: string
+          delivery_confirmed_at?: string | null
+          delivery_confirmed_by?: string | null
+          delivery_signature_url?: string | null
           discount_amount?: number
           id?: string
+          loading_completed_by?: string | null
+          loading_finished_at?: string | null
+          loading_queued_at?: string | null
+          loading_responsible?: string | null
+          loading_started_at?: string | null
+          loading_started_by?: string | null
           order_number?: string
           payment_terms?: string
           phone: string
@@ -352,8 +370,17 @@ export type Database = {
           customer_neighborhood?: string
           customer_state?: string
           customer_trade_name?: string
+          delivery_confirmed_at?: string | null
+          delivery_confirmed_by?: string | null
+          delivery_signature_url?: string | null
           discount_amount?: number
           id?: string
+          loading_completed_by?: string | null
+          loading_finished_at?: string | null
+          loading_queued_at?: string | null
+          loading_responsible?: string | null
+          loading_started_at?: string | null
+          loading_started_by?: string | null
           order_number?: string
           payment_terms?: string
           phone?: string

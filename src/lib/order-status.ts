@@ -1,19 +1,42 @@
 import type { Order, OrderStatus } from "@/types/order";
 
-export type SeparationSubstatus = "em_separacao" | "a_faturar" | null;
+export type OperationalSubstatus = "em_separacao" | "a_faturar" | "em_carregamento" | "entrega" | null;
 
-// Substatus operacional da separação: nunca muda o status principal do pedido
-// (fica sempre "Pedido"/CONFIRMED). É só um indicador visual na tela de Pedidos.
-export function separationSubstatus(order: Pick<Order, "status" | "separationResponsible" | "separationFinishedAt">): SeparationSubstatus {
-  if (order.status !== "CONFIRMED") return null;
-  if (order.separationFinishedAt) return "a_faturar";
-  if (order.separationResponsible) return "em_separacao";
+type SubstatusOrder = Pick<
+  Order,
+  "status" | "separationResponsible" | "separationFinishedAt" | "loadingResponsible" | "loadingFinishedAt"
+>;
+
+// Substatus operacional (separação -> faturamento -> carregamento -> entrega): nunca muda o
+// status principal do pedido (fica "Pedido" até faturar, e "Faturado" até finalizar a entrega).
+// É só um indicador visual na tela de Pedidos.
+export function operationalSubstatus(order: SubstatusOrder): OperationalSubstatus {
+  if (order.status === "CONFIRMED") {
+    if (order.separationFinishedAt) return "a_faturar";
+    if (order.separationResponsible) return "em_separacao";
+    return null;
+  }
+  if (order.status === "COMPLETED") {
+    if (order.loadingFinishedAt) return "entrega";
+    if (order.loadingResponsible) return "em_carregamento";
+    return null;
+  }
   return null;
 }
 
-export const SEPARATION_SUBSTATUS_LABELS: Record<Exclude<SeparationSubstatus, null>, string> = {
+export const OPERATIONAL_SUBSTATUS_LABELS: Record<Exclude<OperationalSubstatus, null>, string> = {
   em_separacao: "Em separação",
   a_faturar: "A faturar",
+  em_carregamento: "Em carregamento",
+  entrega: "Entrega",
+};
+
+// "em_*" (trabalho em andamento) usa vermelho pulsante; o resto (pronto pra próxima etapa) usa verde.
+export const OPERATIONAL_SUBSTATUS_TONE: Record<Exclude<OperationalSubstatus, null>, "active" | "ready"> = {
+  em_separacao: "active",
+  a_faturar: "ready",
+  em_carregamento: "active",
+  entrega: "ready",
 };
 
 export const ORDER_STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [

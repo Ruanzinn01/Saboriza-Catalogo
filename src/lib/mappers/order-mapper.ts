@@ -50,5 +50,7 @@ export function orderFromRow(row: OrderRow, itemRows: OrderItemRow[]): Order {
     discountAmount: row.discount_amount,
     separationResponsible: row.separation_responsible,
     separationFinishedAt: row.separation_finished_at,
+    loadingResponsible: row.loading_responsible,
+    loadingFinishedAt: row.loading_finished_at,
   };
 }

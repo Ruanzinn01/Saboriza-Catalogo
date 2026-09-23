@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   Minus,
   Package,
+  PackageCheck,
   PackageSearch,
   Plus,
   Settings,
@@ -27,7 +28,7 @@ import { slugify } from "@/lib/slugify";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useOrdersStore } from "@/store/orders-store";
 
-export type NavBadgeKey = "newOrders" | "criticalStock" | "pendingSeparation";
+export type NavBadgeKey = "newOrders" | "criticalStock" | "pendingSeparation" | "pendingFulfillment";
 
 export interface NavItem {
   to: string;
@@ -85,6 +86,7 @@ export const NAV_GROUPS: NavGroup[] = [
 
 export const STANDALONE_NAV_ITEMS: NavItem[] = [
   { to: "/admin/separa-confere", label: "Separa Confere", icon: PackageSearch, badge: "pendingSeparation" },
+  { to: "/admin/carrega-entrega", label: "Carrega Entrega", icon: PackageCheck, badge: "pendingFulfillment" },
 ];
 
 export const SETTINGS_ITEM: NavItem = { to: "/admin/configuracoes", label: "Configurações", icon: Settings };
@@ -96,6 +98,17 @@ export function isNavItemActive(pathname: string, item: NavItem): boolean {
   return pathname === item.to || pathname.startsWith(`${item.to}/`);
 }
 
+const BADGE_DESCRIPTIONS: Record<NavBadgeKey, string> = {
+  newOrders: "pedidos novos",
+  criticalStock: "itens críticos",
+  pendingSeparation: "pedidos aguardando separação",
+  pendingFulfillment: "pedidos aguardando carregamento ou entrega",
+};
+
+function badgeDescription(key?: NavBadgeKey): string {
+  return key ? BADGE_DESCRIPTIONS[key] : "";
+}
+
 function activeGroupFor(pathname: string): NavGroup | undefined {
   return NAV_GROUPS.find((group) => group.items.some((item) => isNavItemActive(pathname, item)));
 }
@@ -105,8 +118,9 @@ export function useNavBadges(): Record<NavBadgeKey, number> {
   const pendingSeparation = useOrdersStore(
     (state) => state.orders.filter((order) => order.status === "CONFIRMED" && !order.separationFinishedAt).length
   );
+  const pendingFulfillment = useOrdersStore((state) => state.orders.filter((order) => order.status === "COMPLETED").length);
   const criticalStock = useCatalogStore((state) => state.products.filter((product) => product.active && healthLevel(product) === "red").length);
-  return { newOrders, criticalStock, pendingSeparation };
+  return { newOrders, criticalStock, pendingSeparation, pendingFulfillment };
 }
 
 type NavVariant = "sidebar" | "sheet";
@@ -121,7 +135,12 @@ const variantClasses: Record<
     idle: "hover:bg-cream-50/5 hover:text-cream-50",
     group: "text-cream-50 before:bg-gold-500/70",
     groupHover: "hover:bg-cream-50/5",
-    badge: { newOrders: "bg-gold-500 text-forest-950", criticalStock: "bg-red-500 text-white", pendingSeparation: "bg-blue-500 text-white" },
+    badge: {
+      newOrders: "bg-gold-500 text-forest-950",
+      criticalStock: "bg-red-500 text-white",
+      pendingSeparation: "bg-blue-500 text-white",
+      pendingFulfillment: "bg-blue-500 text-white",
+    },
     dot: "bg-gold-500",
     divider: "border-cream-50/10",
   },
@@ -131,7 +150,12 @@ const variantClasses: Record<
     idle: "hover:bg-ink-900/5",
     group: "text-ink-900 before:bg-gold-600/70",
     groupHover: "hover:bg-ink-900/5",
-    badge: { newOrders: "bg-gold-500 text-forest-950", criticalStock: "bg-red-600 text-white", pendingSeparation: "bg-blue-600 text-white" },
+    badge: {
+      newOrders: "bg-gold-500 text-forest-950",
+      criticalStock: "bg-red-600 text-white",
+      pendingSeparation: "bg-blue-600 text-white",
+      pendingFulfillment: "bg-blue-600 text-white",
+    },
     dot: "bg-gold-600",
     divider: "border-ink-900/10",
   },
@@ -224,8 +248,7 @@ export function AdminNav({ variant, onNavigate }: AdminNavProps) {
         </span>
         <span className="flex-1 truncate">{item.label}</span>
         {badgeCount > 0 && (
-          <span
-            aria-label={`${badgeCount} ${item.badge === "newOrders" ? "pedidos novos" : "itens críticos"}`}
+          <span aria-label={`${badgeCount} ${badgeDescription(item.badge)}`}
             className={cn("min-w-5 rounded-full px-1.5 py-0.5 text-center text-[11px] font-bold leading-none", item.badge && styles.badge[item.badge])}
           >
             {badgeCount > 99 ? "99+" : badgeCount}

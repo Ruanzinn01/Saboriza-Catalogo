@@ -35,6 +35,9 @@ import { OrdersPage } from "@/pages/admin/OrdersPage";
 import { OrderEditorPage } from "@/pages/admin/OrderEditorPage";
 import { SeparaConferePage } from "@/pages/admin/SeparaConferePage";
 import { SeparaConfereOrderPage } from "@/pages/admin/SeparaConfereOrderPage";
+import { CarregaEntregaPage } from "@/pages/admin/CarregaEntregaPage";
+import { CarregamentoOrderPage } from "@/pages/admin/CarregamentoOrderPage";
+import { EntregaConfirmacaoPage } from "@/pages/admin/EntregaConfirmacaoPage";
 import { SettingsPage } from "@/pages/admin/SettingsPage";
 import { WhatsAppFloatingButton } from "@/components/layout/WhatsAppFloatingButton";
 
@@ -85,6 +88,9 @@ export function App() {
             <Route path="pedidos/:orderId" element={<OrderEditorPage />} />
             <Route path="separa-confere" element={<SeparaConferePage />} />
             <Route path="separa-confere/:orderId" element={<SeparaConfereOrderPage />} />
+            <Route path="carrega-entrega" element={<CarregaEntregaPage />} />
+            <Route path="carrega-entrega/carregar/:orderId" element={<CarregamentoOrderPage />} />
+            <Route path="carrega-entrega/entregar/:orderId" element={<EntregaConfirmacaoPage />} />
             <Route path="configuracoes" element={<SettingsPage />} />
           </Route>
         </Route>
