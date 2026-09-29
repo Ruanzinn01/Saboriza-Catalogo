@@ -7,6 +7,7 @@ import {
   Building2,
   ClipboardCheck,
   ClipboardList,
+  Clock,
   Database,
   Factory,
   LayoutDashboard,
@@ -40,6 +41,7 @@ export interface NavItem {
   alsoActiveFor?: string[];
   badge?: NavBadgeKey;
   highlight?: boolean;
+  external?: boolean;
 }
 
 export interface NavGroup {
@@ -89,6 +91,7 @@ export const NAV_GROUPS: NavGroup[] = [
 export const STANDALONE_NAV_ITEMS: NavItem[] = [
   { to: "/admin/separa-confere", label: "Separa Confere", icon: PackageSearch, badge: "pendingSeparation" },
   { to: "/admin/carrega-entrega", label: "Carrega Entrega", icon: PackageCheck, badge: "pendingFulfillment" },
+  { to: "/ponto-oris", label: "Terminal de Ponto", icon: Clock, external: true },
 ];
 
 export const SETTINGS_ITEM: NavItem = { to: "/admin/configuracoes", label: "Configurações", icon: Settings };
@@ -228,18 +231,13 @@ export function AdminNav({ variant, onNavigate }: AdminNavProps) {
     const active = isNavItemActive(pathname, item);
     const Icon = item.icon;
     const badgeCount = item.badge ? badges[item.badge] : 0;
-    return (
-      <Link
-        key={item.to}
-        to={item.to}
-        onClick={onNavigate}
-        aria-current={active ? "page" : undefined}
-        className={cn(
-          "relative flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors before:absolute before:left-0 before:top-2.5 before:bottom-2.5 before:w-[3px] before:rounded-full",
-          styles.item,
-          active ? styles.active : styles.idle
-        )}
-      >
+    const itemClassName = cn(
+      "relative flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors before:absolute before:left-0 before:top-2.5 before:bottom-2.5 before:w-[3px] before:rounded-full",
+      styles.item,
+      active ? styles.active : styles.idle
+    );
+    const content = (
+      <>
         <span
           className={cn(
             "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
@@ -256,6 +254,20 @@ export function AdminNav({ variant, onNavigate }: AdminNavProps) {
             {badgeCount > 99 ? "99+" : badgeCount}
           </span>
         )}
+      </>
+    );
+
+    if (item.external) {
+      return (
+        <a key={item.to} href={item.to} target="_blank" rel="noreferrer" className={itemClassName}>
+          {content}
+        </a>
+      );
+    }
+
+    return (
+      <Link key={item.to} to={item.to} onClick={onNavigate} aria-current={active ? "page" : undefined} className={itemClassName}>
+        {content}
       </Link>
     );
   }

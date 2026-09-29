@@ -7,6 +7,7 @@ import { useSettingsStore } from "@/store/settings-store";
 import { CatalogPage } from "@/pages/CatalogPage";
 import { CheckoutPage } from "@/pages/CheckoutPage";
 import { OrderConfirmedPage } from "@/pages/OrderConfirmedPage";
+import { PontoOrisTerminalPage } from "@/pages/PontoOrisTerminalPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { AdminLoginPage } from "@/pages/admin/AdminLoginPage";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -58,6 +59,7 @@ export function App() {
         <Route path="/" element={<CatalogPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/pedido-confirmado/:orderId" element={<OrderConfirmedPage />} />
+        <Route path="/ponto-oris" element={<PontoOrisTerminalPage />} />
 
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route element={<ProtectedRoute />}>
