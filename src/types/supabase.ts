@@ -86,6 +86,125 @@ export type Database = {
           },
         ]
       }
+      billing_credit_snapshots: {
+        Row: {
+          available_after: number
+          billing_id: string
+          commitments: number
+          company_id: string | null
+          created_at: string
+          credit_limit: number
+          current_exposure: number
+          excess: number
+          financed_part: number
+          fingerprint: string
+          id: string
+          open_receivables: number
+          overdue_amount: number
+          overdue_count: number
+          projected_exposure: number
+        }
+        Insert: {
+          available_after?: number
+          billing_id: string
+          commitments?: number
+          company_id?: string | null
+          created_at?: string
+          credit_limit?: number
+          current_exposure?: number
+          excess?: number
+          financed_part?: number
+          fingerprint: string
+          id?: string
+          open_receivables?: number
+          overdue_amount?: number
+          overdue_count?: number
+          projected_exposure?: number
+        }
+        Update: {
+          available_after?: number
+          billing_id?: string
+          commitments?: number
+          company_id?: string | null
+          created_at?: string
+          credit_limit?: number
+          current_exposure?: number
+          excess?: number
+          financed_part?: number
+          fingerprint?: string
+          id?: string
+          open_receivables?: number
+          overdue_amount?: number
+          overdue_count?: number
+          projected_exposure?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_credit_snapshots_billing_id_fkey"
+            columns: ["billing_id"]
+            isOneToOne: false
+            referencedRelation: "billings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billings: {
+        Row: {
+          company_id: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          customer_id: string
+          fiscal_choice: string | null
+          id: string
+          idempotency_key: string | null
+          order_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          customer_id: string
+          fiscal_choice?: string | null
+          id?: string
+          idempotency_key?: string | null
+          order_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          customer_id?: string
+          fiscal_choice?: string | null
+          id?: string
+          idempotency_key?: string | null
+          order_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billings_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_groups: {
         Row: {
           created_at: string
@@ -153,6 +272,50 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      charges: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          external_id: string | null
+          id: string
+          idempotency_key: string
+          installment_id: string
+          provider: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          idempotency_key: string
+          installment_id: string
+          provider?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          idempotency_key?: string
+          installment_id?: string
+          provider?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "charges_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "installments"
             referencedColumns: ["id"]
           },
         ]
@@ -236,6 +399,149 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_commitments: {
+        Row: {
+          amount: number
+          company_id: string | null
+          converted_receivable_id: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          order_id: string | null
+          origin: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          company_id?: string | null
+          converted_receivable_id?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          order_id?: string | null
+          origin?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string | null
+          converted_receivable_id?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          order_id?: string | null
+          origin?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_commitments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_commitments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_releases: {
+        Row: {
+          billing_id: string
+          company_id: string | null
+          created_at: string
+          id: string
+          reason: string
+          snapshot_id: string | null
+          status: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          billing_id: string
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          reason: string
+          snapshot_id?: string | null
+          status?: string
+          type: string
+          user_id?: string
+        }
+        Update: {
+          billing_id?: string
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          reason?: string
+          snapshot_id?: string | null
+          status?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_releases_billing_id_fkey"
+            columns: ["billing_id"]
+            isOneToOne: false
+            referencedRelation: "billings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_releases_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "billing_credit_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_credit: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          credit_limit: number
+          customer_id: string
+          policy_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          credit_limit?: number
+          customer_id: string
+          policy_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          credit_limit?: number
+          customer_id?: string
+          policy_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_credit_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
         ]
@@ -930,6 +1236,56 @@ export type Database = {
           },
         ]
       }
+      fiscal_documents: {
+        Row: {
+          billing_id: string
+          company_id: string | null
+          created_at: string
+          external_id: string | null
+          id: string
+          key: string | null
+          number: string | null
+          pdf_ref: string | null
+          status: string
+          updated_at: string
+          xml_ref: string | null
+        }
+        Insert: {
+          billing_id: string
+          company_id?: string | null
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          key?: string | null
+          number?: string | null
+          pdf_ref?: string | null
+          status?: string
+          updated_at?: string
+          xml_ref?: string | null
+        }
+        Update: {
+          billing_id?: string
+          company_id?: string | null
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          key?: string | null
+          number?: string | null
+          pdf_ref?: string | null
+          status?: string
+          updated_at?: string
+          xml_ref?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiscal_documents_billing_id_fkey"
+            columns: ["billing_id"]
+            isOneToOne: false
+            referencedRelation: "billings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_companies: {
         Row: {
           company_id: string
@@ -1167,6 +1523,53 @@ export type Database = {
           state_name?: string
         }
         Relationships: []
+      }
+      installments: {
+        Row: {
+          amount: number
+          company_id: string | null
+          created_at: string
+          days: number
+          due_date: string
+          id: string
+          number: number
+          payment_method_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          company_id?: string | null
+          created_at?: string
+          days?: number
+          due_date: string
+          id?: string
+          number: number
+          payment_method_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string | null
+          created_at?: string
+          days?: number
+          due_date?: string
+          id?: string
+          number?: number
+          payment_method_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installments_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       loading_jobs: {
         Row: {
@@ -1889,6 +2292,53 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_methods: {
+        Row: {
+          amount: number
+          auto_messages: boolean
+          billing_id: string
+          company_id: string | null
+          condition: string | null
+          created_at: string
+          fees: Json
+          generates_credit: boolean
+          id: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          auto_messages?: boolean
+          billing_id: string
+          company_id?: string | null
+          condition?: string | null
+          created_at?: string
+          fees?: Json
+          generates_credit?: boolean
+          id?: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          auto_messages?: boolean
+          billing_id?: string
+          company_id?: string | null
+          condition?: string | null
+          created_at?: string
+          fees?: Json
+          generates_credit?: boolean
+          id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_methods_billing_id_fkey"
+            columns: ["billing_id"]
+            isOneToOne: false
+            referencedRelation: "billings"
             referencedColumns: ["id"]
           },
         ]
@@ -2718,6 +3168,70 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "suppliers"
             referencedColumns: ["company_id", "id"]
+          },
+        ]
+      }
+      receivables: {
+        Row: {
+          amount: number
+          billing_id: string
+          company_id: string | null
+          created_at: string
+          customer_id: string
+          due_date: string
+          id: string
+          installment_id: string | null
+          paid_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          billing_id: string
+          company_id?: string | null
+          created_at?: string
+          customer_id: string
+          due_date: string
+          id?: string
+          installment_id?: string | null
+          paid_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          billing_id?: string
+          company_id?: string | null
+          created_at?: string
+          customer_id?: string
+          due_date?: string
+          id?: string
+          installment_id?: string | null
+          paid_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receivables_billing_id_fkey"
+            columns: ["billing_id"]
+            isOneToOne: false
+            referencedRelation: "billings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "installments"
+            referencedColumns: ["id"]
           },
         ]
       }
