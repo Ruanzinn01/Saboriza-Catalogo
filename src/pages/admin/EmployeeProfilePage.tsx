@@ -791,6 +791,15 @@ export function EmployeeProfilePage() {
                   Operação de ponto é 100% online. O servidor confirma cada registro; sem conexão, a interface informa
                   indisponibilidade — nunca inventa batidas.
                 </div>
+                {existing?.id && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/admin/colaboradores/${existing.id}/espelho`)}
+                    className={`${c.btn} ${c.primaryBtn} mt-3`}
+                  >
+                    Ver espelho de ponto
+                  </button>
+                )}
               </Card>
             </>
           )}

@@ -22,6 +22,7 @@ import { CustomerFormPage } from "@/pages/admin/CustomerFormPage";
 import { CustomerDetailPage } from "@/pages/admin/CustomerDetailPage";
 import { EmployeesPage } from "@/pages/admin/EmployeesPage";
 import { EmployeeProfilePage } from "@/pages/admin/EmployeeProfilePage";
+import { EmployeeTimesheetPage } from "@/pages/admin/EmployeeTimesheetPage";
 import { SuppliersPage } from "@/pages/admin/SuppliersPage";
 import { SupplierFormPage } from "@/pages/admin/SupplierFormPage";
 import { SupplierDetailPage } from "@/pages/admin/SupplierDetailPage";
@@ -89,6 +90,7 @@ export function App() {
             <Route path="colaboradores" element={<EmployeesPage />} />
             <Route path="colaboradores/novo" element={<EmployeeProfilePage />} />
             <Route path="colaboradores/:employeeId" element={<EmployeeProfilePage />} />
+            <Route path="colaboradores/:employeeId/espelho" element={<EmployeeTimesheetPage />} />
             <Route path="fornecedores" element={<SuppliersPage />} />
             <Route path="fornecedores/novo" element={<SupplierFormPage />} />
             <Route path="fornecedores/:supplierId" element={<SupplierDetailPage />} />

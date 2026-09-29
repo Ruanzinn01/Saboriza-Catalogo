@@ -3869,6 +3869,19 @@ export type Database = {
       }
       is_valid_cpf: { Args: { p_cpf: string }; Returns: boolean }
       oris360_accept_invite: { Args: never; Returns: undefined }
+      oris360_apurar_dia: {
+        Args: { p_date: string; p_employee_id: string }
+        Returns: Json
+      }
+      oris360_apurar_mes: {
+        Args: { p_competencia: string; p_employee_id: string }
+        Returns: {
+          dia: string
+          inconsistency_type: string
+          open_session_start: string
+          worked_minutes: number
+        }[]
+      }
       oris360_group_of_company: {
         Args: { p_company_id: string }
         Returns: string
