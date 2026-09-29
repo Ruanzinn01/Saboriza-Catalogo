@@ -19,6 +19,8 @@ import { CategoriesPage } from "@/pages/admin/CategoriesPage";
 import { CustomersPage } from "@/pages/admin/CustomersPage";
 import { CustomerFormPage } from "@/pages/admin/CustomerFormPage";
 import { CustomerDetailPage } from "@/pages/admin/CustomerDetailPage";
+import { EmployeesPage } from "@/pages/admin/EmployeesPage";
+import { EmployeeProfilePage } from "@/pages/admin/EmployeeProfilePage";
 import { SuppliersPage } from "@/pages/admin/SuppliersPage";
 import { SupplierFormPage } from "@/pages/admin/SupplierFormPage";
 import { SupplierDetailPage } from "@/pages/admin/SupplierDetailPage";
@@ -79,6 +81,9 @@ export function App() {
             <Route path="estoque" element={<StockPage />} />
             <Route path="estoque/indicadores" element={<StockInsightsPage />} />
             <Route path="estoque/:productId" element={<ProductStockDetailPage />} />
+            <Route path="colaboradores" element={<EmployeesPage />} />
+            <Route path="colaboradores/novo" element={<EmployeeProfilePage />} />
+            <Route path="colaboradores/:employeeId" element={<EmployeeProfilePage />} />
             <Route path="fornecedores" element={<SuppliersPage />} />
             <Route path="fornecedores/novo" element={<SupplierFormPage />} />
             <Route path="fornecedores/:supplierId" element={<SupplierDetailPage />} />

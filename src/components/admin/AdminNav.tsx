@@ -18,6 +18,7 @@ import {
   Settings,
   TrendingUp,
   Truck,
+  UserCheck,
   Users,
   Warehouse,
   type LucideIcon,
@@ -63,6 +64,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: "/admin/produtos", label: "Produtos", icon: Package, alsoActiveFor: ["/admin/categorias"] },
       { to: "/admin/clientes", label: "Clientes", icon: Users },
       { to: "/admin/fornecedores", label: "Fornecedores", icon: Truck },
+      { to: "/admin/colaboradores", label: "Colaboradores", icon: UserCheck },
     ],
   },
   {

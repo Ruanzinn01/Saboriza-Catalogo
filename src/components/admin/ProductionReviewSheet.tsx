@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
 import { ProductionAlertList } from "@/components/admin/ProductionAlertList";
 import type { LineAlerts, ProductionLine } from "@/lib/production-alerts";
+import type { Employee } from "@/types/employee";
 import type { Product } from "@/types/product";
 import { formatNumber } from "@/lib/number";
 
@@ -14,6 +15,9 @@ interface ProductionReviewSheetProps {
   alertsByProduct: Record<string, LineAlerts>;
   totalUnits: number;
   saving: boolean;
+  employees: Employee[];
+  selectedEmployeeIds: string[];
+  onToggleEmployee: (employeeId: string) => void;
   onConfirm: () => void;
 }
 
@@ -25,6 +29,9 @@ export function ProductionReviewSheet({
   alertsByProduct,
   totalUnits,
   saving,
+  employees,
+  selectedEmployeeIds,
+  onToggleEmployee,
   onConfirm,
 }: ProductionReviewSheetProps) {
   const warningCount = lines.filter((line) => {
@@ -60,6 +67,34 @@ export function ProductionReviewSheet({
             {lines.length} produto{lines.length > 1 ? "s" : ""}
           </p>
         </div>
+
+        {employees.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-semibold text-ink-900">Quem produziu (opcional)</p>
+            <div className="flex flex-wrap gap-2">
+              {employees.map((employee) => {
+                const selected = selectedEmployeeIds.includes(employee.id);
+                return (
+                  <button
+                    key={employee.id}
+                    type="button"
+                    onClick={() => onToggleEmployee(employee.id)}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      selected
+                        ? "border-forest-700 bg-forest-700/10 text-forest-800"
+                        : "border-ink-900/15 bg-white text-ink-700 hover:bg-ink-900/5"
+                    }`}
+                  >
+                    {employee.name}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-ink-muted">
+              A quantidade produzida é dividida igualmente entre os colaboradores marcados. Deixe sem marcar se não quiser registrar.
+            </p>
+          </div>
+        )}
 
         {warningCount > 0 && (
           <div className="flex items-start gap-2 rounded-2xl bg-amber-500/10 p-3 text-xs font-semibold text-amber-700">

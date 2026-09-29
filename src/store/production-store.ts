@@ -12,7 +12,12 @@ interface ProductionState {
   status: "idle" | "loading" | "ready" | "error";
   fetchRecords: () => Promise<void>;
   fetchProductStock: (productIds: string[]) => Promise<void>;
-  registerProduction: (productId: string, packsQuantity: number) => Promise<{ record: ProductionRecord | null; error: string | null }>;
+  registerProduction: (
+    productId: string,
+    packsQuantity: number,
+    employeeIds?: string[],
+    urgentDemandId?: string | null
+  ) => Promise<{ record: ProductionRecord | null; error: string | null }>;
   refreshAfterProduction: (productIds: string[]) => Promise<void>;
 }
 
@@ -46,9 +51,14 @@ export const useProductionStore = create<ProductionState>()((set) => ({
     }));
   },
 
-  registerProduction: async (productId, packsQuantity) => {
+  registerProduction: async (productId, packsQuantity, employeeIds, urgentDemandId) => {
     const { data, error } = await supabase
-      .rpc("create_production", { p_product_id: productId, p_packs_quantity: packsQuantity })
+      .rpc("create_production", {
+        p_product_id: productId,
+        p_packs_quantity: packsQuantity,
+        p_employee_ids: employeeIds && employeeIds.length > 0 ? employeeIds : null,
+        p_urgent_demand_id: urgentDemandId ?? null,
+      })
       .single();
 
     if (error || !data) {

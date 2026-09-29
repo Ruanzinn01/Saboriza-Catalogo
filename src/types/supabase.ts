@@ -504,6 +504,7 @@ export type Database = {
       }
       production_records: {
         Row: {
+          company_id: string
           confirmed_at: string
           created_at: string
           id: string
@@ -511,10 +512,14 @@ export type Database = {
           product_id: string
           responsible_id: string | null
           status: string
+          unit_id: string
           units_quantity: number
           updated_at: string
+          urgent_allocated_units: number
+          urgent_demand_id: string | null
         }
         Insert: {
+          company_id?: string
           confirmed_at?: string
           created_at?: string
           id?: string
@@ -522,10 +527,14 @@ export type Database = {
           product_id: string
           responsible_id?: string | null
           status?: string
+          unit_id?: string
           units_quantity: number
           updated_at?: string
+          urgent_allocated_units?: number
+          urgent_demand_id?: string | null
         }
         Update: {
+          company_id?: string
           confirmed_at?: string
           created_at?: string
           id?: string
@@ -533,8 +542,11 @@ export type Database = {
           product_id?: string
           responsible_id?: string | null
           status?: string
+          unit_id?: string
           units_quantity?: number
           updated_at?: string
+          urgent_allocated_units?: number
+          urgent_demand_id?: string | null
         }
         Relationships: [
           {
@@ -544,7 +556,188 @@ export type Database = {
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "production_records_urgent_company_fkey"
+            columns: ["company_id", "urgent_demand_id"]
+            isOneToOne: false
+            referencedRelation: "urgent_demands"
+            referencedColumns: ["company_id", "id"]
+          },
         ]
+      }
+      urgent_demands: {
+        Row: {
+          company_id: string
+          created_at: string
+          done_quantity: number
+          id: string
+          name: string
+          product_id: string
+          status: string
+          total_quantity: number
+          unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string
+          created_at?: string
+          done_quantity?: number
+          id?: string
+          name: string
+          product_id: string
+          status?: string
+          total_quantity: number
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          done_quantity?: number
+          id?: string
+          name?: string
+          product_id?: string
+          status?: string
+          total_quantity?: number
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      production_diaries: {
+        Row: {
+          closed_at: string | null
+          company_id: string
+          created_at: string
+          general_note: string | null
+          id: string
+          local_date: string
+          status: string
+          unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          company_id?: string
+          created_at?: string
+          general_note?: string | null
+          id?: string
+          local_date: string
+          status?: string
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          company_id?: string
+          created_at?: string
+          general_note?: string | null
+          id?: string
+          local_date?: string
+          status?: string
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      diary_evaluations: {
+        Row: {
+          commitment_grade: string
+          company_id: string
+          created_at: string
+          diary_id: string
+          employee_id: string
+          id: string
+          note: string | null
+          pace_grade: string
+          quality_grade: string
+          updated_at: string
+        }
+        Insert: {
+          commitment_grade: string
+          company_id?: string
+          created_at?: string
+          diary_id: string
+          employee_id: string
+          id?: string
+          note?: string | null
+          pace_grade: string
+          quality_grade: string
+          updated_at?: string
+        }
+        Update: {
+          commitment_grade?: string
+          company_id?: string
+          created_at?: string
+          diary_id?: string
+          employee_id?: string
+          id?: string
+          note?: string | null
+          pace_grade?: string
+          quality_grade?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      diary_occurrences: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string
+          diary_id: string
+          employee_id: string
+          id: string
+          occurrence_type: string
+        }
+        Insert: {
+          company_id?: string
+          created_at?: string
+          description: string
+          diary_id: string
+          employee_id: string
+          id?: string
+          occurrence_type: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string
+          diary_id?: string
+          employee_id?: string
+          id?: string
+          occurrence_type?: string
+        }
+        Relationships: []
+      }
+      diary_other_activities: {
+        Row: {
+          activity: string
+          company_id: string
+          created_at: string
+          diary_id: string
+          employee_id: string
+          id: string
+          period: string | null
+        }
+        Insert: {
+          activity: string
+          company_id?: string
+          created_at?: string
+          diary_id: string
+          employee_id: string
+          id?: string
+          period?: string | null
+        }
+        Update: {
+          activity?: string
+          company_id?: string
+          created_at?: string
+          diary_id?: string
+          employee_id?: string
+          id?: string
+          period?: string | null
+        }
+        Relationships: []
       }
       products: {
         Row: {
@@ -844,6 +1037,425 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      employees: {
+        Row: {
+          admin_access_linked: boolean
+          admin_access_role_label: string | null
+          admin_access_scope: string | null
+          admin_access_status: string | null
+          admission_date: string | null
+          advances_sample: number
+          birth_date: string | null
+          birthplace: string | null
+          can_operate_production: boolean
+          cep: string | null
+          city: string | null
+          code: string
+          company_id: string
+          complement: string | null
+          cost_center: string | null
+          cpf: string | null
+          created_at: string
+          department: string | null
+          email: string | null
+          emergency_name: string | null
+          emergency_phone: string | null
+          emergency_relationship: string | null
+          employment_end_date: string | null
+          employment_notes: string | null
+          employment_regime: string | null
+          employment_start_date: string | null
+          employment_type: string | null
+          id: string
+          lotation_effective_date: string | null
+          manager_id: string | null
+          marital_status: string | null
+          meu360_enabled: boolean
+          monthly_divisor: number
+          name: string
+          nationality: string | null
+          neighborhood: string | null
+          notes: string | null
+          overtime_minutes_sample: number
+          personal_access_state: string
+          personal_email: string | null
+          phone: string | null
+          photo_url: string | null
+          pix_key: string | null
+          rg: string | null
+          rg_issuer: string | null
+          role: string | null
+          salary_additions: number
+          salary_base: number | null
+          salary_benefits: string | null
+          salary_effective_date: string | null
+          social_name: string | null
+          state: string | null
+          status: string
+          street: string | null
+          termination_date: string | null
+          termination_reason: string | null
+          timesheet_break: string | null
+          timesheet_enabled: boolean
+          timesheet_from: string | null
+          timesheet_overtime_bank: string | null
+          timesheet_overtime_mode: string | null
+          timesheet_schedule_label: string | null
+          timesheet_standard_hours: string | null
+          timesheet_until: string | null
+          timesheet_weekly_hours: string | null
+          tool_links: Json
+          unit_id: string | null
+          updated_at: string
+          address_number: string | null
+          work_location: string | null
+        }
+        Insert: {
+          admin_access_linked?: boolean
+          admin_access_role_label?: string | null
+          admin_access_scope?: string | null
+          admin_access_status?: string | null
+          admission_date?: string | null
+          advances_sample?: number
+          birth_date?: string | null
+          birthplace?: string | null
+          can_operate_production?: boolean
+          cep?: string | null
+          city?: string | null
+          code?: string
+          company_id?: string
+          complement?: string | null
+          cost_center?: string | null
+          cpf?: string | null
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          emergency_name?: string | null
+          emergency_phone?: string | null
+          emergency_relationship?: string | null
+          employment_end_date?: string | null
+          employment_notes?: string | null
+          employment_regime?: string | null
+          employment_start_date?: string | null
+          employment_type?: string | null
+          id?: string
+          lotation_effective_date?: string | null
+          manager_id?: string | null
+          marital_status?: string | null
+          meu360_enabled?: boolean
+          monthly_divisor?: number
+          name: string
+          nationality?: string | null
+          neighborhood?: string | null
+          notes?: string | null
+          overtime_minutes_sample?: number
+          personal_access_state?: string
+          personal_email?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          pix_key?: string | null
+          rg?: string | null
+          rg_issuer?: string | null
+          role?: string | null
+          salary_additions?: number
+          salary_base?: number | null
+          salary_benefits?: string | null
+          salary_effective_date?: string | null
+          social_name?: string | null
+          state?: string | null
+          status?: string
+          street?: string | null
+          termination_date?: string | null
+          termination_reason?: string | null
+          timesheet_break?: string | null
+          timesheet_enabled?: boolean
+          timesheet_from?: string | null
+          timesheet_overtime_bank?: string | null
+          timesheet_overtime_mode?: string | null
+          timesheet_schedule_label?: string | null
+          timesheet_standard_hours?: string | null
+          timesheet_until?: string | null
+          timesheet_weekly_hours?: string | null
+          tool_links?: Json
+          unit_id?: string | null
+          updated_at?: string
+          address_number?: string | null
+          work_location?: string | null
+        }
+        Update: {
+          admin_access_linked?: boolean
+          admin_access_role_label?: string | null
+          admin_access_scope?: string | null
+          admin_access_status?: string | null
+          admission_date?: string | null
+          advances_sample?: number
+          birth_date?: string | null
+          birthplace?: string | null
+          can_operate_production?: boolean
+          cep?: string | null
+          city?: string | null
+          code?: string
+          company_id?: string
+          complement?: string | null
+          cost_center?: string | null
+          cpf?: string | null
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          emergency_name?: string | null
+          emergency_phone?: string | null
+          emergency_relationship?: string | null
+          employment_end_date?: string | null
+          employment_notes?: string | null
+          employment_regime?: string | null
+          employment_start_date?: string | null
+          employment_type?: string | null
+          id?: string
+          lotation_effective_date?: string | null
+          manager_id?: string | null
+          marital_status?: string | null
+          meu360_enabled?: boolean
+          monthly_divisor?: number
+          name?: string
+          nationality?: string | null
+          neighborhood?: string | null
+          notes?: string | null
+          overtime_minutes_sample?: number
+          personal_access_state?: string
+          personal_email?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          pix_key?: string | null
+          rg?: string | null
+          rg_issuer?: string | null
+          role?: string | null
+          salary_additions?: number
+          salary_base?: number | null
+          salary_benefits?: string | null
+          salary_effective_date?: string | null
+          social_name?: string | null
+          state?: string | null
+          status?: string
+          street?: string | null
+          termination_date?: string | null
+          termination_reason?: string | null
+          timesheet_break?: string | null
+          timesheet_enabled?: boolean
+          timesheet_from?: string | null
+          timesheet_overtime_bank?: string | null
+          timesheet_overtime_mode?: string | null
+          timesheet_schedule_label?: string | null
+          timesheet_standard_hours?: string | null
+          timesheet_until?: string | null
+          timesheet_weekly_hours?: string | null
+          tool_links?: Json
+          unit_id?: string | null
+          updated_at?: string
+          address_number?: string | null
+          work_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_unit_company_fkey"
+            columns: ["company_id", "unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["company_id", "id"]
+          },
+          {
+            foreignKeyName: "employees_manager_company_fkey"
+            columns: ["company_id", "manager_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["company_id", "id"]
+          },
+        ]
+      }
+      employee_documents: {
+        Row: {
+          company_id: string
+          created_at: string
+          doc_type: string
+          employee_id: string
+          expires_at: string | null
+          file_name: string | null
+          id: string
+          issued_at: string | null
+          reference: string
+          shared_meu360: boolean
+          storage_path: string
+        }
+        Insert: {
+          company_id?: string
+          created_at?: string
+          doc_type: string
+          employee_id: string
+          expires_at?: string | null
+          file_name?: string | null
+          id?: string
+          issued_at?: string | null
+          reference: string
+          shared_meu360?: boolean
+          storage_path: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          doc_type?: string
+          employee_id?: string
+          expires_at?: string | null
+          file_name?: string | null
+          id?: string
+          issued_at?: string | null
+          reference?: string
+          shared_meu360?: boolean
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_participants: {
+        Row: {
+          allocated_units: number
+          company_id: string
+          created_at: string
+          employee_id: string
+          id: string
+          production_record_id: string
+        }
+        Insert: {
+          allocated_units: number
+          company_id: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          production_record_id: string
+        }
+        Update: {
+          allocated_units?: number
+          company_id?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          production_record_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_participants_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_participants_production_record_id_fkey"
+            columns: ["production_record_id"]
+            isOneToOne: false
+            referencedRelation: "production_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      units: {
+        Row: {
+          company_id: string
+          created_at: string
+          document: string | null
+          id: string
+          name: string
+          status: string
+          timezone: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          document?: string | null
+          id?: string
+          name: string
+          status?: string
+          timezone?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          document?: string | null
+          id?: string
+          name?: string
+          status?: string
+          timezone?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      audit_events: {
+        Row: {
+          actor_type: string
+          actor_user_id: string | null
+          causation_id: string | null
+          company_id: string | null
+          correlation_id: string
+          employee_id: string | null
+          entity_id: string
+          entity_type: string
+          event_type: string
+          id: string
+          idempotency_key: string | null
+          occurred_at: string
+          payload: Json
+          recorded_at: string
+          schema_version: number
+          unit_id: string | null
+        }
+        Insert: {
+          actor_type: string
+          actor_user_id?: string | null
+          causation_id?: string | null
+          company_id?: string | null
+          correlation_id?: string
+          employee_id?: string | null
+          entity_id: string
+          entity_type: string
+          event_type: string
+          id?: string
+          idempotency_key?: string | null
+          occurred_at?: string
+          payload?: Json
+          recorded_at?: string
+          schema_version?: number
+          unit_id?: string | null
+        }
+        Update: {
+          actor_type?: string
+          actor_user_id?: string | null
+          causation_id?: string | null
+          company_id?: string | null
+          correlation_id?: string
+          employee_id?: string | null
+          entity_id?: string
+          entity_type?: string
+          event_type?: string
+          id?: string
+          idempotency_key?: string | null
+          occurred_at?: string
+          payload?: Json
+          recorded_at?: string
+          schema_version?: number
+          unit_id?: string | null
+        }
+        Relationships: []
       }
       settings: {
         Row: {
@@ -1153,9 +1765,10 @@ export type Database = {
         }
         Returns: Json
       }
-      create_production: {
-        Args: { p_packs_quantity: number; p_product_id: string }
+      reverse_production: {
+        Args: { p_production_id: string; p_reason: string }
         Returns: {
+          company_id: string
           confirmed_at: string
           created_at: string
           id: string
@@ -1163,8 +1776,39 @@ export type Database = {
           product_id: string
           responsible_id: string | null
           status: string
+          unit_id: string
           units_quantity: number
           updated_at: string
+          urgent_allocated_units: number
+          urgent_demand_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "production_records"
+          isOneToOne: false
+        }
+      }
+      create_production: {
+        Args: {
+          p_employee_ids?: string[] | null
+          p_packs_quantity: number
+          p_product_id: string
+          p_urgent_demand_id?: string | null
+        }
+        Returns: {
+          company_id: string
+          confirmed_at: string
+          created_at: string
+          id: string
+          packs_quantity: number
+          product_id: string
+          responsible_id: string | null
+          status: string
+          unit_id: string
+          units_quantity: number
+          updated_at: string
+          urgent_allocated_units: number
+          urgent_demand_id: string | null
         }
         SetofOptions: {
           from: "*"
