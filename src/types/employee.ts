@@ -100,6 +100,10 @@ export interface Employee {
   timesheetOvertimeMode: string;
   timesheetFrom: string;
   timesheetUntil: string;
+  timesheetExpectedStart: string;
+  timesheetExpectedEnd: string;
+  timesheetBreakMinutes: number;
+  timesheetToleranceMinutes: number;
   hasTimesheetPin: boolean;
 
   salaryBase: number | null;

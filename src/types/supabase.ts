@@ -1279,13 +1279,17 @@ export type Database = {
           termination_date: string | null
           termination_reason: string | null
           timesheet_break: string | null
+          timesheet_break_minutes: number
           timesheet_enabled: boolean
+          timesheet_expected_end: string | null
+          timesheet_expected_start: string | null
           timesheet_from: string | null
           timesheet_overtime_bank: string | null
           timesheet_overtime_mode: string | null
           timesheet_pin_hash: string | null
           timesheet_schedule_label: string | null
           timesheet_standard_hours: string | null
+          timesheet_tolerance_minutes: number
           timesheet_until: string | null
           timesheet_weekly_hours: string | null
           tool_links: Json
@@ -1352,13 +1356,17 @@ export type Database = {
           termination_date?: string | null
           termination_reason?: string | null
           timesheet_break?: string | null
+          timesheet_break_minutes?: number
           timesheet_enabled?: boolean
+          timesheet_expected_end?: string | null
+          timesheet_expected_start?: string | null
           timesheet_from?: string | null
           timesheet_overtime_bank?: string | null
           timesheet_overtime_mode?: string | null
           timesheet_pin_hash?: string | null
           timesheet_schedule_label?: string | null
           timesheet_standard_hours?: string | null
+          timesheet_tolerance_minutes?: number
           timesheet_until?: string | null
           timesheet_weekly_hours?: string | null
           tool_links?: Json
@@ -1425,13 +1433,17 @@ export type Database = {
           termination_date?: string | null
           termination_reason?: string | null
           timesheet_break?: string | null
+          timesheet_break_minutes?: number
           timesheet_enabled?: boolean
+          timesheet_expected_end?: string | null
+          timesheet_expected_start?: string | null
           timesheet_from?: string | null
           timesheet_overtime_bank?: string | null
           timesheet_overtime_mode?: string | null
           timesheet_pin_hash?: string | null
           timesheet_schedule_label?: string | null
           timesheet_standard_hours?: string | null
+          timesheet_tolerance_minutes?: number
           timesheet_until?: string | null
           timesheet_weekly_hours?: string | null
           tool_links?: Json
@@ -5080,11 +5092,18 @@ export type Database = {
         Args: { p_date: string; p_employee_id: string }
         Returns: Json
       }
+      oris360_apurar_dia_detalhado: {
+        Args: { p_date: string; p_employee_id: string }
+        Returns: Json
+      }
       oris360_apurar_mes: {
         Args: { p_competencia: string; p_employee_id: string }
         Returns: {
           dia: string
+          extra_minutes: number
           inconsistency_type: string
+          late_minutes: number
+          normal_minutes: number
           open_session_start: string
           worked_minutes: number
         }[]

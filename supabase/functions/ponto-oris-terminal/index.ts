@@ -264,6 +264,32 @@ async function handlePunch(body: Record<string, unknown>) {
   return jsonResponse({ punch_id: punch.id, server_time: punch.server_time, type: punch.type });
 }
 
+// Gera URL assinada temporaria pra foto de evidencia de uma batida (bucket privado).
+async function handleGetPhotoUrl(req: Request, body: Record<string, unknown>) {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) return jsonResponse({ error: "não autenticado" }, 401);
+
+  const photoPath = body.photo_path as string;
+  if (!photoPath) return jsonResponse({ error: "photo_path é obrigatório" }, 400);
+
+  const companyId = photoPath.split("/")[0];
+
+  const callerClient = createClient(SUPABASE_URL, ANON_KEY, {
+    global: { headers: { Authorization: authHeader } },
+  });
+
+  const { data: allowed } = await callerClient.rpc("oris360_has_permission", {
+    p_company_id: companyId,
+    p_permission_key: "timesheet.apuracao.read",
+  });
+  if (!allowed) return jsonResponse({ error: "sem permissão" }, 403);
+
+  const { data, error } = await serviceClient.storage.from("oris360-private").createSignedUrl(photoPath, 300);
+  if (error || !data) return jsonResponse({ error: "não foi possível gerar o link da foto" }, 400);
+
+  return jsonResponse({ url: data.signedUrl });
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return jsonResponse({ error: "método não suportado" }, 405);
 
@@ -283,6 +309,8 @@ Deno.serve(async (req) => {
       return handleIdentify(body);
     case "punch":
       return handlePunch(body);
+    case "get-photo-url":
+      return handleGetPhotoUrl(req, body);
     default:
       return jsonResponse({ error: "ação desconhecida" }, 400);
   }

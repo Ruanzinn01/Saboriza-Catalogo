@@ -327,6 +327,10 @@ const emptyForm: EmployeeInput = {
   timesheetOvertimeMode: "",
   timesheetFrom: "",
   timesheetUntil: "",
+  timesheetExpectedStart: "",
+  timesheetExpectedEnd: "",
+  timesheetBreakMinutes: 60,
+  timesheetToleranceMinutes: 10,
   salaryBase: null,
   monthlyDivisor: 220,
   salaryAdditions: 0,
@@ -785,6 +789,26 @@ export function EmployeeProfilePage() {
                     <PinSetter employeeId={existing?.id} hasPin={existing?.hasTimesheetPin ?? false} />
                     <Field label="Controlar ponto a partir de" type="date" value={form.timesheetFrom} onChange={(v) => set("timesheetFrom", v)} />
                     <Field label="Controlar ponto até" type="date" value={form.timesheetUntil} onChange={(v) => set("timesheetUntil", v)} />
+                    <Field label="Entrada esperada" type="time" value={form.timesheetExpectedStart} onChange={(v) => set("timesheetExpectedStart", v)} />
+                    <Field label="Saída esperada" type="time" value={form.timesheetExpectedEnd} onChange={(v) => set("timesheetExpectedEnd", v)} />
+                    <div>
+                      <label className={c.label}>Intervalo (minutos)</label>
+                      <input
+                        type="number"
+                        value={form.timesheetBreakMinutes}
+                        onChange={(e) => set("timesheetBreakMinutes", Number(e.target.value))}
+                        className={c.input}
+                      />
+                    </div>
+                    <div>
+                      <label className={c.label}>Tolerância de atraso (minutos)</label>
+                      <input
+                        type="number"
+                        value={form.timesheetToleranceMinutes}
+                        onChange={(e) => set("timesheetToleranceMinutes", Number(e.target.value))}
+                        className={c.input}
+                      />
+                    </div>
                   </div>
                 )}
                 <div className={`mt-3 ${c.notice}`}>
