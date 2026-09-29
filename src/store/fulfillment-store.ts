@@ -145,6 +145,17 @@ function buildOrders(
   });
 }
 
+// Faturar (Onda 5) e etapa obrigatoria antes de Carrega Entrega: so aparece aqui pedido com faturamento CONFIRMADO.
+async function filterBilledOrders(orderRows: OrderRow[]): Promise<OrderRow[]> {
+  if (orderRows.length === 0) return orderRows;
+  const { data: billingRows } = await supabase
+    .from("billings")
+    .select("order_id, status")
+    .in("order_id", orderRows.map((row) => row.id));
+  const billedOrderIds = new Set((billingRows ?? []).filter((b) => b.status === "CONFIRMADO").map((b) => b.order_id));
+  return orderRows.filter((row) => billedOrderIds.has(row.id));
+}
+
 async function loadOrderDetails(orderRows: OrderRow[]) {
   const orderIds = orderRows.map((row) => row.id);
   if (orderIds.length === 0) return { itemRows: [] as ItemRow[], productRows: [] as ProductRow[], adjustmentRows: [] as AdjustmentRow[] };
@@ -225,8 +236,9 @@ export const useFulfillmentStore = create<FulfillmentState>()((set, get) => ({
         .is("loading_finished_at", null)
         .order("loading_queued_at", { ascending: true });
       if (error || !orderRows) throw error;
-      const { itemRows, productRows, adjustmentRows } = await loadOrderDetails(orderRows as OrderRow[]);
-      set({ loadingQueue: buildOrders(orderRows as OrderRow[], itemRows, productRows, adjustmentRows), loadingQueueStatus: "ready" });
+      const billedRows = await filterBilledOrders(orderRows as OrderRow[]);
+      const { itemRows, productRows, adjustmentRows } = await loadOrderDetails(billedRows);
+      set({ loadingQueue: buildOrders(billedRows, itemRows, productRows, adjustmentRows), loadingQueueStatus: "ready" });
     } catch {
       toast.error("Não foi possível carregar a fila de carregamento");
       set({ loadingQueueStatus: "error" });
@@ -244,9 +256,10 @@ export const useFulfillmentStore = create<FulfillmentState>()((set, get) => ({
         .is("delivery_confirmed_at", null)
         .order("loading_finished_at", { ascending: true });
       if (error || !orderRows) throw error;
-      const { itemRows, productRows, adjustmentRows } = await loadOrderDetails(orderRows as OrderRow[]);
+      const billedRows = await filterBilledOrders(orderRows as OrderRow[]);
+      const { itemRows, productRows, adjustmentRows } = await loadOrderDetails(billedRows);
 
-      const customerIds = [...new Set((orderRows as OrderRow[]).map((row) => row.customer_id).filter((id): id is string => Boolean(id)))];
+      const customerIds = [...new Set(billedRows.map((row) => row.customer_id).filter((id): id is string => Boolean(id)))];
       const deliveryCountByCustomer = new Map<string, number>();
       if (customerIds.length > 0) {
         const { data: pastDeliveries } = await supabase.from("orders").select("customer_id").eq("status", "FINALIZADO").in("customer_id", customerIds);
@@ -257,7 +270,7 @@ export const useFulfillmentStore = create<FulfillmentState>()((set, get) => ({
       }
 
       set({
-        deliveryQueue: buildOrders(orderRows as OrderRow[], itemRows, productRows, adjustmentRows, deliveryCountByCustomer),
+        deliveryQueue: buildOrders(billedRows, itemRows, productRows, adjustmentRows, deliveryCountByCustomer),
         deliveryQueueStatus: "ready",
       });
     } catch {

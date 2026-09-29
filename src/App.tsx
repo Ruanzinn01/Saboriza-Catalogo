@@ -37,6 +37,8 @@ import { StockInsightsPage } from "@/pages/admin/StockInsightsPage";
 import { ProductStockDetailPage } from "@/pages/admin/ProductStockDetailPage";
 import { OrdersPage } from "@/pages/admin/OrdersPage";
 import { OrderEditorPage } from "@/pages/admin/OrderEditorPage";
+import { FaturarListPage } from "@/pages/admin/FaturarListPage";
+import { FaturarOrderPage } from "@/pages/admin/FaturarOrderPage";
 import { SeparaConferePage } from "@/pages/admin/SeparaConferePage";
 import { SeparaConfereOrderPage } from "@/pages/admin/SeparaConfereOrderPage";
 import { CarregaEntregaPage } from "@/pages/admin/CarregaEntregaPage";
@@ -98,6 +100,8 @@ export function App() {
             <Route path="pedidos" element={<OrdersPage />} />
             <Route path="pedidos/novo" element={<OrderEditorPage />} />
             <Route path="pedidos/:orderId" element={<OrderEditorPage />} />
+            <Route path="faturar" element={<FaturarListPage />} />
+            <Route path="faturar/:orderId" element={<FaturarOrderPage />} />
             <Route path="separa-confere" element={<SeparaConferePage />} />
             <Route path="separa-confere/:orderId" element={<SeparaConfereOrderPage />} />
             <Route path="carrega-entrega" element={<CarregaEntregaPage />} />

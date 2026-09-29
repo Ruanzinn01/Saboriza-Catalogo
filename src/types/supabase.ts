@@ -5089,6 +5089,20 @@ export type Database = {
           worked_minutes: number
         }[]
       }
+      oris360_billing_confirm: {
+        Args: {
+          p_fiscal_choice: string
+          p_idempotency_key: string
+          p_order_id: string
+          p_payment_methods: Json
+        }
+        Returns: string
+      }
+      oris360_billing_context: { Args: { p_order_id: string }; Returns: Json }
+      oris360_billing_quote: {
+        Args: { p_financed_part: number; p_order_id: string }
+        Returns: Json
+      }
       oris360_group_of_company: {
         Args: { p_company_id: string }
         Returns: string
