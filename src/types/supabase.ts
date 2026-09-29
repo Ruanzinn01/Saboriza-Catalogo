@@ -689,6 +689,7 @@ export type Database = {
           timesheet_from: string | null
           timesheet_overtime_bank: string | null
           timesheet_overtime_mode: string | null
+          timesheet_pin_hash: string | null
           timesheet_schedule_label: string | null
           timesheet_standard_hours: string | null
           timesheet_until: string | null
@@ -761,6 +762,7 @@ export type Database = {
           timesheet_from?: string | null
           timesheet_overtime_bank?: string | null
           timesheet_overtime_mode?: string | null
+          timesheet_pin_hash?: string | null
           timesheet_schedule_label?: string | null
           timesheet_standard_hours?: string | null
           timesheet_until?: string | null
@@ -833,6 +835,7 @@ export type Database = {
           timesheet_from?: string | null
           timesheet_overtime_bank?: string | null
           timesheet_overtime_mode?: string | null
+          timesheet_pin_hash?: string | null
           timesheet_schedule_label?: string | null
           timesheet_standard_hours?: string | null
           timesheet_until?: string | null
@@ -3189,6 +3192,268 @@ export type Database = {
           },
         ]
       }
+      time_adjustments: {
+        Row: {
+          adjustment_date: string
+          after_value: string
+          before_value: string | null
+          company_id: string | null
+          created_at: string
+          created_by: string
+          employee_id: string
+          field_changed: string
+          id: string
+          punch_id: string | null
+          reason: string
+        }
+        Insert: {
+          adjustment_date: string
+          after_value: string
+          before_value?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string
+          employee_id: string
+          field_changed: string
+          id?: string
+          punch_id?: string | null
+          reason: string
+        }
+        Update: {
+          adjustment_date?: string
+          after_value?: string
+          before_value?: string | null
+          company_id?: string | null
+          created_at?: string
+          created_by?: string
+          employee_id?: string
+          field_changed?: string
+          id?: string
+          punch_id?: string | null
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_adjustments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_adjustments_punch_id_fkey"
+            columns: ["punch_id"]
+            isOneToOne: false
+            referencedRelation: "time_punches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_devices: {
+        Row: {
+          company_id: string
+          created_at: string
+          credential_hash: string
+          id: string
+          label: string
+          revoked_at: string | null
+          unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          credential_hash: string
+          id?: string
+          label: string
+          revoked_at?: string | null
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          credential_hash?: string
+          id?: string
+          label?: string
+          revoked_at?: string | null
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_devices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_devices_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_occurrences: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          occurrence_date: string
+          occurrence_type: string
+          priority: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          occurrence_date: string
+          occurrence_type: string
+          priority?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          occurrence_date?: string
+          occurrence_type?: string
+          priority?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_occurrences_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_period_states: {
+        Row: {
+          company_id: string | null
+          competencia: string
+          consolidated_at: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          revision_number: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          competencia: string
+          consolidated_at?: string | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          revision_number?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          competencia?: string
+          consolidated_at?: string | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          revision_number?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_period_states_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_punches: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          created_by: string
+          device_id: string
+          device_reported_time: string | null
+          employee_id: string
+          id: string
+          idempotency_key: string
+          location: Json | null
+          photo_path: string
+          server_time: string
+          type: Database["public"]["Enums"]["time_punch_type"]
+          unit_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string
+          device_id: string
+          device_reported_time?: string | null
+          employee_id: string
+          id?: string
+          idempotency_key: string
+          location?: Json | null
+          photo_path: string
+          server_time?: string
+          type: Database["public"]["Enums"]["time_punch_type"]
+          unit_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string
+          device_id?: string
+          device_reported_time?: string | null
+          employee_id?: string
+          id?: string
+          idempotency_key?: string
+          location?: Json | null
+          photo_path?: string
+          server_time?: string
+          type?: Database["public"]["Enums"]["time_punch_type"]
+          unit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_punches_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "time_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_punches_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactional_outbox: {
         Row: {
           actor_type: string
@@ -3696,6 +3961,7 @@ export type Database = {
         | "COMPLETED"
         | "CANCELLED"
         | "FINALIZADO"
+      time_punch_type: "ENTRADA" | "INTERVALO" | "RETORNO" | "SAIDA"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3831,6 +4097,7 @@ export const Constants = {
         "CANCELLED",
         "FINALIZADO",
       ],
+      time_punch_type: ["ENTRADA", "INTERVALO", "RETORNO", "SAIDA"],
     },
   },
 } as const
