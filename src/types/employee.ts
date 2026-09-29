@@ -100,6 +100,7 @@ export interface Employee {
   timesheetOvertimeMode: string;
   timesheetFrom: string;
   timesheetUntil: string;
+  hasTimesheetPin: boolean;
 
   salaryBase: number | null;
   monthlyDivisor: number;
@@ -129,7 +130,7 @@ export interface Employee {
   updatedAt: string;
 }
 
-export type EmployeeInput = Omit<Employee, "id" | "code" | "terminationDate" | "createdAt" | "updatedAt">;
+export type EmployeeInput = Omit<Employee, "id" | "code" | "terminationDate" | "createdAt" | "updatedAt" | "hasTimesheetPin">;
 
 export function normalizeCpfDigits(value: string): string {
   return value.replace(/\D/g, "");

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Wifi, WifiOff, Settings, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { usePontoOrisTerminalStore, type PunchType } from "@/store/ponto-oris-terminal-store";
 import { NumericKeypad } from "@/components/ponto-oris/NumericKeypad";
@@ -105,56 +105,40 @@ function SuccessModal({ type }: { type: PunchType | null }) {
 }
 
 function DeviceSetupScreen() {
-  const { saveDevice } = usePontoOrisTerminalStore();
-  const [companyLabel, setCompanyLabel] = useState("");
-  const [deviceId, setDeviceId] = useState("");
-  const [deviceCredential, setDeviceCredential] = useState("");
+  const { registerDevice, isRegisteringDevice, errorMessage, dismissError } = usePontoOrisTerminalStore();
+  const [label, setLabel] = useState("");
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!label) return;
+    await registerDevice(label);
+  }
 
   return (
     <div className="flex min-h-[640px] items-center justify-center rounded-2xl bg-[#F4F6F8] px-6">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!companyLabel || !deviceId || !deviceCredential) return;
-          saveDevice({ companyLabel, deviceId, deviceCredential });
-        }}
-        className="flex w-full max-w-md flex-col gap-4 rounded-2xl bg-white p-8 shadow-sm"
-      >
-        <h1 className="text-lg font-semibold text-[#26313D]">Configuração do dispositivo</h1>
+      <form onSubmit={handleSubmit} className="flex w-full max-w-md flex-col gap-4 rounded-2xl bg-white p-8 shadow-sm">
+        <h1 className="text-lg font-semibold text-[#26313D]">Configurar este dispositivo</h1>
         <p className="text-sm text-[#26313D]/60">
-          Dados fornecidos pelo administrador ao cadastrar este tablet no Ponto Óris.
+          Dá um nome pra esse tablet (ex.: "Tablet Produção", "Tablet Entrada"). O cadastro é feito uma única vez
+          neste navegador.
         </p>
         <label className="flex flex-col gap-1 text-sm text-[#26313D]">
-          Nome da empresa
+          Nome do dispositivo
           <input
-            value={companyLabel}
-            onChange={(e) => setCompanyLabel(e.target.value)}
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
             className="rounded-lg border border-[#26313D]/15 px-3 py-2.5"
-            placeholder="Ex.: Crescer no Campo"
+            placeholder="Ex.: Tablet Produção"
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm text-[#26313D]">
-          ID do dispositivo
-          <input
-            value={deviceId}
-            onChange={(e) => setDeviceId(e.target.value)}
-            className="rounded-lg border border-[#26313D]/15 px-3 py-2.5 font-mono text-sm"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm text-[#26313D]">
-          Credencial do dispositivo
-          <input
-            value={deviceCredential}
-            onChange={(e) => setDeviceCredential(e.target.value)}
-            type="password"
-            className="rounded-lg border border-[#26313D]/15 px-3 py-2.5 font-mono text-sm"
-          />
-        </label>
+        {errorMessage && <p className="text-sm text-[#D84B4B]">{errorMessage}</p>}
         <button
           type="submit"
-          className="mt-2 rounded-xl bg-[#315F93] py-3 font-medium text-white active:scale-95"
+          disabled={!label || isRegisteringDevice}
+          onClick={dismissError}
+          className="mt-2 rounded-xl bg-[#315F93] py-3 font-medium text-white transition active:scale-95 disabled:opacity-40"
         >
-          Conectar
+          {isRegisteringDevice ? "Cadastrando..." : "Cadastrar dispositivo"}
         </button>
       </form>
     </div>

@@ -29,8 +29,10 @@ interface PontoOrisTerminalState {
   isBusy: boolean;
   lastConfirmedType: PunchType | null;
 
+  isRegisteringDevice: boolean;
   loadDevice: () => void;
   saveDevice: (device: StoredDevice) => void;
+  registerDevice: (label: string) => Promise<string | null>;
   forgetDevice: () => void;
 
   setEmployeeCode: (value: string) => void;
@@ -86,6 +88,37 @@ export const usePontoOrisTerminalStore = create<PontoOrisTerminalState>((set, ge
   saveDevice: (device) => {
     localStorage.setItem(DEVICE_STORAGE_KEY, JSON.stringify(device));
     set({ device, step: "matricula" });
+  },
+
+  isRegisteringDevice: false,
+
+  registerDevice: async (label) => {
+    set({ isRegisteringDevice: true, errorMessage: null });
+
+    const { data: company } = await supabase.from("companies").select("display_name").limit(1).maybeSingle();
+
+    const { data, error } = await supabase.functions.invoke<{
+      device_id?: string;
+      device_credential?: string;
+      error?: string;
+    }>("ponto-oris-terminal", {
+      body: { action: "register-device", label },
+    });
+
+    set({ isRegisteringDevice: false });
+
+    if (error || !data || data.error || !data.device_id || !data.device_credential) {
+      const message = data?.error ?? "Não foi possível cadastrar o dispositivo";
+      set({ errorMessage: message });
+      return message;
+    }
+
+    get().saveDevice({
+      deviceId: data.device_id,
+      deviceCredential: data.device_credential,
+      companyLabel: company?.display_name ?? "Saboriza",
+    });
+    return null;
   },
 
   forgetDevice: () => {

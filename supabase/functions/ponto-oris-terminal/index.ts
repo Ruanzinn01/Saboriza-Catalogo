@@ -55,17 +55,30 @@ async function handleRegisterDevice(req: Request, body: Record<string, unknown>)
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return jsonResponse({ error: "não autenticado" }, 401);
 
-  const companyId = body.company_id as string;
   const label = body.label as string;
   const unitId = (body.unit_id as string | undefined) ?? null;
 
-  if (!companyId || !label) {
-    return jsonResponse({ error: "company_id e label são obrigatórios" }, 400);
-  }
+  if (!label) return jsonResponse({ error: "label é obrigatório" }, 400);
 
   const callerClient = createClient(SUPABASE_URL, ANON_KEY, {
     global: { headers: { Authorization: authHeader } },
   });
+
+  // company_id nunca vem do payload — resolvido a partir da membership ativa de quem chama.
+  const { data: userData } = await callerClient.auth.getUser();
+  if (!userData?.user) return jsonResponse({ error: "não autenticado" }, 401);
+
+  const { data: membership } = await serviceClient
+    .from("memberships")
+    .select("company_id")
+    .eq("user_id", userData.user.id)
+    .eq("status", "ACTIVE")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (!membership) return jsonResponse({ error: "sem empresa ativa" }, 403);
+  const companyId = membership.company_id;
 
   const { data: allowed } = await callerClient.rpc("oris360_has_permission", {
     p_company_id: companyId,

@@ -113,6 +113,102 @@ function Field({
   );
 }
 
+function PinSetter({ employeeId, hasPin }: { employeeId: string | undefined; hasPin: boolean }) {
+  const fetchEmployees = useEmployeesStore((s) => s.fetchEmployees);
+  const [open, setOpen] = useState(false);
+  const [pin, setPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function submit() {
+    if (!employeeId) return;
+    if (pin.length < 4) {
+      toast.error("PIN precisa ter pelo menos 4 dígitos");
+      return;
+    }
+    if (pin !== confirmPin) {
+      toast.error("Os PINs não conferem");
+      return;
+    }
+    setSaving(true);
+    const { data, error } = await supabase.functions.invoke<{ ok?: boolean; error?: string }>("ponto-oris-terminal", {
+      body: { action: "set-employee-pin", employee_id: employeeId, pin },
+    });
+    setSaving(false);
+    if (error || !data?.ok) {
+      toast.error(data?.error ?? "Não foi possível definir o PIN");
+      return;
+    }
+    toast.success("PIN do ponto definido");
+    setOpen(false);
+    setPin("");
+    setConfirmPin("");
+    fetchEmployees();
+  }
+
+  if (!employeeId) {
+    return <Field label="PIN do ponto" value="" readOnly placeholder="Salve o cadastro antes de definir o PIN" />;
+  }
+
+  if (!open) {
+    return (
+      <div>
+        <label className={c.label}>PIN do ponto</label>
+        <div className="flex items-center gap-2">
+          <span className={hasPin ? c.okbox : c.notice} style={{ padding: "8px 11px", flex: 1 }}>
+            {hasPin ? "PIN definido" : "Nenhum PIN definido"}
+          </span>
+          <button type="button" onClick={() => setOpen(true)} className={c.btn}>
+            {hasPin ? "Redefinir" : "Definir"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="sm:col-span-2">
+      <label className={c.label}>Novo PIN do ponto</label>
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="password"
+          inputMode="numeric"
+          maxLength={6}
+          value={pin}
+          onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+          placeholder="PIN (4-6 dígitos)"
+          className={c.input}
+          style={{ maxWidth: 160 }}
+        />
+        <input
+          type="password"
+          inputMode="numeric"
+          maxLength={6}
+          value={confirmPin}
+          onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
+          placeholder="Confirmar PIN"
+          className={c.input}
+          style={{ maxWidth: 160 }}
+        />
+        <button type="button" disabled={saving} onClick={() => void submit()} className={`${c.btn} ${c.primaryBtn}`}>
+          Salvar
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            setPin("");
+            setConfirmPin("");
+          }}
+          className={c.btn}
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Select({
   label,
   value,
@@ -686,7 +782,7 @@ export function EmployeeProfilePage() {
                       options={["Calcula e acompanha", "Somente registra"].map((v) => ({ value: v, label: v }))}
                     />
                     <ReadOnlyCode value={existing?.code ?? ""} />
-                    <Field label="PIN do ponto" value="" type="password" readOnly placeholder="Defina no serviço de identidade" />
+                    <PinSetter employeeId={existing?.id} hasPin={existing?.hasTimesheetPin ?? false} />
                     <Field label="Controlar ponto a partir de" type="date" value={form.timesheetFrom} onChange={(v) => set("timesheetFrom", v)} />
                     <Field label="Controlar ponto até" type="date" value={form.timesheetUntil} onChange={(v) => set("timesheetUntil", v)} />
                   </div>

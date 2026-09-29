@@ -58,6 +58,7 @@ export function employeeFromRow(row: EmployeeRow): Employee {
     timesheetOvertimeMode: row.timesheet_overtime_mode ?? "",
     timesheetFrom: row.timesheet_from ?? "",
     timesheetUntil: row.timesheet_until ?? "",
+    hasTimesheetPin: Boolean(row.timesheet_pin_hash),
 
     salaryBase: row.salary_base,
     monthlyDivisor: row.monthly_divisor,
