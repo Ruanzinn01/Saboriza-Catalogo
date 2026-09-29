@@ -17,6 +17,7 @@ import {
   PackageSearch,
   Plus,
   Receipt,
+  ReceiptText,
   Wallet,
   Settings,
   TrendingUp,
@@ -94,6 +95,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: Wallet,
     items: [
       { to: "/admin/aportes", label: "Aportes de Sócios", icon: Wallet },
+      { to: "/admin/despesas", label: "Despesas", icon: ReceiptText },
     ],
   },
 ];

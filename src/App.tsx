@@ -40,6 +40,7 @@ import { OrderEditorPage } from "@/pages/admin/OrderEditorPage";
 import { FaturarListPage } from "@/pages/admin/FaturarListPage";
 import { FaturarOrderPage } from "@/pages/admin/FaturarOrderPage";
 import { AportesPage } from "@/pages/admin/AportesPage";
+import { DespesasPage } from "@/pages/admin/DespesasPage";
 import { SeparaConferePage } from "@/pages/admin/SeparaConferePage";
 import { SeparaConfereOrderPage } from "@/pages/admin/SeparaConfereOrderPage";
 import { CarregaEntregaPage } from "@/pages/admin/CarregaEntregaPage";
@@ -112,6 +113,7 @@ export function App() {
             <Route path="usuarios" element={<TeamPage />} />
             <Route path="ponto-oris" element={<PontoOrisTerminalPage />} />
             <Route path="aportes" element={<AportesPage />} />
+            <Route path="despesas" element={<DespesasPage />} />
           </Route>
         </Route>
 
