@@ -3868,6 +3868,7 @@ export type Database = {
         Returns: string
       }
       is_valid_cpf: { Args: { p_cpf: string }; Returns: boolean }
+      oris360_accept_invite: { Args: never; Returns: undefined }
       oris360_group_of_company: {
         Args: { p_company_id: string }
         Returns: string
@@ -3875,6 +3876,26 @@ export type Database = {
       oris360_has_permission: {
         Args: { p_company_id: string; p_permission_key: string }
         Returns: boolean
+      }
+      oris360_list_company_members: {
+        Args: { p_company_id: string }
+        Returns: {
+          created_at: string
+          email: string
+          ends_at: string
+          membership_id: string
+          role_names: string[]
+          starts_at: string
+          status: string
+          user_id: string
+        }[]
+      }
+      oris360_list_roles: {
+        Args: { p_company_id: string }
+        Returns: {
+          id: string
+          name: string
+        }[]
       }
       rename_raw_material_category: {
         Args: { p_id: string; p_name: string }

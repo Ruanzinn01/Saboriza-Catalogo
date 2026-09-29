@@ -42,6 +42,7 @@ import { CarregaEntregaPage } from "@/pages/admin/CarregaEntregaPage";
 import { CarregamentoOrderPage } from "@/pages/admin/CarregamentoOrderPage";
 import { EntregaConfirmacaoPage } from "@/pages/admin/EntregaConfirmacaoPage";
 import { SettingsPage } from "@/pages/admin/SettingsPage";
+import { TeamPage } from "@/pages/admin/TeamPage";
 import { WhatsAppFloatingButton } from "@/components/layout/WhatsAppFloatingButton";
 
 export function App() {
@@ -101,6 +102,7 @@ export function App() {
             <Route path="carrega-entrega/carregar/:orderId" element={<CarregamentoOrderPage />} />
             <Route path="carrega-entrega/entregar/:orderId" element={<EntregaConfirmacaoPage />} />
             <Route path="configuracoes" element={<SettingsPage />} />
+            <Route path="usuarios" element={<TeamPage />} />
             <Route path="ponto-oris" element={<PontoOrisTerminalPage />} />
           </Route>
         </Route>

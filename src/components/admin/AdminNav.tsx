@@ -21,6 +21,7 @@ import {
   Truck,
   UserCheck,
   Users,
+  UsersRound,
   Warehouse,
   type LucideIcon,
 } from "lucide-react";
@@ -95,6 +96,7 @@ export const STANDALONE_NAV_ITEMS: NavItem[] = [
 ];
 
 export const SETTINGS_ITEM: NavItem = { to: "/admin/configuracoes", label: "Configurações", icon: Settings };
+export const TEAM_ITEM: NavItem = { to: "/admin/usuarios", label: "Usuários", icon: UsersRound };
 
 export function isNavItemActive(pathname: string, item: NavItem): boolean {
   if (item.excludePrefixes?.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) return false;
@@ -313,6 +315,7 @@ export function AdminNav({ variant, onNavigate }: AdminNavProps) {
       })}
       <div className={cn("mt-1 flex flex-col gap-1 border-t pt-2", styles.divider)}>
         {STANDALONE_NAV_ITEMS.map(renderItem)}
+        {renderItem(TEAM_ITEM)}
         {renderItem(SETTINGS_ITEM)}
       </div>
     </nav>

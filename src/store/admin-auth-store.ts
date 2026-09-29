@@ -19,6 +19,7 @@ export const useAdminAuthStore = create<AdminAuthState>((set) => ({
   init: () => {
     supabase.auth.getSession().then(({ data }) => {
       set({ session: data.session, isAuthenticated: data.session !== null, isLoading: false });
+      if (data.session) void supabase.rpc("oris360_accept_invite");
     });
     supabase.auth.onAuthStateChange((_event, session) => {
       set({ session, isAuthenticated: session !== null, isLoading: false });
@@ -31,6 +32,8 @@ export const useAdminAuthStore = create<AdminAuthState>((set) => ({
       return { success: false, error: error?.message ?? "E-mail ou senha inválidos" };
     }
     set({ session: data.session, isAuthenticated: true, isLoading: false });
+    // Convite pendente (status INVITED) vira ACTIVE no primeiro login bem-sucedido.
+    void supabase.rpc("oris360_accept_invite");
     return { success: true };
   },
 
