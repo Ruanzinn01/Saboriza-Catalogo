@@ -250,23 +250,25 @@ Nenhum checkbox, nenhuma tarefa e nenhuma decisão de negócio das Fases 0-6 foi
 
 ## PARTE 6 · ORDEM PRELIMINAR DE IMPLEMENTAÇÃO (não iniciar sem aprovação)
 
+**Atualização de 2026-09-29**: as ondas 1 a 4 abaixo, descritas ao longo desta Parte 6 como "não iniciada" ou "patch não aplicado", **foram todas aplicadas direto no banco real ao longo do dia 2026-09-28**, na mesma sessão em que este diagnóstico foi escrito (a tabela original não foi atualizada em tempo real conforme cada onda fechava). Confirmado via `list_migrations` no projeto `opeietrhbqlhrhljcdtx`: `phase3_wave1_saas_foundation` → `phase3_hotfix_missing_company_id_defaults`, mais os relatórios `ONDA_1_APLICACAO.md`, `ONDA_2_CADASTROS_COMERCIAL.md`, `ONDA_3_SEPARACAO_E_TIMING_ESTOQUE.md`, `ONDA_4_V1_COLABORADORES.md` e `ONDA_4_V2_FIDELIDADE_VISUAL.md`, todos dentro de `ORIS360_FASE3_ONDA1_PATCH/`. A pendência real que restava (tipos TypeScript do frontend desatualizados) foi corrigida em 2026-09-29 (`src/types/supabase.ts` regerado, commit `1f7eb73`).
+
 Direto do `PLANO_DE_IMPLEMENTACAO_POR_ONDAS.md`, já cruzado com o estado real do código (Parte 3):
 
 | Onda | Escopo | Situação hoje | Gate de saída |
 |---|---|---|---|
-| 0 | Reconciliação: conectar Supabase/Vercel reais, congelar baseline, backup testado | ✅ **Feito localmente em 2026-09-28** — falta só backup/restauração testado (não bloqueia Onda 1) | nenhuma divergência crítica desconhecida — cumprido |
-| 1 | Fundação SaaS/IAM: Company/Unit/Membership/Roles/Entitlements, RLS multiempresa, audit/outbox | **Patch já escrito, não aplicado** (Parte 1.4) | teste de isolamento A/B 100% |
-| 2 | Cadastros company-aware: Customers/Suppliers/Products, migração da Saboriza como empresa inicial | Não iniciada | sem vazamento, contagem reconciliada |
-| 3 | Pedido + Separação + Estoque: nova máquina de status, `SeparationJob` próprio, baixa na conferência | Não iniciada — **depende da decisão 4.2** | nenhuma dupla baixa, retry idempotente |
-| 4 | Colaboradores + Produção: Employee/EmploymentLink, Produziu Registra V3 | Produção já existe no legado (Fase 2 do guia) mas sem company/employee | produção atômica e rastreável |
-| 5 | Finance Core + Asaas Gateway + Faturar V5 | Não iniciada (Fase 5 do guia também não) | webhook/retry sem duplicação |
-| 6 | Entrega Registra | Fluxo Carrega-Entrega já existe no legado, sem evidências/assinatura formal | comprovante imutável |
+| 0 | Reconciliação: conectar Supabase/Vercel reais, congelar baseline, backup testado | ✅ **Feito em 2026-09-28** — falta só backup/restauração testado (não bloqueia Onda 1) | nenhuma divergência crítica desconhecida — cumprido |
+| 1 | Fundação SaaS/IAM: Company/Unit/Membership/Roles/Entitlements, RLS multiempresa, audit/outbox, Grupo Empresarial | ✅ **Aplicada em 2026-09-28** (`ONDA_1_APLICACAO.md`) — 3 migrations, teste de isolamento rodado e revertido | teste de isolamento A/B 100% — cumprido |
+| 2 | Cadastros company-aware: Customers/Suppliers/Products/Orders, migração da Saboriza como empresa inicial | ✅ **Aplicada em 2026-09-28** (`ONDA_2_CADASTROS_COMERCIAL.md`) — 8 tabelas comerciais + `suppliers`/`products` (já na Onda 1), checkout anônimo testado | sem vazamento, contagem reconciliada — cumprido |
+| 3 | Pedido + Separação + Estoque: baixa migrada para o fim da Separação, estorno automático em cancelamento pós-separação, `separation_jobs`/`loading_jobs` como espelho | ✅ **Aplicada em 2026-09-28** (`ONDA_3_SEPARACAO_E_TIMING_ESTOQUE.md`) — **mudança de regra de negócio já em produção**: baixa não depende mais de "Faturar". Frontend (`separation-store.ts`, `fulfillment-store.ts`) continua lendo/escrevendo `orders` direto, sem migrar pra `separation_jobs` ainda (deliberado, Onda 3.2 futura) | nenhuma dupla baixa, retry idempotente — cumprido |
+| 4 | Colaboradores + Produção: Employee/EmploymentLink, Produziu Registra V3 | ✅ **Aplicada em 2026-09-28** (`ONDA_4_V1_COLABORADORES.md`, `ONDA_4_V2_FIDELIDADE_VISUAL.md`) — schema completo + telas (`EmployeesPage`, `EmployeeProfilePage`, `ProduzirRegistraPage` V3), commitado no git em 2026-09-28/29 | produção atômica e rastreável — cumprido |
+| 5 | Finance Core + Asaas Gateway + Faturar V5 | **Não iniciada** (Fase 5 do guia também não) — próxima onda real sem trabalho prévio | webhook/retry sem duplicação |
+| 6 | Entrega Registra | Fluxo Carrega-Entrega já existe no legado (commits `2df56c4`..`823e03d`), sem evidências/assinatura formal integradas à Fundação SaaS ainda | comprovante imutável |
 | 7 | Despesas/Receitas/Aportes/Patrimônio | Não iniciada | reconciliação sem duplicidade econômica |
 | 8 | Fechamento + DRE + Comissões | Não iniciada | números reconciliam por drill-down |
-| 9 | Tarefas/Missões/Roteiros + Força de Vendas completa | Não iniciada — **módulo 02 pendente de esclarecimento** (4.5) | rascunho local nunca é fato oficial antes do envio |
+| 9 | Tarefas/Missões/Roteiros + Força de Vendas completa | Não iniciada — módulo 02 já esclarecido (4.5), falta implementar | rascunho local nunca é fato oficial antes do envio |
 | 10 | Pulso + Painel do Proprietário + SaaS Admin completo | Não iniciada | cada indicador rastreia sua origem |
 
-**Leitura prática**: as Fases 0-4 do guia atual já cobriram, informalmente, parte do que as Ondas 3 e 4 pedem (produção, estoque). A Fundação SaaS (Onda 1) é o próximo passo real e **não depende de nenhuma decisão de negócio pendente** — só da reconciliação de ambiente (Onda 0) e da confirmação do repositório (4.1).
+**Leitura prática (atualizada 2026-09-29)**: Ondas 0 a 4 estão fechadas — fundação multiempresa, cadastros comerciais, separação/estoque e colaboradores/produção já rodam sobre `company_id` real, com RLS de tenant e sem `true/true`. O próximo passo real do roadmap é a **Onda 5 (Finance Core + Asaas)** — não depende de nenhuma decisão pendente, só de escopo e aprovação para começar.
 
 ---
 
@@ -295,8 +297,8 @@ Direto do `PLANO_DE_IMPLEMENTACAO_POR_ONDAS.md`, já cruzado com o estado real d
 7. **Módulos realmente prontos para implementação**: 01 (Pulso360), 02 (Força de Vendas, corrigido em 2026-09-28), 03 (Colaboradores), 04 (Faturar), 05 (Produziu Registra), 06 (Fundação — é pré-requisito de tudo), 07 (Gestão Produção), 08 (Estoque), 09 (Aportes), 10 (Despesas), 11 (Receitas), 12 (Financeiro Geral), 14 (Asaas), 16 (DRE), 18 (Painel), 20 (Meu360) — todos com PDF, PATCH_FINAL, checklist e rastreabilidade completos.
 8. **Módulos que dependem de infraestrutura anterior**: todos os 21 dependem da Fundação Mestre (06) e da Onda 1 (IAM/Company/Unit) antes de qualquer linha de código de negócio.
 9. **Mudanças estruturais necessárias para SaaS**: adicionar `company_id`/`unit_id` em praticamente todo o schema atual (lista completa na Parte 3.2); substituir RLS `true/true` por policies reais baseadas em `auth.uid()` + membership; criar tabelas de IAM (já desenhadas no patch da Onda 1).
-10. **Ordem preliminar de implementação**: Onda 0 (reconciliar ambiente) → Onda 1 (Fundação SaaS/IAM, patch já pronto) → Onda 2 (cadastros company-aware) → Onda 3 (Pedido/Separação/Estoque, com a decisão 4.2 resolvida) → Onda 4 em diante conforme Parte 6.
-11. **Decisões que ainda precisam do proprietário**: as 5 listadas na Parte 4, com destaque para 4.1 e 4.2, que bloqueiam a Onda 0 e a Onda 3 respectivamente.
+10. **Ordem preliminar de implementação**: Onda 0 (reconciliar ambiente) → Onda 1 (Fundação SaaS/IAM) → Onda 2 (cadastros company-aware) → Onda 3 (Pedido/Separação/Estoque) → Onda 4 (Colaboradores/Produção) — **as cinco já aplicadas em 2026-09-28/29** (ver Parte 6 atualizada). Onda 5 (Finance Core + Asaas) em diante segue não iniciada.
+11. **Decisões que ainda precisam do proprietário**: as 5 listadas na Parte 4 já foram todas resolvidas (4.1 a 4.5); a única lacuna aberta é a harmonização dos 5 módulos de 4.6, que não bloqueia nada.
 12. **A documentação é suficiente para avançar à Arquitetura Mestre?** A arquitetura transversal **já está fechada e aprovada** (Fase 2 completa, 25 documentos, sem lacuna bloqueadora). O que falta não é arquitetura — é (a) reconciliar o ambiente real (Onda 0), (b) resolver as 5 decisões da Parte 4, e (c) esclarecer/completar o módulo Força de Vendas antes de tocá-lo.
 
 ---
