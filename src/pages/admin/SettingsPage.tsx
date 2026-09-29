@@ -7,6 +7,7 @@ import { Combobox, type ComboboxOption } from "@/components/ui/Combobox";
 import { AdminState } from "@/components/admin/AdminState";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { CouponsSection } from "@/components/admin/CouponsSection";
+import { RolesPermissionsPanel } from "@/components/admin/RolesPermissionsPanel";
 import { TopBar } from "@/components/layout/TopBar";
 import { Hero } from "@/components/catalog/Hero";
 import { cn } from "@/lib/cn";
@@ -20,12 +21,13 @@ import { searchCnae } from "@/lib/cnae";
 import { TAX_REGIMES, SCHEDULE_ANNEXES } from "@/lib/fiscal-constants";
 import { getSettingsReadiness } from "@/lib/settings-readiness";
 
-type SettingsTab = "fabrica" | "aparencia" | "cupons";
+type SettingsTab = "fabrica" | "aparencia" | "cupons" | "usuarios";
 
 const TABS: { value: SettingsTab; label: string }[] = [
   { value: "fabrica", label: "Dados da fábrica" },
   { value: "aparencia", label: "Aparência" },
   { value: "cupons", label: "Cupons" },
+  { value: "usuarios", label: "Usuários e Permissões" },
 ];
 
 export function SettingsPage() {
@@ -434,6 +436,7 @@ export function SettingsPage() {
           )}
 
           {tab === "cupons" && <CouponsSection />}
+          {tab === "usuarios" && <RolesPermissionsPanel />}
         </>
       )}
     </div>

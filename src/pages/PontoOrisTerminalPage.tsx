@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Wifi, WifiOff, Settings, ArrowLeft, CheckCircle2, Loader2, Users, ArrowUpRight } from "lucide-react";
 import { usePontoOrisTerminalStore, type PunchType } from "@/store/ponto-oris-terminal-store";
+import { useAdminAuthStore } from "@/store/admin-auth-store";
 import { NumericKeypad } from "@/components/ponto-oris/NumericKeypad";
 import { PunchCamera } from "@/components/ponto-oris/PunchCamera";
 
@@ -126,7 +127,8 @@ function SuccessModal({ type }: { type: PunchType | null }) {
 
 function DeviceSetupScreen() {
   const { registerDevice, isRegisteringDevice, errorMessage, dismissError } = usePontoOrisTerminalStore();
-  const [label, setLabel] = useState("");
+  const adminEmail = useAdminAuthStore((s) => s.session?.user.email ?? "");
+  const [label, setLabel] = useState(() => (adminEmail ? `Tablet de ${adminEmail.split("@")[0]}` : ""));
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -139,8 +141,8 @@ function DeviceSetupScreen() {
       <form onSubmit={handleSubmit} className="flex w-full max-w-md flex-col gap-4 rounded-2xl bg-white p-8 shadow-sm">
         <h1 className="text-lg font-semibold text-[#26313D]">Configurar este dispositivo</h1>
         <p className="text-sm text-[#26313D]/60">
-          Dá um nome pra esse tablet (ex.: "Tablet Produção", "Tablet Entrada"). O cadastro é feito uma única vez
-          neste navegador.
+          Nome sugerido a partir de quem está cadastrando. Pode editar (ex.: "Tablet Produção", "Tablet Entrada"). O
+          cadastro é feito uma única vez neste navegador.
         </p>
         <label className="flex flex-col gap-1 text-sm text-[#26313D]">
           Nome do dispositivo

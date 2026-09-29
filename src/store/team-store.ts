@@ -13,22 +13,36 @@ export interface TeamMember {
 export interface RoleOption {
   id: string;
   name: string;
+  permissionKeys: string[];
+}
+
+export interface PermissionInfo {
+  key: string;
+  name: string;
+  description: string;
+  sensitivity: string;
 }
 
 interface TeamState {
   companyId: string | null;
   members: TeamMember[];
   roles: RoleOption[];
+  permissions: PermissionInfo[];
   status: "idle" | "loading" | "ready" | "error";
   fetchTeam: () => Promise<void>;
+  fetchRolesCatalog: () => Promise<void>;
   inviteMember: (email: string, roleId: string) => Promise<string | null>;
   revokeMember: (membershipId: string) => Promise<string | null>;
+  updateMemberRole: (membershipId: string, roleId: string) => Promise<string | null>;
+  createRole: (name: string) => Promise<string | null>;
+  saveRolePermissions: (roleId: string, permissionKeys: string[]) => Promise<string | null>;
 }
 
 export const useTeamStore = create<TeamState>((set, get) => ({
   companyId: null,
   members: [],
   roles: [],
+  permissions: [],
   status: "idle",
 
   fetchTeam: async () => {
@@ -60,8 +74,23 @@ export const useTeamStore = create<TeamState>((set, get) => ({
         roleNames: m.role_names ?? [],
         createdAt: m.created_at,
       })),
-      roles: (roles ?? []).map((r) => ({ id: r.id, name: r.name })),
+      roles: (roles ?? []).map((r) => ({ id: r.id, name: r.name, permissionKeys: [] })),
       status: "ready",
+    });
+  },
+
+  fetchRolesCatalog: async () => {
+    const { data, error } = await supabase.functions.invoke<{
+      roles?: { id: string; name: string; permission_keys: string[] }[];
+      permissions?: PermissionInfo[];
+      error?: string;
+    }>("iam-manage-members", { body: { action: "list-roles" } });
+
+    if (error || !data || data.error) return;
+
+    set({
+      roles: (data.roles ?? []).map((r) => ({ id: r.id, name: r.name, permissionKeys: r.permission_keys })),
+      permissions: data.permissions ?? [],
     });
   },
 
@@ -80,6 +109,34 @@ export const useTeamStore = create<TeamState>((set, get) => ({
     });
     if (error || !data?.ok) return data?.error ?? "Não foi possível revogar o acesso";
     await get().fetchTeam();
+    return null;
+  },
+
+  updateMemberRole: async (membershipId, roleId) => {
+    const { data, error } = await supabase.functions.invoke<{ ok?: boolean; error?: string }>("iam-manage-members", {
+      body: { action: "update-member-role", membership_id: membershipId, role_id: roleId },
+    });
+    if (error || !data?.ok) return data?.error ?? "Não foi possível trocar o papel";
+    await get().fetchTeam();
+    return null;
+  },
+
+  createRole: async (name) => {
+    const { data, error } = await supabase.functions.invoke<{ ok?: boolean; role_id?: string; error?: string }>(
+      "iam-manage-members",
+      { body: { action: "create-role", name } }
+    );
+    if (error || !data?.ok) return data?.error ?? "Não foi possível criar o papel";
+    await get().fetchRolesCatalog();
+    return null;
+  },
+
+  saveRolePermissions: async (roleId, permissionKeys) => {
+    const { data, error } = await supabase.functions.invoke<{ ok?: boolean; error?: string }>("iam-manage-members", {
+      body: { action: "update-role-permissions", role_id: roleId, permission_keys: permissionKeys },
+    });
+    if (error || !data?.ok) return data?.error ?? "Não foi possível salvar as permissões";
+    await get().fetchRolesCatalog();
     return null;
   },
 }));

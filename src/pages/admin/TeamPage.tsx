@@ -75,9 +75,11 @@ function InviteForm({ onDone }: { onDone: () => void }) {
 
 export function TeamPage() {
   const members = useTeamStore((state) => state.members);
+  const roles = useTeamStore((state) => state.roles);
   const status = useTeamStore((state) => state.status);
   const fetchTeam = useTeamStore((state) => state.fetchTeam);
   const revokeMember = useTeamStore((state) => state.revokeMember);
+  const updateMemberRole = useTeamStore((state) => state.updateMemberRole);
   const [showInvite, setShowInvite] = useState(false);
 
   useEffect(() => {
@@ -89,6 +91,16 @@ export function TeamPage() {
     const error = await revokeMember(membershipId);
     if (error) toast.error(error);
     else toast.success("Acesso revogado");
+  }
+
+  async function handleRoleChange(membershipId: string, roleId: string) {
+    const error = await updateMemberRole(membershipId, roleId);
+    if (error) toast.error(error);
+    else toast.success("Papel atualizado");
+  }
+
+  function currentRoleId(member: { roleNames: string[] }) {
+    return roles.find((r) => member.roleNames.includes(r.name))?.id ?? "";
   }
 
   return (
@@ -127,7 +139,26 @@ export function TeamPage() {
                 {members.map((member) => (
                   <tr key={member.membershipId} className="border-b border-forest-950/5 last:border-none hover:bg-forest-950/5">
                     <td className="px-4 py-3 font-semibold text-ink-900">{member.email}</td>
-                    <td className="px-4 py-3 text-ink-700/70">{member.roleNames.join(", ") || "-----"}</td>
+                    <td className="px-4 py-3">
+                      {member.status === "ENDED" ? (
+                        <span className="text-ink-700/70">{member.roleNames.join(", ") || "-----"}</span>
+                      ) : (
+                        <select
+                          value={currentRoleId(member)}
+                          onChange={(e) => void handleRoleChange(member.membershipId, e.target.value)}
+                          className="h-9 rounded-lg border border-ink-900/15 px-2 text-sm"
+                        >
+                          <option value="" disabled>
+                            {member.roleNames.join(", ") || "Selecionar"}
+                          </option>
+                          {roles.map((role) => (
+                            <option key={role.id} value={role.id}>
+                              {role.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_TONE[member.status] ?? ""}`}>
                         {STATUS_LABELS[member.status] ?? member.status}

@@ -12,10 +12,16 @@ const serviceClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
 const PUNCH_TYPES = ["ENTRADA", "INTERVALO", "RETORNO", "SAIDA"] as const;
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
 }
 
@@ -291,6 +297,7 @@ async function handleGetPhotoUrl(req: Request, body: Record<string, unknown>) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: CORS_HEADERS });
   if (req.method !== "POST") return jsonResponse({ error: "método não suportado" }, 405);
 
   let body: Record<string, unknown>;

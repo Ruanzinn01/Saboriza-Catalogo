@@ -9,10 +9,16 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 const serviceClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
 }
 
@@ -116,7 +122,144 @@ async function handleRevoke(req: Request, body: Record<string, unknown>) {
   return jsonResponse({ ok: true });
 }
 
+// Lista papeis da empresa (com as permissoes concedidas) + catalogo completo de permissoes disponiveis.
+async function handleListRoles(req: Request) {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) return jsonResponse({ error: "não autenticado" }, 401);
+
+  const resolved = await resolveCallerCompany(authHeader);
+  if (!resolved) return jsonResponse({ error: "sem empresa ativa" }, 403);
+  const { callerClient, companyId } = resolved;
+
+  const { data: allowed } = await callerClient.rpc("oris360_has_permission", {
+    p_company_id: companyId,
+    p_permission_key: "iam.roles.read",
+  });
+  if (!allowed) return jsonResponse({ error: "sem permissão" }, 403);
+
+  const [{ data: roles }, { data: rolePermissions }, { data: permissions }] = await Promise.all([
+    serviceClient.from("roles").select("id, name, status").eq("company_id", companyId).eq("status", "ACTIVE"),
+    serviceClient.from("role_permissions").select("role_id, permission_key").eq("company_id", companyId),
+    serviceClient.from("permissions").select("key, name, description, sensitivity").order("key"),
+  ]);
+
+  const grantedByRole = new Map<string, string[]>();
+  (rolePermissions ?? []).forEach((rp) => {
+    const list = grantedByRole.get(rp.role_id) ?? [];
+    list.push(rp.permission_key);
+    grantedByRole.set(rp.role_id, list);
+  });
+
+  return jsonResponse({
+    roles: (roles ?? []).map((r) => ({ id: r.id, name: r.name, permission_keys: grantedByRole.get(r.id) ?? [] })),
+    permissions: permissions ?? [],
+  });
+}
+
+// Cria um novo papel (vazio, sem permissoes) para a empresa.
+async function handleCreateRole(req: Request, body: Record<string, unknown>) {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) return jsonResponse({ error: "não autenticado" }, 401);
+
+  const name = (body.name as string)?.trim();
+  if (!name) return jsonResponse({ error: "nome é obrigatório" }, 400);
+
+  const resolved = await resolveCallerCompany(authHeader);
+  if (!resolved) return jsonResponse({ error: "sem empresa ativa" }, 403);
+  const { callerClient, companyId } = resolved;
+
+  const { data: allowed } = await callerClient.rpc("oris360_has_permission", {
+    p_company_id: companyId,
+    p_permission_key: "iam.roles.manage",
+  });
+  if (!allowed) return jsonResponse({ error: "sem permissão" }, 403);
+
+  const { data: role, error } = await serviceClient
+    .from("roles")
+    .insert({ company_id: companyId, name })
+    .select("id")
+    .single();
+
+  if (error) return jsonResponse({ error: error.message }, 400);
+  return jsonResponse({ ok: true, role_id: role.id });
+}
+
+// Substitui o conjunto de permissoes de um papel pelo enviado (checkboxes marcados = permission_keys).
+async function handleUpdateRolePermissions(req: Request, body: Record<string, unknown>) {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) return jsonResponse({ error: "não autenticado" }, 401);
+
+  const roleId = body.role_id as string;
+  const permissionKeys = (body.permission_keys as string[]) ?? [];
+  if (!roleId) return jsonResponse({ error: "role_id é obrigatório" }, 400);
+
+  const resolved = await resolveCallerCompany(authHeader);
+  if (!resolved) return jsonResponse({ error: "sem empresa ativa" }, 403);
+  const { callerClient, companyId } = resolved;
+
+  const { data: allowed } = await callerClient.rpc("oris360_has_permission", {
+    p_company_id: companyId,
+    p_permission_key: "iam.roles.manage",
+  });
+  if (!allowed) return jsonResponse({ error: "sem permissão" }, 403);
+
+  const { data: role } = await serviceClient
+    .from("roles")
+    .select("id")
+    .eq("id", roleId)
+    .eq("company_id", companyId)
+    .maybeSingle();
+  if (!role) return jsonResponse({ error: "papel inválido para esta empresa" }, 400);
+
+  const { error: deleteError } = await serviceClient.from("role_permissions").delete().eq("role_id", roleId).eq("company_id", companyId);
+  if (deleteError) return jsonResponse({ error: deleteError.message }, 400);
+
+  if (permissionKeys.length > 0) {
+    const { error: insertError } = await serviceClient
+      .from("role_permissions")
+      .insert(permissionKeys.map((key) => ({ company_id: companyId, role_id: roleId, permission_key: key })));
+    if (insertError) return jsonResponse({ error: insertError.message }, 400);
+  }
+
+  return jsonResponse({ ok: true });
+}
+
+// Troca o papel de um membro existente (remove os papeis atuais, atribui o novo).
+async function handleUpdateMemberRole(req: Request, body: Record<string, unknown>) {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) return jsonResponse({ error: "não autenticado" }, 401);
+
+  const membershipId = body.membership_id as string;
+  const roleId = body.role_id as string;
+  if (!membershipId || !roleId) return jsonResponse({ error: "membership_id e role_id são obrigatórios" }, 400);
+
+  const resolved = await resolveCallerCompany(authHeader);
+  if (!resolved) return jsonResponse({ error: "sem empresa ativa" }, 403);
+  const { callerClient, companyId } = resolved;
+
+  const { data: allowed } = await callerClient.rpc("oris360_has_permission", {
+    p_company_id: companyId,
+    p_permission_key: "iam.memberships.manage",
+  });
+  if (!allowed) return jsonResponse({ error: "sem permissão" }, 403);
+
+  const { error: deleteError } = await serviceClient
+    .from("membership_roles")
+    .delete()
+    .eq("membership_id", membershipId)
+    .eq("company_id", companyId);
+  if (deleteError) return jsonResponse({ error: deleteError.message }, 400);
+
+  const { error: insertError } = await serviceClient
+    .from("membership_roles")
+    .insert({ company_id: companyId, membership_id: membershipId, role_id: roleId });
+  if (insertError) return jsonResponse({ error: insertError.message }, 400);
+
+  return jsonResponse({ ok: true });
+}
+
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: CORS_HEADERS });
   if (req.method !== "POST") return jsonResponse({ error: "método não suportado" }, 405);
 
   let body: Record<string, unknown>;
@@ -131,6 +274,14 @@ Deno.serve(async (req) => {
       return handleInvite(req, body);
     case "revoke":
       return handleRevoke(req, body);
+    case "list-roles":
+      return handleListRoles(req);
+    case "create-role":
+      return handleCreateRole(req, body);
+    case "update-role-permissions":
+      return handleUpdateRolePermissions(req, body);
+    case "update-member-role":
+      return handleUpdateMemberRole(req, body);
     default:
       return jsonResponse({ error: "ação desconhecida" }, 400);
   }
