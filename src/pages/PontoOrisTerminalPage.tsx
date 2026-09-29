@@ -1,8 +1,28 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Wifi, WifiOff, Settings, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Wifi, WifiOff, Settings, ArrowLeft, CheckCircle2, Loader2, Users, ArrowUpRight } from "lucide-react";
 import { usePontoOrisTerminalStore, type PunchType } from "@/store/ponto-oris-terminal-store";
 import { NumericKeypad } from "@/components/ponto-oris/NumericKeypad";
 import { PunchCamera } from "@/components/ponto-oris/PunchCamera";
+
+function AdminQuickLinks() {
+  return (
+    <div className="mb-4 flex flex-col gap-2 rounded-2xl border border-forest-950/10 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-ink-700/70">
+        Esta tela simula o terminal físico do tablet (só matrícula + PIN). Gestão de PIN, jornada, espelho de ponto e
+        banco de horas ficam na ficha de cada colaborador.
+      </p>
+      <Link
+        to="/admin/colaboradores"
+        className="flex shrink-0 items-center gap-1.5 rounded-xl bg-forest-950 px-4 py-2 text-sm font-semibold text-white hover:bg-forest-800"
+      >
+        <Users size={16} />
+        Colaboradores e PIN
+        <ArrowUpRight size={14} />
+      </Link>
+    </div>
+  );
+}
 
 const PUNCH_LABELS: Record<PunchType, string> = {
   ENTRADA: "Entrada",
@@ -279,13 +299,22 @@ export function PontoOrisTerminalPage() {
     return () => clearTimeout(id);
   }, [step, reset]);
 
-  if (step === "device-setup" || !device) return <DeviceSetupScreen />;
+  if (step === "device-setup" || !device) {
+    return (
+      <div>
+        <AdminQuickLinks />
+        <DeviceSetupScreen />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-[640px] flex-col overflow-hidden rounded-2xl bg-[#F4F6F8] shadow-sm">
-      <TopBar companyLabel={device.companyLabel} />
+    <div>
+      <AdminQuickLinks />
+      <div className="flex min-h-[640px] flex-col overflow-hidden rounded-2xl bg-[#F4F6F8] shadow-sm">
+        <TopBar companyLabel={device.companyLabel} />
 
-      {step === "matricula" && <MatriculaScreen />}
+        {step === "matricula" && <MatriculaScreen />}
       {step === "pin" && (
         <div className="relative flex flex-1 flex-col">
           <button
@@ -306,6 +335,7 @@ export function PontoOrisTerminalPage() {
       {step === "enviando" && <ProcessingModal />}
       {step === "sucesso" && <SuccessModal type={lastConfirmedType} />}
       {errorMessage && <ErrorModal message={errorMessage} onDismiss={dismissError} />}
+      </div>
     </div>
   );
 }
