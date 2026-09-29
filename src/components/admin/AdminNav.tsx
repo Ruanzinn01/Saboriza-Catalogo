@@ -17,6 +17,7 @@ import {
   PackageSearch,
   Plus,
   Receipt,
+  Wallet,
   Settings,
   TrendingUp,
   Truck,
@@ -86,6 +87,13 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: "/admin/estoque", label: "Estoque", icon: Warehouse, excludePrefixes: ["/admin/estoque/indicadores"], badge: "criticalStock" },
       { to: "/admin/estoque/indicadores", label: "Indicadores de estoque", icon: BarChart3 },
+    ],
+  },
+  {
+    label: "Financeiro",
+    icon: Wallet,
+    items: [
+      { to: "/admin/aportes", label: "Aportes de Sócios", icon: Wallet },
     ],
   },
 ];
