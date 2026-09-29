@@ -91,7 +91,7 @@ export const NAV_GROUPS: NavGroup[] = [
 export const STANDALONE_NAV_ITEMS: NavItem[] = [
   { to: "/admin/separa-confere", label: "Separa Confere", icon: PackageSearch, badge: "pendingSeparation" },
   { to: "/admin/carrega-entrega", label: "Carrega Entrega", icon: PackageCheck, badge: "pendingFulfillment" },
-  { to: "/ponto-oris", label: "Terminal de Ponto", icon: Clock, external: true },
+  { to: "/ponto-oris", label: "Terminal de Ponto", icon: Clock },
 ];
 
 export const SETTINGS_ITEM: NavItem = { to: "/admin/configuracoes", label: "Configurações", icon: Settings };
