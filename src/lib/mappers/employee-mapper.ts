@@ -62,6 +62,7 @@ export function employeeFromRow(row: EmployeeRow): Employee {
     timesheetExpectedEnd: row.timesheet_expected_end ?? "",
     timesheetBreakMinutes: row.timesheet_break_minutes,
     timesheetToleranceMinutes: row.timesheet_tolerance_minutes,
+    timesheetOvertimePercent: row.timesheet_overtime_percent,
     hasTimesheetPin: Boolean(row.timesheet_pin_hash),
 
     salaryBase: row.salary_base,

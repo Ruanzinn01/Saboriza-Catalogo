@@ -104,6 +104,7 @@ export interface Employee {
   timesheetExpectedEnd: string;
   timesheetBreakMinutes: number;
   timesheetToleranceMinutes: number;
+  timesheetOvertimePercent: number;
   hasTimesheetPin: boolean;
 
   salaryBase: number | null;

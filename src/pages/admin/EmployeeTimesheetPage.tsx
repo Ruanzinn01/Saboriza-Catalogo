@@ -1,9 +1,12 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { useEmployeesStore } from "@/store/employees-store";
 import { usePontoOrisApuracaoStore } from "@/store/ponto-oris-apuracao-store";
+import { useTimeBankStore } from "@/store/time-bank-store";
 import { AdminState } from "@/components/admin/AdminState";
+import { Button } from "@/components/ui/Button";
 
 const INCONSISTENCY_LABELS: Record<string, string> = {
   SEQUENCIA_INVALIDA: "Sequência inválida",
@@ -91,6 +94,90 @@ function DayDetailRow({ employeeId, date }: { employeeId: string; date: string }
         </div>
       </td>
     </tr>
+  );
+}
+
+function TimeBankCard({ employeeId, competencia }: { employeeId: string; competencia: Date }) {
+  const balanceMinutes = useTimeBankStore((s) => s.balanceMinutes);
+  const fetchBalance = useTimeBankStore((s) => s.fetchBalance);
+  const closeCompetencia = useTimeBankStore((s) => s.closeCompetencia);
+  const resolve = useTimeBankStore((s) => s.resolve);
+
+  const [closing, setClosing] = useState(false);
+  const [resolveMinutes, setResolveMinutes] = useState("");
+  const [resolving, setResolving] = useState(false);
+
+  useEffect(() => {
+    fetchBalance(employeeId);
+  }, [employeeId, fetchBalance]);
+
+  async function handleClose() {
+    setClosing(true);
+    const result = await closeCompetencia(employeeId, competencia.toISOString().slice(0, 10));
+    setClosing(false);
+    if (!result) {
+      toast.error("Não foi possível fechar a competência (ou já foi fechada antes)");
+      return;
+    }
+    toast.success(`Competência fechada: +${formatMinutes(result.extraMinutes)} extra, -${formatMinutes(result.lateMinutes)} atraso`);
+  }
+
+  async function handleResolve(resolution: "PAGO" | "COMPENSADO") {
+    const minutes = Number(resolveMinutes);
+    if (!minutes || minutes <= 0) return;
+    setResolving(true);
+    const err = await resolve(employeeId, minutes, resolution);
+    setResolving(false);
+    if (err) {
+      toast.error(err);
+      return;
+    }
+    toast.success(resolution === "PAGO" ? "Pagamento lançado em Despesas" : "Compensação registrada");
+    setResolveMinutes("");
+  }
+
+  return (
+    <div className="rounded-2xl border border-forest-950/10 bg-white p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-ink-muted">Saldo do banco de horas</p>
+          <p className={`text-2xl font-extrabold ${balanceMinutes < 0 ? "text-red-600" : "text-forest-950"}`}>
+            {formatMinutes(balanceMinutes)}
+          </p>
+        </div>
+        <Button onClick={() => void handleClose()} disabled={closing}>
+          {closing ? "Fechando..." : "Fechar competência exibida"}
+        </Button>
+      </div>
+      {balanceMinutes > 0 && (
+        <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-forest-950/10 pt-4">
+          <label className="flex flex-col gap-1 text-xs text-ink-muted">
+            Minutos a resolver
+            <input
+              type="number"
+              value={resolveMinutes}
+              onChange={(e) => setResolveMinutes(e.target.value)}
+              max={balanceMinutes}
+              className="h-10 w-32 rounded-lg border border-ink-900/15 px-2 text-sm"
+            />
+          </label>
+          <button
+            onClick={() => void handleResolve("COMPENSADO")}
+            disabled={resolving}
+            className="rounded-lg border border-forest-950/15 px-3 py-2 text-sm font-semibold text-forest-800 hover:bg-forest-950/5"
+          >
+            Compensar (folga)
+          </button>
+          <button
+            onClick={() => void handleResolve("PAGO")}
+            disabled={resolving}
+            className="rounded-lg bg-forest-950 px-3 py-2 text-sm font-semibold text-white hover:bg-forest-800"
+          >
+            Pagar (lança em Despesas)
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -198,6 +285,8 @@ export function EmployeeTimesheetPage() {
           <p className={`text-xl font-extrabold ${pendingCount > 0 ? "text-red-600" : "text-forest-950"}`}>{pendingCount}</p>
         </div>
       </div>
+
+      {employeeId && <TimeBankCard employeeId={employeeId} competencia={competencia} />}
 
       {status === "loading" && days.length === 0 ? (
         <AdminState variant="loading" message="Calculando apuração..." />

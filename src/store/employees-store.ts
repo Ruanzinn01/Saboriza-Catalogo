@@ -70,6 +70,7 @@ function toRow(input: EmployeeInput) {
     timesheet_expected_end: input.timesheetExpectedEnd || null,
     timesheet_break_minutes: input.timesheetBreakMinutes,
     timesheet_tolerance_minutes: input.timesheetToleranceMinutes,
+    timesheet_overtime_percent: input.timesheetOvertimePercent,
 
     salary_base: input.salaryBase,
     monthly_divisor: input.monthlyDivisor,

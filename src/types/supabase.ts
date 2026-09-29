@@ -1286,6 +1286,7 @@ export type Database = {
           timesheet_from: string | null
           timesheet_overtime_bank: string | null
           timesheet_overtime_mode: string | null
+          timesheet_overtime_percent: number
           timesheet_pin_hash: string | null
           timesheet_schedule_label: string | null
           timesheet_standard_hours: string | null
@@ -1363,6 +1364,7 @@ export type Database = {
           timesheet_from?: string | null
           timesheet_overtime_bank?: string | null
           timesheet_overtime_mode?: string | null
+          timesheet_overtime_percent?: number
           timesheet_pin_hash?: string | null
           timesheet_schedule_label?: string | null
           timesheet_standard_hours?: string | null
@@ -1440,6 +1442,7 @@ export type Database = {
           timesheet_from?: string | null
           timesheet_overtime_bank?: string | null
           timesheet_overtime_mode?: string | null
+          timesheet_overtime_percent?: number
           timesheet_pin_hash?: string | null
           timesheet_schedule_label?: string | null
           timesheet_standard_hours?: string | null
@@ -4468,6 +4471,60 @@ export type Database = {
           },
         ]
       }
+      time_bank_entries: {
+        Row: {
+          amount: number | null
+          company_id: string | null
+          competencia: string | null
+          created_at: string
+          created_by: string
+          employee_id: string
+          expense_id: string | null
+          id: string
+          minutes: number
+          type: string
+        }
+        Insert: {
+          amount?: number | null
+          company_id?: string | null
+          competencia?: string | null
+          created_at?: string
+          created_by?: string
+          employee_id: string
+          expense_id?: string | null
+          id?: string
+          minutes: number
+          type: string
+        }
+        Update: {
+          amount?: number | null
+          company_id?: string | null
+          competencia?: string | null
+          created_at?: string
+          created_by?: string
+          employee_id?: string
+          expense_id?: string | null
+          id?: string
+          minutes?: number
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_bank_entries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_bank_entries_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       time_devices: {
         Row: {
           company_id: string
@@ -5122,6 +5179,10 @@ export type Database = {
         Args: { p_financed_part: number; p_order_id: string }
         Returns: Json
       }
+      oris360_fechar_competencia_ponto: {
+        Args: { p_competencia: string; p_employee_id: string }
+        Returns: Json
+      }
       oris360_group_of_company: {
         Args: { p_company_id: string }
         Returns: string
@@ -5149,6 +5210,14 @@ export type Database = {
           id: string
           name: string
         }[]
+      }
+      oris360_resolver_banco_horas: {
+        Args: { p_employee_id: string; p_minutes: number; p_resolution: string }
+        Returns: string
+      }
+      oris360_time_bank_balance: {
+        Args: { p_employee_id: string }
+        Returns: number
       }
       rename_raw_material_category: {
         Args: { p_id: string; p_name: string }

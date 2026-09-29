@@ -331,6 +331,7 @@ const emptyForm: EmployeeInput = {
   timesheetExpectedEnd: "",
   timesheetBreakMinutes: 60,
   timesheetToleranceMinutes: 10,
+  timesheetOvertimePercent: 50,
   salaryBase: null,
   monthlyDivisor: 220,
   salaryAdditions: 0,
@@ -806,6 +807,15 @@ export function EmployeeProfilePage() {
                         type="number"
                         value={form.timesheetToleranceMinutes}
                         onChange={(e) => set("timesheetToleranceMinutes", Number(e.target.value))}
+                        className={c.input}
+                      />
+                    </div>
+                    <div>
+                      <label className={c.label}>Adicional de hora extra (%)</label>
+                      <input
+                        type="number"
+                        value={form.timesheetOvertimePercent}
+                        onChange={(e) => set("timesheetOvertimePercent", Number(e.target.value))}
                         className={c.input}
                       />
                     </div>
