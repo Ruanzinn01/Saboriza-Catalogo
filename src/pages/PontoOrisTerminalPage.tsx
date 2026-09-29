@@ -111,7 +111,7 @@ function DeviceSetupScreen() {
   const [deviceCredential, setDeviceCredential] = useState("");
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-[#F4F6F8] px-6">
+    <div className="flex min-h-[640px] items-center justify-center rounded-2xl bg-[#F4F6F8] px-6">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -298,7 +298,7 @@ export function PontoOrisTerminalPage() {
   if (step === "device-setup" || !device) return <DeviceSetupScreen />;
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-[#F4F6F8]">
+    <div className="flex min-h-[640px] flex-col overflow-hidden rounded-2xl bg-[#F4F6F8] shadow-sm">
       <TopBar companyLabel={device.companyLabel} />
 
       {step === "matricula" && <MatriculaScreen />}

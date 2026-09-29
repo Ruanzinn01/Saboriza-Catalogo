@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
@@ -45,6 +45,9 @@ import { SettingsPage } from "@/pages/admin/SettingsPage";
 import { WhatsAppFloatingButton } from "@/components/layout/WhatsAppFloatingButton";
 
 export function App() {
+  const { pathname } = useLocation();
+  const isCustomerFacing = !pathname.startsWith("/admin");
+
   useEffect(() => {
     useCatalogStore.getState().fetchCatalog();
     useAdminAuthStore.getState().init();
@@ -54,12 +57,11 @@ export function App() {
   return (
     <>
       <Toaster position="top-center" richColors />
-      <WhatsAppFloatingButton />
+      {isCustomerFacing && <WhatsAppFloatingButton />}
       <Routes>
         <Route path="/" element={<CatalogPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/pedido-confirmado/:orderId" element={<OrderConfirmedPage />} />
-        <Route path="/ponto-oris" element={<PontoOrisTerminalPage />} />
 
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route element={<ProtectedRoute />}>
@@ -99,6 +101,7 @@ export function App() {
             <Route path="carrega-entrega/carregar/:orderId" element={<CarregamentoOrderPage />} />
             <Route path="carrega-entrega/entregar/:orderId" element={<EntregaConfirmacaoPage />} />
             <Route path="configuracoes" element={<SettingsPage />} />
+            <Route path="ponto-oris" element={<PontoOrisTerminalPage />} />
           </Route>
         </Route>
 
