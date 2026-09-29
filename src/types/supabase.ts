@@ -14,6 +14,264 @@ export type Database = {
   }
   public: {
     Tables: {
+      asset_consignments: {
+        Row: {
+          asset_unit_id: string
+          company_id: string | null
+          consigned_at: string
+          created_by: string
+          customer_id: string
+          id: string
+          is_active: boolean
+          returned_at: string | null
+        }
+        Insert: {
+          asset_unit_id: string
+          company_id?: string | null
+          consigned_at?: string
+          created_by?: string
+          customer_id: string
+          id?: string
+          is_active?: boolean
+          returned_at?: string | null
+        }
+        Update: {
+          asset_unit_id?: string
+          company_id?: string | null
+          consigned_at?: string
+          created_by?: string
+          customer_id?: string
+          id?: string
+          is_active?: boolean
+          returned_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_consignments_asset_unit_id_fkey"
+            columns: ["asset_unit_id"]
+            isOneToOne: false
+            referencedRelation: "asset_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_consignments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_inventory_checks: {
+        Row: {
+          asset_unit_id: string
+          checked_at: string
+          checked_by: string
+          company_id: string | null
+          id: string
+          notes: string | null
+          result: string
+        }
+        Insert: {
+          asset_unit_id: string
+          checked_at?: string
+          checked_by?: string
+          company_id?: string | null
+          id?: string
+          notes?: string | null
+          result: string
+        }
+        Update: {
+          asset_unit_id?: string
+          checked_at?: string
+          checked_by?: string
+          company_id?: string | null
+          id?: string
+          notes?: string | null
+          result?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_inventory_checks_asset_unit_id_fkey"
+            columns: ["asset_unit_id"]
+            isOneToOne: false
+            referencedRelation: "asset_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_models: {
+        Row: {
+          category: string
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      asset_movements: {
+        Row: {
+          asset_unit_id: string
+          company_id: string | null
+          created_at: string
+          created_by: string
+          from_unit_id: string | null
+          id: string
+          notes: string | null
+          responsible_employee_id: string | null
+          to_unit_id: string | null
+          type: string
+        }
+        Insert: {
+          asset_unit_id: string
+          company_id?: string | null
+          created_at?: string
+          created_by?: string
+          from_unit_id?: string | null
+          id?: string
+          notes?: string | null
+          responsible_employee_id?: string | null
+          to_unit_id?: string | null
+          type: string
+        }
+        Update: {
+          asset_unit_id?: string
+          company_id?: string | null
+          created_at?: string
+          created_by?: string
+          from_unit_id?: string | null
+          id?: string
+          notes?: string | null
+          responsible_employee_id?: string | null
+          to_unit_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_movements_asset_unit_id_fkey"
+            columns: ["asset_unit_id"]
+            isOneToOne: false
+            referencedRelation: "asset_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_movements_from_unit_id_fkey"
+            columns: ["from_unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_movements_responsible_employee_id_fkey"
+            columns: ["responsible_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_movements_to_unit_id_fkey"
+            columns: ["to_unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_units: {
+        Row: {
+          acquisition_date: string | null
+          acquisition_value: number
+          asset_model_id: string
+          company_id: string | null
+          created_at: string
+          current_responsible_id: string | null
+          current_unit_id: string | null
+          estimated_current_value: number | null
+          expense_id: string | null
+          id: string
+          managerial_value: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          acquisition_date?: string | null
+          acquisition_value: number
+          asset_model_id: string
+          company_id?: string | null
+          created_at?: string
+          current_responsible_id?: string | null
+          current_unit_id?: string | null
+          estimated_current_value?: number | null
+          expense_id?: string | null
+          id?: string
+          managerial_value?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          acquisition_date?: string | null
+          acquisition_value?: number
+          asset_model_id?: string
+          company_id?: string | null
+          created_at?: string
+          current_responsible_id?: string | null
+          current_unit_id?: string | null
+          estimated_current_value?: number | null
+          expense_id?: string | null
+          id?: string
+          managerial_value?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_units_asset_model_id_fkey"
+            columns: ["asset_model_id"]
+            isOneToOne: false
+            referencedRelation: "asset_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_units_current_responsible_id_fkey"
+            columns: ["current_responsible_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_units_current_unit_id_fkey"
+            columns: ["current_unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_units_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           actor_type: string
@@ -359,6 +617,36 @@ export type Database = {
           status?: string
           updated_at?: string
           version?: number
+        }
+        Relationships: []
+      }
+      company_partners: {
+        Row: {
+          company_id: string
+          created_at: string
+          document: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string
+          created_at?: string
+          document?: string | null
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          document?: string | null
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1232,6 +1520,68 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          company_id: string
+          competence: string | null
+          created_at: string
+          created_by: string
+          description: string
+          due_date: string | null
+          employee_id: string | null
+          id: string
+          nature: string
+          paid_amount: number | null
+          paid_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          company_id?: string
+          competence?: string | null
+          created_at?: string
+          created_by?: string
+          description: string
+          due_date?: string | null
+          employee_id?: string | null
+          id?: string
+          nature?: string
+          paid_amount?: number | null
+          paid_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          company_id?: string
+          competence?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string
+          due_date?: string | null
+          employee_id?: string | null
+          id?: string
+          nature?: string
+          paid_amount?: number | null
+          paid_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
@@ -2296,6 +2646,79 @@ export type Database = {
           },
         ]
       }
+      partner_contributions: {
+        Row: {
+          amount: number
+          company_id: string | null
+          created_at: string
+          created_by: string
+          expense_id: string | null
+          id: string
+          notes: string | null
+          origin: string
+          partner_id: string
+          planned_date: string | null
+          realized_date: string | null
+          reversed_contribution_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          company_id?: string | null
+          created_at?: string
+          created_by?: string
+          expense_id?: string | null
+          id?: string
+          notes?: string | null
+          origin: string
+          partner_id: string
+          planned_date?: string | null
+          realized_date?: string | null
+          reversed_contribution_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string | null
+          created_at?: string
+          created_by?: string
+          expense_id?: string | null
+          id?: string
+          notes?: string | null
+          origin?: string
+          partner_id?: string
+          planned_date?: string | null
+          realized_date?: string | null
+          reversed_contribution_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_contributions_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_contributions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "company_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_contributions_reversed_contribution_id_fkey"
+            columns: ["reversed_contribution_id"]
+            isOneToOne: false
+            referencedRelation: "partner_contributions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_methods: {
         Row: {
           amount: number
@@ -3235,6 +3658,178 @@ export type Database = {
           },
         ]
       }
+      revenue_receipts: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          created_by: string
+          discount: number
+          effective_date: string
+          external_movement_id: string | null
+          id: string
+          interest_penalty: number
+          principal_received: number
+          receivable_id: string
+          received_amount: number
+          reversed_receipt_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string
+          discount?: number
+          effective_date: string
+          external_movement_id?: string | null
+          id?: string
+          interest_penalty?: number
+          principal_received?: number
+          receivable_id: string
+          received_amount: number
+          reversed_receipt_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string
+          discount?: number
+          effective_date?: string
+          external_movement_id?: string | null
+          id?: string
+          interest_penalty?: number
+          principal_received?: number
+          receivable_id?: string
+          received_amount?: number
+          reversed_receipt_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_receipts_receivable_id_fkey"
+            columns: ["receivable_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_receivables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_receipts_reversed_receipt_id_fkey"
+            columns: ["reversed_receipt_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_receipts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revenue_receivables: {
+        Row: {
+          account_id: string | null
+          company_id: string | null
+          created_at: string
+          due_date: string
+          effective_date: string | null
+          id: string
+          installment_number: number
+          open_balance: number
+          principal: number
+          revenue_id: string
+          status: string
+          total_installments: number
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          due_date: string
+          effective_date?: string | null
+          id?: string
+          installment_number?: number
+          open_balance: number
+          principal: number
+          revenue_id: string
+          status?: string
+          total_installments?: number
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          due_date?: string
+          effective_date?: string | null
+          id?: string
+          installment_number?: number
+          open_balance?: number
+          principal?: number
+          revenue_id?: string
+          status?: string
+          total_installments?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_receivables_revenue_id_fkey"
+            columns: ["revenue_id"]
+            isOneToOne: false
+            referencedRelation: "revenues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revenues: {
+        Row: {
+          category: string
+          company_id: string
+          competence: string
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          notes: string | null
+          origin: string
+          payer_origin_id: string | null
+          principal_amount: number
+          recurrence_rule: Json | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          company_id?: string
+          competence: string
+          created_at?: string
+          created_by?: string
+          description: string
+          id?: string
+          notes?: string | null
+          origin?: string
+          payer_origin_id?: string | null
+          principal_amount: number
+          recurrence_rule?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          company_id?: string
+          competence?: string
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          notes?: string | null
+          origin?: string
+          payer_origin_id?: string | null
+          principal_amount?: number
+          recurrence_rule?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenues_payer_origin_id_fkey"
+            columns: ["payer_origin_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           company_id: string
@@ -3311,6 +3906,104 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salary_advances: {
+        Row: {
+          amount: number
+          company_id: string | null
+          created_at: string
+          created_by: string
+          id: string
+          paid_at: string | null
+          requested_at: string
+          reversed_advance_id: string | null
+          salary_obligation_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          company_id?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          paid_at?: string | null
+          requested_at?: string
+          reversed_advance_id?: string | null
+          salary_obligation_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          paid_at?: string | null
+          requested_at?: string
+          reversed_advance_id?: string | null
+          salary_obligation_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_advances_reversed_advance_id_fkey"
+            columns: ["reversed_advance_id"]
+            isOneToOne: false
+            referencedRelation: "salary_advances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_advances_salary_obligation_id_fkey"
+            columns: ["salary_obligation_id"]
+            isOneToOne: false
+            referencedRelation: "salary_obligations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salary_obligations: {
+        Row: {
+          base_salary: number
+          company_id: string | null
+          competence: string
+          created_at: string
+          employee_id: string
+          id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          base_salary: number
+          company_id?: string | null
+          competence: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          base_salary?: number
+          company_id?: string | null
+          competence?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_obligations_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
