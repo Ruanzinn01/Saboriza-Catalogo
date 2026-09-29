@@ -212,14 +212,18 @@ Estoque controla **unidades físicas individuais**. Pedido e produção operam e
 
 | Camada | Tecnologia |
 |---|---|
-| Framework | Next.js 14 com App Router |
+| Build/Framework | Vite 6, SPA React 18 (sem SSR) |
+| Roteamento | React Router 6, client-side |
 | Linguagem | TypeScript |
-| Interface | Tailwind e shadcn/ui |
+| Interface | Tailwind CSS 4, componentes próprios (`src/components/ui/`) |
+| Estado | Zustand (`src/store/*.ts`) |
 | Banco | Supabase com PostgreSQL |
-| Segurança | RLS por perfil |
-| Deploy | Vercel |
+| Segurança | RLS ativa em todas as tabelas; hoje `USING (true)` para `authenticated`, sem perfil/role real |
+| Deploy | Vercel (SPA estática, rewrite catch-all para `index.html`) |
 
 Stack fechada. Não introduzir biblioteca nova sem autorização.
+
+**Correção de 2026-09-28**: esta tabela descrevia Next.js 14 + shadcn/ui, o que nunca correspondeu ao código real. Corrigido após raio-x completo do repositório (ver `SABORIZA_MODULOS (transformação SAAS).md`).
 
 ---
 
@@ -236,6 +240,8 @@ Fase 4  Leitura gerencial
 Fase 5  Financeiro e pagamentos
 Fase 6  Emissão fiscal
 ```
+
+**Nota de 2026-09-28 — continuação do roadmap:** este documento cobre a evolução do Saboriza como sistema single-tenant até a Fase 6. A partir daí, o destino do projeto passa a ser a transformação em plataforma SaaS multiempresa Óris360, com o Saboriza como primeiro tenant. Essa continuação, o inventário dos 21 módulos do Óris360, a arquitetura mestre aprovada e os conflitos identificados entre ela e este guia (em especial a regra de baixa de estoque) estão em `SABORIZA_MODULOS (transformação SAAS).md`. As Fases 0-4 abaixo continuam válidas e não foram alteradas.
 
 ---
 
@@ -724,15 +730,24 @@ Sistema: 380    Físico: 365    →    ajuste de -15
 Venda de 2 packs de 12  →  saída de 24 unidades
 ```
 
-- [x] Pedido concluído gera baixa automática em unidades físicas — dispara em
-      `COMPLETED` (Finalizado), não `CONFIRMED`. Validado com pedido de teste
-      real: 42→38 unidades
+**Atualizado em 2026-09-28 (Onda 3 da transformação SaaS)** — a baixa deixou de disparar em
+`orders.status = 'COMPLETED'` (Faturar). Agora dispara quando a **Separação termina**
+(`separation_finished_at` passa de vazio para preenchido), independente do faturamento — decisão
+4.2 do `SABORIZA_MODULOS (transformação SAAS).md`, alinhada ao Separa Confere já existente. Faturar
+(`COMPLETED`) não tem mais nenhum efeito colateral em estoque. Cancelamento após a separação já ter
+baixado agora estorna automaticamente (`stock_movements.origin = 'order_cancel_reversal'`). Testado
+com ciclo completo real (criação como `anon` → separação → baixa → cancelamento → estorno), 100%
+revertido em transação de teste, nenhum dado real tocado. Ver `ONDA_3_SEPARACAO_E_TIMING_ESTOQUE.md`.
+
+- [x] Separação finalizada gera baixa automática em unidades físicas —
+      validado com ciclo completo de teste: 1050→1020 (baixa de 1 pack),
+      sem precisar chegar em `COMPLETED`
+- [x] Cancelamento após baixa gera estorno automático — validado: 1020→1050
+      ao cancelar, com `stock_movements` próprio (`order_cancel_reversal`)
 - [x] Movimentação registrada com referência ao pedido (`reference_id` = id
-      do pedido, observação com o número `#0016`)
-- [x] Estoque insuficiente alerta mas não bloqueia — validado: pedido de 12 un
-      contra estoque 0 completou normalmente, saldo ficou em 0 (nunca
-      negativo, por causa da constraint `current_stock >= 0` já existente),
-      movimentação registrada com aviso, e toast de alerta na tela de Pedidos
+      do pedido, observação com o número do pedido)
+- [x] Estoque insuficiente alerta mas não bloqueia — comportamento herdado
+      do clamp em `current_stock >= 0`, não alterado por esta mudança
 
 ## Fora de escopo
 
