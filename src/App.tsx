@@ -52,6 +52,8 @@ import { CarregamentoOrderPage } from "@/pages/admin/CarregamentoOrderPage";
 import { EntregaConfirmacaoPage } from "@/pages/admin/EntregaConfirmacaoPage";
 import { SettingsPage } from "@/pages/admin/SettingsPage";
 import { TeamPage } from "@/pages/admin/TeamPage";
+import { ForcaDeVendasPage } from "@/pages/admin/ForcaDeVendasPage";
+import { TarefasPage } from "@/pages/admin/TarefasPage";
 import { WhatsAppFloatingButton } from "@/components/layout/WhatsAppFloatingButton";
 import { ProtectedPlatformRoute } from "@/components/platform/ProtectedPlatformRoute";
 import { PlatformLayout } from "@/components/platform/PlatformLayout";
@@ -126,6 +128,8 @@ export function App() {
             <Route path="patrimonio" element={<PatrimonioPage />} />
             <Route path="dre" element={<DREPage />} />
             <Route path="fechamento" element={<FechamentoPage />} />
+            <Route path="vendas" element={<ForcaDeVendasPage />} />
+            <Route path="tarefas" element={<TarefasPage />} />
           </Route>
         </Route>
 

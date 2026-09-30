@@ -903,6 +903,20 @@ export function EmployeeProfilePage() {
                   Amostra aritmética. Não representa salário líquido, folha fechada ou valores devidos.
                 </p>
               </Card>
+
+              {existing?.id && (
+                <Card title="Força de Vendas e Tarefas">
+                  <p className={`mb-3 text-sm ${c.muted}`}>Taxa de comissão e tarefas atribuídas são gerenciadas nas telas dedicadas.</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={() => navigate("/admin/vendas")} className={`${c.btn} ${c.primaryBtn}`}>
+                      Ver comissões
+                    </button>
+                    <button type="button" onClick={() => navigate("/admin/tarefas")} className={`${c.btn} ${c.primaryBtn}`}>
+                      Ver tarefas
+                    </button>
+                  </div>
+                </Card>
+              )}
             </>
           )}
 

@@ -29,6 +29,7 @@ import { useCatalogStore } from "@/store/catalog-store";
 import { useOrdersStore } from "@/store/orders-store";
 import { useCustomersStore } from "@/store/customers-store";
 import { useSettingsStore } from "@/store/settings-store";
+import { useVendasStore } from "@/store/vendas-store";
 import { submitOrder, updateOrderItems } from "@/lib/orders-api";
 import { copyOrderText, downloadOrderPdf, sendOrderWhatsApp } from "@/lib/order-actions";
 import { ORDER_STATUS_OPTIONS, ORDER_STATUS_TRANSITIONS, operationalSubstatus } from "@/lib/order-status";
@@ -72,7 +73,11 @@ export function OrderEditorPage() {
   const updateStatus = useOrdersStore((state) => state.updateStatus);
   const updateOrderDetails = useOrdersStore((state) => state.updateOrderDetails);
   const linkCustomer = useOrdersStore((state) => state.linkCustomer);
+  const setSeller = useOrdersStore((state) => state.setSeller);
   const deleteOrder = useOrdersStore((state) => state.deleteOrder);
+
+  const sellers = useVendasStore((state) => state.sellers);
+  const fetchSellers = useVendasStore((state) => state.fetchSellers);
 
   const registeredCustomers = useCustomersStore((state) => state.customers);
   const fetchCustomers = useCustomersStore((state) => state.fetchCustomers);
@@ -103,6 +108,7 @@ export function OrderEditorPage() {
 
   useEffect(() => {
     if (registeredCustomers.length === 0) fetchCustomers();
+    if (sellers.length === 0) fetchSellers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -420,6 +426,27 @@ export function OrderEditorPage() {
           />
         </div>
       </section>
+
+      {order && (
+        <section className="flex flex-col gap-3 rounded-3xl border border-forest-950/10 bg-white p-6">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Vendedor</p>
+            <Link to="/admin/vendas" className="text-xs font-semibold text-forest-800 hover:underline">
+              Ver comissões
+            </Link>
+          </div>
+          <select
+            value={order.sellerEmployeeId ?? ""}
+            onChange={(e) => void setSeller(order.id, e.target.value || null)}
+            className="h-11 w-full max-w-sm rounded-xl border border-ink-900/15 bg-white px-3 text-sm text-ink-900 outline-none focus:border-forest-700 sm:w-auto"
+          >
+            <option value="">Sem vendedor</option>
+            {sellers.map((seller) => (
+              <option key={seller.id} value={seller.id}>{seller.name}</option>
+            ))}
+          </select>
+        </section>
+      )}
 
       <section className="flex flex-col gap-4 rounded-3xl border border-forest-950/10 bg-white p-6">
         <p className="text-xs font-bold uppercase tracking-wide text-ink-muted">Produtos</p>

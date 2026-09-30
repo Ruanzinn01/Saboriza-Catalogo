@@ -23,6 +23,7 @@ export interface Order {
   number: string;
   createdAt: string;
   customerId: string | null;
+  sellerEmployeeId: string | null;
   customer: OrderCustomer;
   items: CartItem[];
   total: number;

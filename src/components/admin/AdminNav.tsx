@@ -11,6 +11,7 @@ import {
   Database,
   Factory,
   LayoutDashboard,
+  ListChecks,
   Minus,
   Package,
   PackageCheck,
@@ -100,6 +101,14 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: "/admin/patrimonio", label: "Patrimônio", icon: Boxes },
       { to: "/admin/dre", label: "DRE Gerencial", icon: BarChart3 },
       { to: "/admin/fechamento", label: "Fechamento Mensal", icon: ClipboardCheck },
+    ],
+  },
+  {
+    label: "Vendas e equipe",
+    icon: TrendingUp,
+    items: [
+      { to: "/admin/vendas", label: "Força de Vendas", icon: TrendingUp },
+      { to: "/admin/tarefas", label: "Tarefas e Missões", icon: ListChecks },
     ],
   },
 ];

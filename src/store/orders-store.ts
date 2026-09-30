@@ -13,6 +13,7 @@ interface OrdersState {
   updateStatus: (orderId: string, status: OrderStatus) => void;
   updateOrderDetails: (orderId: string, customer: OrderCustomer, paymentTerms: string) => void;
   linkCustomer: (orderId: string, customerId: string) => Promise<boolean>;
+  setSeller: (orderId: string, employeeId: string | null) => Promise<boolean>;
   deleteOrder: (orderId: string) => Promise<boolean>;
   replaceOrder: (order: Order) => void;
 }
@@ -123,6 +124,20 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
     }
 
     set({ orders: previous.map((order) => (order.id === orderId ? { ...order, customerId } : order)) });
+    return true;
+  },
+
+  setSeller: async (orderId, employeeId) => {
+    const previous = get().orders;
+    const { error } = await supabase.from("orders").update({ seller_employee_id: employeeId }).eq("id", orderId);
+
+    if (error) {
+      toast.error("Não foi possível definir o vendedor do pedido");
+      return false;
+    }
+
+    set({ orders: previous.map((order) => (order.id === orderId ? { ...order, sellerEmployeeId: employeeId } : order)) });
+    toast.success("Vendedor do pedido atualizado");
     return true;
   },
 
