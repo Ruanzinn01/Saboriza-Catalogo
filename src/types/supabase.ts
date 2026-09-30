@@ -4931,22 +4931,7 @@ export type Database = {
       }
     }
     Views: {
-      dre_monthly: {
-        Row: {
-          cmv_cpv: number | null
-          company_id: string | null
-          deductions: number | null
-          financial_charges: number | null
-          gross_profit: number | null
-          gross_revenue: number | null
-          managerial_operating_result: number | null
-          month: string | null
-          net_revenue: number | null
-          operating_expenses: number | null
-          other_revenue: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       adjust_stock: {
@@ -5157,6 +5142,21 @@ export type Database = {
           p_signature_path: string
         }
         Returns: string
+      }
+      get_dre_monthly: {
+        Args: { p_company_id: string }
+        Returns: {
+          cmv_cpv: number
+          deductions: number
+          financial_charges: number
+          gross_profit: number
+          gross_revenue: number
+          managerial_operating_result: number
+          month: string
+          net_revenue: number
+          operating_expenses: number
+          other_revenue: number
+        }[]
       }
       is_valid_cpf: { Args: { p_cpf: string }; Returns: boolean }
       oris360_accept_invite: { Args: never; Returns: undefined }

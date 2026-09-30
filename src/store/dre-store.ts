@@ -28,7 +28,13 @@ export const useDreStore = create<DreState>((set) => ({
   fetchAll: async () => {
     set({ status: "loading" });
 
-    const { data, error } = await supabase.from("dre_monthly").select("*").order("month", { ascending: false });
+    const { data: company } = await supabase.from("companies").select("id").limit(1).maybeSingle();
+    if (!company) {
+      set({ status: "error" });
+      return;
+    }
+
+    const { data, error } = await supabase.rpc("get_dre_monthly", { p_company_id: company.id });
 
     if (error) {
       set({ status: "error" });
