@@ -620,6 +620,35 @@ export type Database = {
         }
         Relationships: []
       }
+      company_closing_settings: {
+        Row: {
+          automation_enabled: boolean
+          company_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          automation_enabled?: boolean
+          company_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          automation_enabled?: boolean
+          company_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_closing_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_partners: {
         Row: {
           company_id: string
@@ -2132,6 +2161,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "memberships_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monthly_closes: {
+        Row: {
+          checksum: string | null
+          closed_at: string | null
+          company_id: string
+          competence: string
+          created_at: string
+          id: string
+          pendencies: Json
+          snapshot: Json
+          status: string
+        }
+        Insert: {
+          checksum?: string | null
+          closed_at?: string | null
+          company_id: string
+          competence: string
+          created_at?: string
+          id?: string
+          pendencies?: Json
+          snapshot?: Json
+          status: string
+        }
+        Update: {
+          checksum?: string | null
+          closed_at?: string | null
+          company_id?: string
+          competence?: string
+          created_at?: string
+          id?: string
+          pendencies?: Json
+          snapshot?: Json
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_closes_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -5305,6 +5378,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      set_monthly_close_automation: {
+        Args: { p_company_id: string; p_enabled: boolean }
+        Returns: undefined
       }
       update_order_items: {
         Args: { p_coupon_code?: string; p_items: Json; p_order_id: string }

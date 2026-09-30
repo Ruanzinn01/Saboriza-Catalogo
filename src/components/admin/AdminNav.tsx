@@ -99,6 +99,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: "/admin/receitas", label: "Receitas", icon: TrendingUp },
       { to: "/admin/patrimonio", label: "Patrimônio", icon: Boxes },
       { to: "/admin/dre", label: "DRE Gerencial", icon: BarChart3 },
+      { to: "/admin/fechamento", label: "Fechamento Mensal", icon: ClipboardCheck },
     ],
   },
 ];

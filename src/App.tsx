@@ -44,6 +44,7 @@ import { DespesasPage } from "@/pages/admin/DespesasPage";
 import { ReceitasPage } from "@/pages/admin/ReceitasPage";
 import { PatrimonioPage } from "@/pages/admin/PatrimonioPage";
 import { DREPage } from "@/pages/admin/DREPage";
+import { FechamentoPage } from "@/pages/admin/FechamentoPage";
 import { SeparaConferePage } from "@/pages/admin/SeparaConferePage";
 import { SeparaConfereOrderPage } from "@/pages/admin/SeparaConfereOrderPage";
 import { CarregaEntregaPage } from "@/pages/admin/CarregaEntregaPage";
@@ -120,6 +121,7 @@ export function App() {
             <Route path="receitas" element={<ReceitasPage />} />
             <Route path="patrimonio" element={<PatrimonioPage />} />
             <Route path="dre" element={<DREPage />} />
+            <Route path="fechamento" element={<FechamentoPage />} />
           </Route>
         </Route>
 
