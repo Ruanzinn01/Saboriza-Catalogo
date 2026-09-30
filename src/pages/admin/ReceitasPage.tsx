@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Plus, CheckCircle2 } from "lucide-react";
 import { useReceitasStore, type RevenueOrigin } from "@/store/receitas-store";
@@ -153,7 +154,15 @@ export function ReceitasPage() {
               {revenues.map((r) => (
                 <tr key={r.receivableId} className="border-b border-forest-950/5 last:border-none hover:bg-forest-950/5">
                   <td className="px-4 py-3 font-semibold text-ink-900">{r.description}</td>
-                  <td className="px-4 py-3 text-ink-700/70">{r.payerName ?? "-----"}</td>
+                  <td className="px-4 py-3 text-ink-700/70">
+                    {r.payerId ? (
+                      <Link to={`/admin/clientes/${r.payerId}`} className="hover:underline">
+                        {r.payerName ?? "-----"}
+                      </Link>
+                    ) : (
+                      r.payerName ?? "-----"
+                    )}
+                  </td>
                   <td className="px-4 py-3 font-semibold text-ink-900">{brl(r.amount)}</td>
                   <td className="px-4 py-3 text-ink-700/70">{r.dueDate ?? "-----"}</td>
                   <td className="px-4 py-3">

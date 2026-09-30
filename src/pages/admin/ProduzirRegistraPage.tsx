@@ -682,7 +682,13 @@ export function ProduzirRegistraPage() {
               <h2 className="mb-3 text-lg font-bold">Produtos mais produzidos</h2>
               {productRanking.map(({ product, qty }) => (
                 <div key={product?.id} className="flex justify-between border-b py-2" style={{ borderColor: c.line }}>
-                  <span>{product?.name}</span>
+                  {product ? (
+                    <Link to={`/admin/produtos/${product.id}`} className="hover:underline" style={{ color: c.blue }}>
+                      {product.name}
+                    </Link>
+                  ) : (
+                    <span>-----</span>
+                  )}
                   <b>{fmt(qty)} un</b>
                 </div>
               ))}

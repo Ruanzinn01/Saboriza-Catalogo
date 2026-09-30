@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Plus, CheckCircle2 } from "lucide-react";
 import { useDespesasStore, type ExpenseNature } from "@/store/despesas-store";
@@ -140,7 +141,11 @@ function SalariosTab() {
           <tbody>
             {obligations.filter((o) => o.competence === competence).map((o) => (
               <tr key={o.id} className="border-b border-forest-950/5 last:border-none">
-                <td className="px-4 py-3 font-semibold text-ink-900">{o.employeeName}</td>
+                <td className="px-4 py-3 font-semibold text-ink-900">
+                  <Link to={`/admin/colaboradores/${o.employeeId}`} className="hover:underline">
+                    {o.employeeName}
+                  </Link>
+                </td>
                 <td className="px-4 py-3 text-ink-700/70">{brl(o.baseSalary)}</td>
                 <td className="px-4 py-3 text-ink-700/70">{brl(o.advancesPaid)}</td>
                 <td className="px-4 py-3 font-semibold text-forest-950">{brl(o.remaining)}</td>

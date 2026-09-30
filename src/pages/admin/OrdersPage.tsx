@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Building2, Plus, Search, Tag } from "lucide-react";
+import { Building2, PackageSearch, Plus, Receipt, Search, Tag } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { OPERATIONAL_SUBSTATUS_LABELS, ORDER_STATUS_OPTIONS, groupOrdersByDay, operationalSubstatus } from "@/lib/order-status";
 import { useOrdersStore } from "@/store/orders-store";
@@ -32,31 +32,54 @@ function OperationalSubstatusBadge({ order }: { order: Order }) {
 }
 
 function OrderCard({ order }: { order: Order }) {
+  const substatus = operationalSubstatus(order);
+  const showSeparar = order.status === "CONFIRMED" && !order.separationFinishedAt;
+  const showFaturar = substatus === "a_faturar";
+
   return (
-    <Link
-      to={`/admin/pedidos/${order.id}`}
-      className="flex flex-col overflow-hidden rounded-3xl border border-forest-950/10 bg-white transition-colors hover:border-forest-700/30 hover:bg-forest-950/[0.02]"
-    >
-      <div className="flex items-center justify-between gap-3 bg-ink-900/5 px-4 py-3 sm:px-5">
-        <span className="text-base font-extrabold text-forest-950">{order.number}</span>
-        <div className="flex flex-col items-end gap-1">
-          <OrderStatusBadge status={order.status} />
-          <OperationalSubstatusBadge order={order} />
+    <div className="flex flex-col overflow-hidden rounded-3xl border border-forest-950/10 bg-white transition-colors hover:border-forest-700/30">
+      <Link to={`/admin/pedidos/${order.id}`} className="flex flex-col hover:bg-forest-950/[0.02]">
+        <div className="flex items-center justify-between gap-3 bg-ink-900/5 px-4 py-3 sm:px-5">
+          <span className="text-base font-extrabold text-forest-950">{order.number}</span>
+          <div className="flex flex-col items-end gap-1">
+            <OrderStatusBadge status={order.status} />
+            <OperationalSubstatusBadge order={order} />
+          </div>
         </div>
-      </div>
-      <div className="flex flex-col gap-2 px-4 py-4 sm:px-5">
-        <div className="flex items-center gap-2 text-sm font-semibold text-ink-900">
-          <Building2 size={15} className="shrink-0 text-ink-muted" />
-          {order.customer.company}
+        <div className="flex flex-col gap-2 px-4 py-4 sm:px-5">
+          <div className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+            <Building2 size={15} className="shrink-0 text-ink-muted" />
+            {order.customer.company}
+          </div>
+          <div className="flex items-center gap-2 text-sm text-ink-700/70">
+            <Tag size={15} className="shrink-0 text-ink-muted" />
+            {order.customer.tradeName || order.customer.name}
+          </div>
+          <span className="text-sm font-bold text-ink-900">{formatCurrency(order.total)}</span>
+          <span className="text-xs text-ink-muted">{formatOrderDate(order.createdAt)}</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-ink-700/70">
-          <Tag size={15} className="shrink-0 text-ink-muted" />
-          {order.customer.tradeName || order.customer.name}
+      </Link>
+      {(showSeparar || showFaturar) && (
+        <div className="flex gap-2 border-t border-forest-950/10 px-4 py-2.5 sm:px-5">
+          {showSeparar && (
+            <Link
+              to={`/admin/separa-confere/${order.id}`}
+              className="flex items-center gap-1.5 rounded-lg bg-forest-950/5 px-3 py-1.5 text-xs font-bold text-forest-800 hover:bg-forest-950/10"
+            >
+              <PackageSearch size={14} /> Separar
+            </Link>
+          )}
+          {showFaturar && (
+            <Link
+              to={`/admin/faturar/${order.id}`}
+              className="flex items-center gap-1.5 rounded-lg bg-gold-500/20 px-3 py-1.5 text-xs font-bold text-gold-700 hover:bg-gold-500/30"
+            >
+              <Receipt size={14} /> Faturar
+            </Link>
+          )}
         </div>
-        <span className="text-sm font-bold text-ink-900">{formatCurrency(order.total)}</span>
-        <span className="text-xs text-ink-muted">{formatOrderDate(order.createdAt)}</span>
-      </div>
-    </Link>
+      )}
+    </div>
   );
 }
 

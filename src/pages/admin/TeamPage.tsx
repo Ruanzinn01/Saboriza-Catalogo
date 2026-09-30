@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Plus, ShieldOff } from "lucide-react";
 import { useTeamStore } from "@/store/team-store";
+import { useEmployeesStore } from "@/store/employees-store";
 import { AdminState } from "@/components/admin/AdminState";
 import { Button } from "@/components/ui/Button";
 
@@ -80,11 +82,21 @@ export function TeamPage() {
   const fetchTeam = useTeamStore((state) => state.fetchTeam);
   const revokeMember = useTeamStore((state) => state.revokeMember);
   const updateMemberRole = useTeamStore((state) => state.updateMemberRole);
+  const employees = useEmployeesStore((state) => state.employees);
+  const fetchEmployees = useEmployeesStore((state) => state.fetchEmployees);
   const [showInvite, setShowInvite] = useState(false);
 
   useEffect(() => {
     fetchTeam();
   }, [fetchTeam]);
+
+  useEffect(() => {
+    if (employees.length === 0) fetchEmployees();
+  }, [employees.length, fetchEmployees]);
+
+  function employeeIdForEmail(email: string) {
+    return employees.find((e) => e.email?.toLowerCase() === email.toLowerCase())?.id ?? null;
+  }
 
   async function handleRevoke(membershipId: string) {
     if (!confirm("Revogar o acesso deste usuário?")) return;
@@ -136,9 +148,19 @@ export function TeamPage() {
                 </tr>
               </thead>
               <tbody>
-                {members.map((member) => (
+                {members.map((member) => {
+                  const employeeId = employeeIdForEmail(member.email);
+                  return (
                   <tr key={member.membershipId} className="border-b border-forest-950/5 last:border-none hover:bg-forest-950/5">
-                    <td className="px-4 py-3 font-semibold text-ink-900">{member.email}</td>
+                    <td className="px-4 py-3 font-semibold text-ink-900">
+                      {employeeId ? (
+                        <Link to={`/admin/colaboradores/${employeeId}`} className="hover:underline">
+                          {member.email}
+                        </Link>
+                      ) : (
+                        member.email
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       {member.status === "ENDED" ? (
                         <span className="text-ink-700/70">{member.roleNames.join(", ") || "-----"}</span>
@@ -178,17 +200,28 @@ export function TeamPage() {
                       )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           <div className="flex flex-col gap-3 lg:hidden">
-            {members.map((member) => (
+            {members.map((member) => {
+              const employeeId = employeeIdForEmail(member.email);
+              return (
               <div key={member.membershipId} className="rounded-2xl border border-forest-950/10 bg-white p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate font-extrabold text-forest-950">{member.email}</p>
+                    <p className="truncate font-extrabold text-forest-950">
+                      {employeeId ? (
+                        <Link to={`/admin/colaboradores/${employeeId}`} className="hover:underline">
+                          {member.email}
+                        </Link>
+                      ) : (
+                        member.email
+                      )}
+                    </p>
                     <p className="text-sm text-ink-700/70">{member.roleNames.join(", ") || "-----"}</p>
                   </div>
                   {member.status !== "ENDED" && (
@@ -205,7 +238,8 @@ export function TeamPage() {
                   {STATUS_LABELS[member.status] ?? member.status}
                 </span>
               </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}

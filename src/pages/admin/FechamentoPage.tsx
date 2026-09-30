@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { AlertTriangle, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { useFechamentoStore, type MonthlyCloseStatus } from "@/store/fechamento-store";
@@ -78,9 +79,18 @@ export function FechamentoPage() {
                     <p className="text-xs text-amber-700">Pendente: {c.pendencies.join(", ")}</p>
                   )}
                 </div>
-                <span className={`flex w-fit items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${meta.tone}`}>
-                  <Icon size={14} /> {meta.label}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`flex w-fit items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${meta.tone}`}>
+                    <Icon size={14} /> {meta.label}
+                  </span>
+                  <Link
+                    to="/admin/dre"
+                    state={{ month: c.competence }}
+                    className="rounded-lg bg-forest-950/5 px-3 py-1.5 text-xs font-bold text-forest-800 hover:bg-forest-950/10"
+                  >
+                    Ver DRE
+                  </Link>
+                </div>
               </div>
             );
           })}

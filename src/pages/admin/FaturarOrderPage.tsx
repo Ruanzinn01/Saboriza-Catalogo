@@ -115,9 +115,14 @@ export function FaturarOrderPage() {
 
   return (
     <div className="flex flex-col gap-5 pb-24">
-      <button onClick={() => navigate("/admin/faturar")} className="flex items-center gap-1 text-sm text-ink-muted hover:text-forest-950">
-        <ArrowLeft size={14} /> Voltar
-      </button>
+      <div className="flex items-center gap-4">
+        <button onClick={() => navigate("/admin/faturar")} className="flex items-center gap-1 text-sm text-ink-muted hover:text-forest-950">
+          <ArrowLeft size={14} /> Voltar
+        </button>
+        <button onClick={() => navigate(`/admin/pedidos/${orderId}`)} className="text-sm text-ink-muted hover:text-forest-950">
+          Ver pedido original
+        </button>
+      </div>
 
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-extrabold text-forest-950">Faturar Pedido #{order.number}</h1>

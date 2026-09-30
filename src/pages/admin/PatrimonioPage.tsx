@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Plus, Archive } from "lucide-react";
 import { usePatrimonioStore } from "@/store/patrimonio-store";
 import { useEmployeesStore } from "@/store/employees-store";
+import { useDespesasStore } from "@/store/despesas-store";
 import { AdminState } from "@/components/admin/AdminState";
 import { Button } from "@/components/ui/Button";
 
@@ -17,16 +19,25 @@ function NewAssetForm({ onDone }: { onDone: () => void }) {
   const createAsset = usePatrimonioStore((s) => s.createAsset);
   const employees = useEmployeesStore((s) => s.employees);
   const fetchEmployees = useEmployeesStore((s) => s.fetchEmployees);
+  const expenses = useDespesasStore((s) => s.expenses);
+  const fetchExpenses = useDespesasStore((s) => s.fetchAll);
   const [modelName, setModelName] = useState("");
   const [category, setCategory] = useState("OUTRO");
   const [acquisitionValue, setAcquisitionValue] = useState("");
   const [acquisitionDate, setAcquisitionDate] = useState("");
   const [responsibleId, setResponsibleId] = useState("");
+  const [expenseId, setExpenseId] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (employees.length === 0) fetchEmployees();
   }, [employees.length, fetchEmployees]);
+
+  useEffect(() => {
+    if (expenses.length === 0) fetchExpenses();
+  }, [expenses.length, fetchExpenses]);
+
+  const investmentExpenses = expenses.filter((e) => e.nature === "INVESTIMENTO");
 
   async function submit() {
     if (!modelName || !acquisitionValue) {
@@ -40,6 +51,7 @@ function NewAssetForm({ onDone }: { onDone: () => void }) {
       acquisitionValue: Number(acquisitionValue),
       acquisitionDate: acquisitionDate || undefined,
       responsibleId: responsibleId || undefined,
+      expenseId: expenseId || undefined,
     });
     setSaving(false);
     if (err) {
@@ -75,6 +87,15 @@ function NewAssetForm({ onDone }: { onDone: () => void }) {
             <option value="">-----</option>
             {employees.map((e) => (
               <option key={e.id} value={e.id}>{e.name}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm text-ink-900">
+          Despesa de aquisição (opcional)
+          <select value={expenseId} onChange={(e) => setExpenseId(e.target.value)} className="h-11 rounded-xl border border-ink-900/15 px-3 text-sm">
+            <option value="">-----</option>
+            {investmentExpenses.map((e) => (
+              <option key={e.id} value={e.id}>{e.description}</option>
             ))}
           </select>
         </label>
@@ -132,6 +153,7 @@ export function PatrimonioPage() {
                 <th className="px-4 py-3">Categoria</th>
                 <th className="px-4 py-3">Valor</th>
                 <th className="px-4 py-3">Responsável</th>
+                <th className="px-4 py-3">Despesa de aquisição</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -143,6 +165,15 @@ export function PatrimonioPage() {
                   <td className="px-4 py-3 text-ink-700/70">{a.category}</td>
                   <td className="px-4 py-3 font-semibold text-ink-900">{brl(a.acquisitionValue)}</td>
                   <td className="px-4 py-3 text-ink-700/70">{a.responsibleName ?? "-----"}</td>
+                  <td className="px-4 py-3 text-ink-700/70">
+                    {a.expenseId ? (
+                      <Link to="/admin/despesas" className="hover:underline">
+                        {a.expenseDescription ?? "Ver despesa"}
+                      </Link>
+                    ) : (
+                      "-----"
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_TONE[a.status]}`}>{a.status}</span>
                   </td>

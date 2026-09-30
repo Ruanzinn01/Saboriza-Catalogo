@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatNumber } from "@/lib/number";
-import { useParams } from "react-router-dom";
-import { ArrowRightLeft, PackagePlus } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
+import { ArrowRightLeft, PackagePlus, Pencil } from "lucide-react";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useStockStore } from "@/store/stock-store";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
@@ -87,6 +87,11 @@ export function ProductStockDetailPage() {
         back={{ to: "/admin/estoque", label: "Voltar para Estoque" }}
         actions={
           <>
+            <Link to={`/admin/produtos/${product.id}`}>
+              <Button variant="outline">
+                <Pencil size={16} /> Editar produto
+              </Button>
+            </Link>
             <Button variant="outline" onClick={() => setSheetMode("entry")}>
               <PackagePlus size={16} /> Entrada
             </Button>

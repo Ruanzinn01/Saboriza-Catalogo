@@ -11,6 +11,7 @@ export interface Revenue {
   category: string;
   origin: RevenueOrigin;
   amount: number;
+  payerId: string | null;
   payerName: string | null;
   dueDate: string | null;
   status: ReceivableStatus;
@@ -69,6 +70,7 @@ export const useReceitasStore = create<ReceitasState>((set, get) => ({
           category: revenue?.category ?? "-----",
           origin: revenue?.origin ?? "MANUAL",
           amount: r.principal,
+          payerId: revenue?.payer_origin_id ?? null,
           payerName: revenue?.customers?.name ?? null,
           dueDate: r.due_date,
           status: r.status as ReceivableStatus,

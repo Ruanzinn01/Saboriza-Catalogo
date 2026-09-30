@@ -12,6 +12,8 @@ export interface AssetUnit {
   status: AssetStatus;
   responsibleId: string | null;
   responsibleName: string | null;
+  expenseId: string | null;
+  expenseDescription: string | null;
 }
 
 export interface NewAssetInput {
@@ -20,6 +22,7 @@ export interface NewAssetInput {
   acquisitionValue: number;
   acquisitionDate?: string;
   responsibleId?: string;
+  expenseId?: string;
 }
 
 interface PatrimonioState {
@@ -40,7 +43,7 @@ export const usePatrimonioStore = create<PatrimonioState>((set, get) => ({
 
     const { data: rows, error } = await supabase
       .from("asset_units")
-      .select("id, acquisition_value, acquisition_date, status, current_responsible_id, asset_models(name, category), employees(name)")
+      .select("id, acquisition_value, acquisition_date, status, current_responsible_id, expense_id, asset_models(name, category), employees(name), expenses(description)")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -52,6 +55,7 @@ export const usePatrimonioStore = create<PatrimonioState>((set, get) => ({
       assets: (rows ?? []).map((a) => {
         const model = a.asset_models as unknown as { name: string; category: string } | null;
         const employee = a.employees as unknown as { name: string } | null;
+        const expense = a.expenses as unknown as { description: string } | null;
         return {
           id: a.id,
           modelName: model?.name ?? "-----",
@@ -61,6 +65,8 @@ export const usePatrimonioStore = create<PatrimonioState>((set, get) => ({
           status: a.status as AssetStatus,
           responsibleId: a.current_responsible_id,
           responsibleName: employee?.name ?? null,
+          expenseId: a.expense_id,
+          expenseDescription: expense?.description ?? null,
         };
       }),
       status: "ready",
@@ -80,6 +86,7 @@ export const usePatrimonioStore = create<PatrimonioState>((set, get) => ({
       acquisition_value: input.acquisitionValue,
       acquisition_date: input.acquisitionDate || null,
       current_responsible_id: input.responsibleId || null,
+      expense_id: input.expenseId || null,
     });
     if (unitError) return unitError.message;
 

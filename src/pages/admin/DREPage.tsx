@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
 import { useDreStore } from "@/store/dre-store";
 import { AdminState } from "@/components/admin/AdminState";
@@ -20,7 +21,9 @@ export function DREPage() {
   const lines = useDreStore((s) => s.lines);
   const status = useDreStore((s) => s.status);
   const fetchAll = useDreStore((s) => s.fetchAll);
-  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const location = useLocation();
+  const requestedMonth = (location.state as { month?: string } | null)?.month ?? null;
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(requestedMonth);
 
   useEffect(() => {
     fetchAll();
@@ -81,6 +84,14 @@ export function DREPage() {
                 bold
                 tone={current.managerialOperatingResult >= 0 ? "positive" : "negative"}
               />
+              <div className="flex gap-2 border-t border-forest-950/10 px-4 py-3">
+                <Link to="/admin/despesas" className="rounded-lg bg-forest-950/5 px-3 py-1.5 text-xs font-bold text-forest-800 hover:bg-forest-950/10">
+                  Ver despesas
+                </Link>
+                <Link to="/admin/receitas" className="rounded-lg bg-forest-950/5 px-3 py-1.5 text-xs font-bold text-forest-800 hover:bg-forest-950/10">
+                  Ver receitas
+                </Link>
+              </div>
             </div>
           )}
         </div>
