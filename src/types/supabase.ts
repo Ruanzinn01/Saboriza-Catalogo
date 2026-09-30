@@ -4931,7 +4931,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      dre_monthly: {
+        Row: {
+          cmv_cpv: number | null
+          company_id: string | null
+          deductions: number | null
+          financial_charges: number | null
+          gross_profit: number | null
+          gross_revenue: number | null
+          managerial_operating_result: number | null
+          month: string | null
+          net_revenue: number | null
+          operating_expenses: number | null
+          other_revenue: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       adjust_stock: {
