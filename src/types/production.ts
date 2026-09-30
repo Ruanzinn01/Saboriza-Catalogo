@@ -16,6 +16,7 @@ export interface ProductionRecord {
   unitsQuantity: number;
   status: string;
   responsibleId: string | null;
+  floorExecutionId: string | null;
   createdAt: string;
   confirmedAt: string;
   updatedAt: string;

@@ -1733,6 +1733,133 @@ export type Database = {
           },
         ]
       }
+      floor_execution_events: {
+        Row: {
+          company_id: string
+          created_at: string
+          employee_id: string | null
+          event_type: string
+          floor_execution_id: string
+          id: string
+          note: string | null
+          quantity_delta: number | null
+        }
+        Insert: {
+          company_id?: string
+          created_at?: string
+          employee_id?: string | null
+          event_type: string
+          floor_execution_id: string
+          id?: string
+          note?: string | null
+          quantity_delta?: number | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          employee_id?: string | null
+          event_type?: string
+          floor_execution_id?: string
+          id?: string
+          note?: string | null
+          quantity_delta?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floor_execution_events_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floor_execution_events_floor_execution_id_fkey"
+            columns: ["floor_execution_id"]
+            isOneToOne: false
+            referencedRelation: "floor_executions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      floor_executions: {
+        Row: {
+          assumed_at: string | null
+          assumed_by_employee_id: string | null
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          operational_quantity: number
+          product_id: string
+          production_record_id: string | null
+          production_release_id: string | null
+          route_version_label: string
+          started_at: string | null
+          status: string
+          target_quantity: number
+          unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          assumed_at?: string | null
+          assumed_by_employee_id?: string | null
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          operational_quantity?: number
+          product_id: string
+          production_record_id?: string | null
+          production_release_id?: string | null
+          route_version_label?: string
+          started_at?: string | null
+          status?: string
+          target_quantity: number
+          unit_id?: string
+          updated_at?: string
+        }
+        Update: {
+          assumed_at?: string | null
+          assumed_by_employee_id?: string | null
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          operational_quantity?: number
+          product_id?: string
+          production_record_id?: string | null
+          production_release_id?: string | null
+          route_version_label?: string
+          started_at?: string | null
+          status?: string
+          target_quantity?: number
+          unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "floor_executions_assumed_by_employee_id_fkey"
+            columns: ["assumed_by_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floor_executions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floor_executions_production_release_id_fkey"
+            columns: ["production_release_id"]
+            isOneToOne: false
+            referencedRelation: "production_releases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_companies: {
         Row: {
           company_id: string
@@ -2305,7 +2432,7 @@ export type Database = {
       }
       order_adjustment_requests: {
         Row: {
-          company_id: string | null
+          company_id: string
           created_at: string
           created_by: string | null
           id: string
@@ -2317,7 +2444,7 @@ export type Database = {
           status: string
         }
         Insert: {
-          company_id?: string | null
+          company_id?: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -2329,7 +2456,7 @@ export type Database = {
           status?: string
         }
         Update: {
-          company_id?: string | null
+          company_id?: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -3275,7 +3402,9 @@ export type Database = {
           company_id: string
           confirmed_at: string
           created_at: string
+          floor_execution_id: string | null
           id: string
+          idempotency_key: string | null
           packs_quantity: number
           product_id: string
           responsible_id: string | null
@@ -3290,7 +3419,9 @@ export type Database = {
           company_id?: string
           confirmed_at?: string
           created_at?: string
+          floor_execution_id?: string | null
           id?: string
+          idempotency_key?: string | null
           packs_quantity: number
           product_id: string
           responsible_id?: string | null
@@ -3305,7 +3436,9 @@ export type Database = {
           company_id?: string
           confirmed_at?: string
           created_at?: string
+          floor_execution_id?: string | null
           id?: string
+          idempotency_key?: string | null
           packs_quantity?: number
           product_id?: string
           responsible_id?: string | null
@@ -3322,6 +3455,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_records_floor_execution_id_fkey"
+            columns: ["floor_execution_id"]
+            isOneToOne: false
+            referencedRelation: "floor_executions"
             referencedColumns: ["id"]
           },
           {
@@ -3361,6 +3501,69 @@ export type Database = {
           },
           {
             foreignKeyName: "production_records_urgent_demand_id_fkey"
+            columns: ["urgent_demand_id"]
+            isOneToOne: false
+            referencedRelation: "urgent_demands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_releases: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by_user_id: string | null
+          id: string
+          idempotency_key: string
+          note: string | null
+          origin: string
+          product_id: string
+          reason: string | null
+          requested_packs: number
+          requested_units: number
+          unit_id: string
+          urgent_demand_id: string | null
+        }
+        Insert: {
+          company_id?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          id?: string
+          idempotency_key: string
+          note?: string | null
+          origin?: string
+          product_id: string
+          reason?: string | null
+          requested_packs: number
+          requested_units: number
+          unit_id?: string
+          urgent_demand_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          id?: string
+          idempotency_key?: string
+          note?: string | null
+          origin?: string
+          product_id?: string
+          reason?: string | null
+          requested_packs?: number
+          requested_units?: number
+          unit_id?: string
+          urgent_demand_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_releases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_releases_urgent_demand_id_fkey"
             columns: ["urgent_demand_id"]
             isOneToOne: false
             referencedRelation: "urgent_demands"
@@ -5185,6 +5388,38 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      confirm_production_release: {
+        Args: {
+          p_floor_execution_id?: string
+          p_idempotency_key?: string
+          p_packs_quantity: number
+          p_product_id: string
+          p_urgent_demand_id?: string
+        }
+        Returns: {
+          company_id: string
+          confirmed_at: string
+          created_at: string
+          floor_execution_id: string | null
+          id: string
+          idempotency_key: string | null
+          packs_quantity: number
+          product_id: string
+          responsible_id: string | null
+          status: string
+          unit_id: string
+          units_quantity: number
+          updated_at: string
+          urgent_allocated_units: number
+          urgent_demand_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "production_records"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       confirm_raw_material_entry: {
         Args: { p_entry_id: string }
         Returns: {
@@ -5258,7 +5493,9 @@ export type Database = {
               company_id: string
               confirmed_at: string
               created_at: string
+              floor_execution_id: string | null
               id: string
+              idempotency_key: string | null
               packs_quantity: number
               product_id: string
               responsible_id: string | null
@@ -5286,7 +5523,9 @@ export type Database = {
               company_id: string
               confirmed_at: string
               created_at: string
+              floor_execution_id: string | null
               id: string
+              idempotency_key: string | null
               packs_quantity: number
               product_id: string
               responsible_id: string | null
@@ -5315,7 +5554,9 @@ export type Database = {
               company_id: string
               confirmed_at: string
               created_at: string
+              floor_execution_id: string | null
               id: string
+              idempotency_key: string | null
               packs_quantity: number
               product_id: string
               responsible_id: string | null
@@ -5333,6 +5574,37 @@ export type Database = {
               isSetofReturn: false
             }
           }
+      create_production_release: {
+        Args: {
+          p_idempotency_key?: string
+          p_note?: string
+          p_packs_quantity: number
+          p_product_id: string
+          p_reason?: string
+          p_urgent_demand_id?: string
+        }
+        Returns: {
+          company_id: string
+          created_at: string
+          created_by_user_id: string | null
+          id: string
+          idempotency_key: string
+          note: string | null
+          origin: string
+          product_id: string
+          reason: string | null
+          requested_packs: number
+          requested_units: number
+          unit_id: string
+          urgent_demand_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "production_releases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_stock_entry: {
         Args: {
           p_observation?: string
@@ -5376,6 +5648,87 @@ export type Database = {
         }
         Returns: string
       }
+      floor_advance_quantity: {
+        Args: { p_floor_execution_id: string; p_quantity_delta: number }
+        Returns: {
+          assumed_at: string | null
+          assumed_by_employee_id: string | null
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          operational_quantity: number
+          product_id: string
+          production_record_id: string | null
+          production_release_id: string | null
+          route_version_label: string
+          started_at: string | null
+          status: string
+          target_quantity: number
+          unit_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "floor_executions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      floor_assume_execution: {
+        Args: { p_employee_id: string; p_floor_execution_id: string }
+        Returns: {
+          assumed_at: string | null
+          assumed_by_employee_id: string | null
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          operational_quantity: number
+          product_id: string
+          production_record_id: string | null
+          production_release_id: string | null
+          route_version_label: string
+          started_at: string | null
+          status: string
+          target_quantity: number
+          unit_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "floor_executions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      floor_complete_execution: {
+        Args: { p_floor_execution_id: string }
+        Returns: {
+          assumed_at: string | null
+          assumed_by_employee_id: string | null
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          operational_quantity: number
+          product_id: string
+          production_record_id: string | null
+          production_release_id: string | null
+          route_version_label: string
+          started_at: string | null
+          status: string
+          target_quantity: number
+          unit_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "floor_executions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_dre_monthly: {
         Args: { p_company_id: string }
         Returns: {
@@ -5391,6 +5744,7 @@ export type Database = {
           other_revenue: number
         }[]
       }
+      get_owner_panel_summary: { Args: { p_company_id: string }; Returns: Json }
       get_platform_companies: {
         Args: never
         Returns: {
@@ -5406,6 +5760,11 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: Json
       }
+      get_platform_company_entitlements: {
+        Args: { p_company_id: string }
+        Returns: Json
+      }
+      get_pulso_today: { Args: { p_company_id: string }; Returns: Json }
       get_sales_commissions_report: {
         Args: {
           p_employee_id?: string
@@ -5521,7 +5880,9 @@ export type Database = {
           company_id: string
           confirmed_at: string
           created_at: string
+          floor_execution_id: string | null
           id: string
+          idempotency_key: string | null
           packs_quantity: number
           product_id: string
           responsible_id: string | null
@@ -5578,6 +5939,14 @@ export type Database = {
       }
       set_monthly_close_automation: {
         Args: { p_company_id: string; p_enabled: boolean }
+        Returns: undefined
+      }
+      set_platform_company_entitlement: {
+        Args: {
+          p_capability_key: string
+          p_company_id: string
+          p_enabled: boolean
+        }
         Returns: undefined
       }
       set_platform_company_status: {

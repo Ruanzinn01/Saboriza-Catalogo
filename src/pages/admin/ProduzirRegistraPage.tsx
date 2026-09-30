@@ -4,10 +4,12 @@ import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useEmployeesStore } from "@/store/employees-store";
+import { useFloorStore } from "@/store/floor-store";
 import { useProductionStore } from "@/store/production-store";
 import { useProductionV3Store } from "@/store/production-v3-store";
 import { useRawMaterialsStore } from "@/store/raw-materials-store";
-import { DIARY_GRADES, OCCURRENCE_TYPES, type CartItem, type OccurrenceType } from "@/types/production-v3";
+import { DIARY_GRADES, OCCURRENCE_TYPES, type OccurrenceType } from "@/types/production-v3";
+import type { Product } from "@/types/product";
 
 // Paleta fiel ao HTML aprovado: PRODUZIU_REGISTRA_REFERENCIA_VISUAL_V3.html
 const c = {
@@ -44,16 +46,15 @@ function Eyebrow({ kicker, title, sub }: { kicker: string; title: string; sub: s
 
 const fmt = (n: number) => Math.round(n).toLocaleString("pt-BR");
 
-type Page = "home" | "register" | "urgent" | "diary" | "produced" | "results";
+type Page = "home" | "liberar" | "confirmar" | "urgent" | "diary" | "produced" | "results";
 
 export function ProduzirRegistraPage() {
   const products = useCatalogStore((s) => s.products);
   const fetchCatalog = useCatalogStore((s) => s.fetchCatalog);
-  const materials = useRawMaterialsStore((s) => s.materials);
   const fetchMaterials = useRawMaterialsStore((s) => s.fetchMaterials);
   const records = useProductionStore((s) => s.records);
   const fetchRecords = useProductionStore((s) => s.fetchRecords);
-  const registerProduction = useProductionStore((s) => s.registerProduction);
+  const confirmProductionRelease = useProductionStore((s) => s.confirmProductionRelease);
   const refreshAfterProduction = useProductionStore((s) => s.refreshAfterProduction);
   const employees = useEmployeesStore((s) => s.employees);
   const fetchEmployees = useEmployeesStore((s) => s.fetchEmployees);
@@ -70,12 +71,11 @@ export function ProduzirRegistraPage() {
   const addOtherActivity = useProductionV3Store((s) => s.addOtherActivity);
   const closeDiary = useProductionV3Store((s) => s.closeDiary);
   const reopenDiary = useProductionV3Store((s) => s.reopenDiary);
+  const floorExecutions = useFloorStore((s) => s.executions);
+  const createRelease = useFloorStore((s) => s.createRelease);
+  const fetchFloorAll = useFloorStore((s) => s.fetchAll);
 
   const [page, setPage] = useState<Page>("home");
-  const [mode, setMode] = useState<"Individual" | "Equipe">("Individual");
-  const [selected, setSelected] = useState<string[]>([]);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [query, setQuery] = useState("");
   const [saving, setSaving] = useState(false);
   const [urgentTab, setUrgentTab] = useState<"Ativos" | "Concluídos">("Ativos");
@@ -84,6 +84,7 @@ export function ProduzirRegistraPage() {
   const [showUrgentForm, setShowUrgentForm] = useState(false);
   const [showOccForm, setShowOccForm] = useState(false);
   const [showActForm, setShowActForm] = useState(false);
+  const [confirmProductId, setConfirmProductId] = useState<string | null>(null);
 
   const eligible = useMemo(() => employees.filter((e) => e.status === "ATIVO" && e.canOperateProduction), [employees]);
   const productById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
@@ -95,6 +96,7 @@ export function ProduzirRegistraPage() {
     fetchRecords();
     fetchEmployees();
     fetchUrgentDemands();
+    fetchFloorAll();
     ensureTodayDiary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -104,53 +106,40 @@ export function ProduzirRegistraPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function setModeAndReset(m: "Individual" | "Equipe") {
-    setMode(m);
-    setSelected(m === "Equipe" ? eligible.map((e) => e.id) : []);
-  }
-
-  function nextToProducts() {
-    if (selected.length === 0) {
-      toast.error("Selecione pelo menos um participante");
-      return;
-    }
-    setStep(2);
-  }
-
-  function addToCart(productId: string, packs: number, urgentDemandId: string | null) {
-    setCart((prev) => [...prev, { productId, packs, urgentDemandId }]);
-    toast.success("Carrinho atualizado. Ainda não confirmado.");
-  }
-
-  function removeFromCart(index: number) {
-    setCart((prev) => prev.filter((_, i) => i !== index));
-  }
-
-  function toReview() {
-    if (cart.length === 0) {
-      toast.error("Adicione pelo menos um produto");
-      return;
-    }
-    setStep(3);
-  }
-
-  async function confirmProduction() {
+  async function handleLiberarProducao(
+    productId: string,
+    packs: number,
+    reason: string,
+    note: string,
+    urgentDemandId: string | null,
+    idempotencyKey: string
+  ) {
     setSaving(true);
-    const affectedProducts = new Set<string>();
-    for (const item of cart) {
-      const { error } = await registerProduction(item.productId, item.packs, selected, item.urgentDemandId);
-      if (error) {
-        toast.error(`Falha ao registrar ${productById.get(item.productId)?.name ?? "produto"}: ${error}`);
-      } else {
-        affectedProducts.add(item.productId);
-      }
-    }
-    await refreshAfterProduction([...affectedProducts]);
-    await fetchUrgentDemands();
-    setCart([]);
-    setStep(1);
+    const ok = await createRelease(productId, packs, reason, note, urgentDemandId, idempotencyKey);
     setSaving(false);
-    toast.success("Produção registrada!");
+    if (ok) go("home");
+  }
+
+  async function handleConfirmarProducao(
+    productId: string,
+    packs: number,
+    urgentDemandId: string | null,
+    floorExecutionId: string | null,
+    idempotencyKey: string
+  ) {
+    setSaving(true);
+    const { error } = await confirmProductionRelease(productId, packs, urgentDemandId, floorExecutionId, idempotencyKey);
+    if (error) {
+      toast.error(`Falha ao confirmar produção: ${error}`);
+      setSaving(false);
+      return;
+    }
+    await refreshAfterProduction([productId]);
+    await fetchUrgentDemands();
+    await fetchFloorAll();
+    setSaving(false);
+    setConfirmProductId(null);
+    toast.success("Produção confirmada! Estoque atualizado.");
     go("produced");
   }
 
@@ -236,199 +225,60 @@ export function ProduzirRegistraPage() {
               <div>
                 <Card>
                   <div className="text-[11px] font-extrabold uppercase tracking-wide" style={{ color: c.blue }}>
-                    REGISTRO DE PRODUÇÃO
+                    LIBERAR PRODUÇÃO
                   </div>
-                  <h2 className="mt-2 mb-1 text-xl font-bold">O que a equipe produziu?</h2>
-                  <p style={{ color: c.muted }}>Encontre o produto e registre a quantidade.</p>
-                  <button type="button" onClick={() => go("register")} className={`${c.btn} ${c.btnPrimary} w-full mt-2`}>
-                    Registrar
+                  <h2 className="mt-2 mb-1 text-xl font-bold">O que precisa ir pro Chão?</h2>
+                  <p style={{ color: c.muted }}>Libera o trabalho pra fábrica. Não mexe em estoque ainda.</p>
+                  <button type="button" onClick={() => go("liberar")} className={`${c.btn} ${c.btnPrimary} w-full mt-2`}>
+                    Liberar Produção
                   </button>
                 </Card>
                 <div className={c.notice}>
-                  <b>Registrado pelo operador logado.</b> Você pode lançar a produção dos colaboradores habilitados, mesmo que eles não tenham login.
+                  <Link to="/admin/chao-de-fabrica" className="font-bold hover:underline" style={{ color: c.blue }}>
+                    Ver Chão de Fábrica →
+                  </Link>{" "}
+                  Acompanhe quem assumiu, quanto já avançou e o que está pronto pra confirmar.
                 </div>
               </div>
               <Card>
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold">Precisamos produzir</h2>
+                  <h2 className="text-lg font-bold">QR/código</h2>
                   <span className={c.tag}>AGORA</span>
                 </div>
                 <p className="mt-3" style={{ color: c.muted }}>
-                  {lowStock.length} produto(s) abaixo do estoque mínimo.
+                  {lowStock.length} produto(s) abaixo do estoque mínimo. Feche o produto acabado aqui.
                 </p>
-                <button type="button" onClick={() => go("register")} className={`${c.btn} ${c.btnPrimary} w-full mt-2`}>
-                  Bora Produzir
+                <button type="button" onClick={() => go("confirmar")} className={`${c.btn} ${c.btnPrimary} w-full mt-2`}>
+                  Confirmar Produção
                 </button>
               </Card>
             </div>
           </>
         )}
 
-        {page === "register" && (
-          <>
-            <Eyebrow kicker="REGISTRAR PRODUÇÃO" title="O trabalho de hoje, registrado." sub="Fábrica · Estoque de produção" />
-            <div className="mb-6 flex gap-2.5">
-              {(["1 · Participantes", "2 · Produtos", "3 · Revisão"] as const).map((label, i) => (
-                <span key={label} className={`rounded-full px-3.5 py-1.5 text-xs ${step === i + 1 ? "text-white" : ""}`} style={{ background: step === i + 1 ? c.blue : "#e8eef6" }}>
-                  {label}
-                </span>
-              ))}
-            </div>
+        {page === "liberar" && (
+          <LiberarProducaoView
+            products={products}
+            query={query}
+            setQuery={setQuery}
+            urgentDemands={urgentDemands}
+            saving={saving}
+            onSubmit={handleLiberarProducao}
+          />
+        )}
 
-            {step === 1 && (
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
-                <Card>
-                  <h2 className="mb-3 text-lg font-bold">Quem produziu?</h2>
-                  <div className="mb-4 flex gap-1 rounded-xl bg-[#edf1f7] p-1">
-                    {(["Individual", "Equipe"] as const).map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setModeAndReset(m)}
-                        className={`flex-1 rounded-lg py-2.5 text-sm font-bold ${mode === m ? "bg-white shadow" : ""}`}
-                        style={{ color: mode === m ? c.blue : c.navy }}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                  {eligible.length === 0 && (
-                    <p className={c.noticeWarn}>Nenhum colaborador habilitado pra produção. Cadastre em Colaboradores e marque "pode operar produção".</p>
-                  )}
-                  {eligible.map((emp) => (
-                    <label key={emp.id} className="my-2 flex items-center gap-3 rounded-xl border p-3" style={{ borderColor: c.line }}>
-                      <input
-                        type={mode === "Individual" ? "radio" : "checkbox"}
-                        name="person"
-                        checked={selected.includes(emp.id)}
-                        onChange={(e) => {
-                          if (mode === "Individual") setSelected(e.target.checked ? [emp.id] : []);
-                          else setSelected((prev) => (e.target.checked ? [...prev, emp.id] : prev.filter((id) => id !== emp.id)));
-                        }}
-                      />
-                      <span className="grid h-8.5 w-8.5 place-items-center rounded-full font-bold" style={{ background: "#edf3fd", color: c.blue }}>
-                        {emp.name[0]}
-                      </span>
-                      <span>
-                        {emp.name}
-                        <br />
-                        <small style={{ color: c.muted }}>{emp.role || "Produção"}</small>
-                      </span>
-                    </label>
-                  ))}
-                  <button type="button" onClick={nextToProducts} className={`${c.btn} ${c.btnPrimary} w-full mt-3`}>
-                    Continuar
-                  </button>
-                </Card>
-                <Card>
-                  <h2 className="mb-1 text-lg font-bold">Cada pessoa conta.</h2>
-                  <p style={{ color: c.muted }}>Selecione quem realmente participou desta produção. O registro fica ligado à identidade do colaborador.</p>
-                </Card>
-              </div>
-            )}
-
-            {step === 2 && (
-              <>
-                <div className="mb-3 flex items-center justify-between">
-                  <span className={c.tag}>
-                    {mode} · {selected.map((id) => employeeById.get(id)?.name.split(" ")[0]).join(", ")}
-                  </span>
-                  <button type="button" onClick={() => setStep(1)} className={`${c.btn} ${c.btnGhost}`}>
-                    Alterar participantes
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
-                  <Card>
-                    <h2 className="mb-3 text-lg font-bold">Adicionar produtos</h2>
-                    <input
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder="Nome ou código do produto"
-                      className={c.input}
-                    />
-                    <div className="mt-3">
-                      {products
-                        .filter((p) => p.active && (p.name + p.code).toLowerCase().includes(query.toLowerCase()))
-                        .map((p) => (
-                          <ProductPicker key={p.id} name={p.name} sku={p.code} onAdd={(packs, urgentId) => addToCart(p.id, packs, urgentId)} urgentOptions={urgentDemands.filter((u) => u.productId === p.id && u.status === "ATIVO")} />
-                        ))}
-                    </div>
-                  </Card>
-                  <Card>
-                    <div className="mb-3 flex items-center justify-between">
-                      <h2 className="text-lg font-bold">Carrinho</h2>
-                      <span className={c.tag}>{cart.length} itens</span>
-                    </div>
-                    {cart.length === 0 ? (
-                      <p style={{ color: c.muted }}>Seu carrinho está vazio. Adicione o que foi produzido.</p>
-                    ) : (
-                      cart.map((item, i) => {
-                        const product = productById.get(item.productId);
-                        const urgent = item.urgentDemandId ? urgentDemands.find((u) => u.id === item.urgentDemandId) : null;
-                        return (
-                          <div key={i} className="border-b py-3" style={{ borderColor: c.line }}>
-                            <h3 className="font-bold">{product?.name}</h3>
-                            <div className="flex items-center justify-between">
-                              <span>
-                                <b>{fmt(item.packs * (product?.packQuantity ?? 0))} un</b>
-                                <br />
-                                <small style={{ color: c.muted }}>{urgent ? urgent.name : "Produção normal"}</small>
-                              </span>
-                              <button type="button" onClick={() => removeFromCart(i)} className="text-lg font-bold" style={{ color: "#b34141" }}>
-                                ×
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                    <button type="button" disabled={cart.length === 0} onClick={toReview} className={`${c.btn} ${c.btnPrimary} w-full mt-3`}>
-                      Revisar produção
-                    </button>
-                  </Card>
-                </div>
-              </>
-            )}
-
-            {step === 3 && (
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
-                <Card>
-                  <h2 className="mb-3 text-lg font-bold">Confira antes de confirmar</h2>
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    <span className={c.tag}>{mode.toUpperCase()}</span>
-                    <span className="rounded-lg bg-[#f2f5f9] px-3 py-1.5 text-xs">{selected.map((id) => employeeById.get(id)?.name).join(" · ")}</span>
-                  </div>
-                  {cart.map((item, i) => (
-                    <div key={i} className="border-b py-2" style={{ borderColor: c.line }}>
-                      {productById.get(item.productId)?.name} — <b>{fmt(item.packs * (productById.get(item.productId)?.packQuantity ?? 0))} un</b>
-                    </div>
-                  ))}
-                  <p className="mt-2 text-sm" style={{ color: c.muted }}>
-                    Distribuição igualitária entre os {selected.length} participante(s) selecionado(s).
-                  </p>
-                </Card>
-                <Card>
-                  <h2 className="mb-3 text-lg font-bold">Uma confirmação, tudo conectado.</h2>
-                  <div className="border-b py-2" style={{ borderColor: c.line }}>
-                    Entrada dos produtos acabados
-                  </div>
-                  <div className="border-b py-2" style={{ borderColor: c.line }}>
-                    Baixa dos insumos da ficha técnica
-                  </div>
-                  <div className="border-b py-2" style={{ borderColor: c.line }}>
-                    Atualização dos Urgentes vinculados
-                  </div>
-                  <div className="py-2">Produzido e Resultados atualizados</div>
-                  <button type="button" disabled={saving} onClick={() => void confirmProduction()} className={`${c.btn} ${c.btnPrimary} w-full mt-3`}>
-                    {saving ? "Confirmando..." : "Confirmar Produção"}
-                  </button>
-                  <button type="button" onClick={() => setStep(2)} className={`${c.btn} ${c.btnGhost} w-full mt-2`}>
-                    Voltar aos produtos
-                  </button>
-                </Card>
-              </div>
-            )}
-          </>
+        {page === "confirmar" && (
+          <ConfirmarProducaoView
+            products={products}
+            query={query}
+            setQuery={setQuery}
+            urgentDemands={urgentDemands}
+            floorExecutions={floorExecutions}
+            confirmProductId={confirmProductId}
+            setConfirmProductId={setConfirmProductId}
+            saving={saving}
+            onConfirm={handleConfirmarProducao}
+          />
         )}
 
         {page === "urgent" && (
@@ -484,16 +334,8 @@ export function ProduzirRegistraPage() {
                       <b>{fmt(u.totalQuantity - u.doneQuantity)} un</b> <span style={{ color: c.muted }}>pendentes</span>
                     </p>
                     {u.status === "ATIVO" && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setModeAndReset("Individual");
-                          go("register");
-                          setStep(2);
-                        }}
-                        className={`${c.btn} ${c.btnSecondary} w-full mt-2`}
-                      >
-                        Registrar produção
+                      <button type="button" onClick={() => go("liberar")} className={`${c.btn} ${c.btnSecondary} w-full mt-2`}>
+                        Liberar produção
                       </button>
                     )}
                   </Card>
@@ -634,7 +476,7 @@ export function ProduzirRegistraPage() {
             <Card>
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-lg font-bold">Registros {period === "Hoje" ? "de hoje" : "da semana"}</h2>
-                <button type="button" onClick={() => go("register")} className={`${c.btn} ${c.btnSecondary}`}>
+                <button type="button" onClick={() => go("liberar")} className={`${c.btn} ${c.btnSecondary}`}>
                   Nova produção
                 </button>
               </div>
@@ -714,7 +556,7 @@ export function ProduzirRegistraPage() {
 
       <nav className="fixed inset-x-0 bottom-0 z-10 flex justify-center gap-2 border-t bg-white/95 px-4 py-2.5 backdrop-blur" style={{ borderColor: c.line }}>
         {([
-          ["register", "Registrar"],
+          ["liberar", "Liberar Produção"],
           ["diary", "Diário"],
           ["produced", "Produzido"],
           ["results", "Resultados"],
@@ -734,66 +576,209 @@ export function ProduzirRegistraPage() {
   );
 }
 
-function ProductPicker({
-  name,
-  sku,
-  urgentOptions,
-  onAdd,
+function LiberarProducaoView({
+  products,
+  query,
+  setQuery,
+  urgentDemands,
+  saving,
+  onSubmit,
 }: {
-  name: string;
-  sku: string;
-  urgentOptions: { id: string; name: string; totalQuantity: number; doneQuantity: number }[];
-  onAdd: (packs: number, urgentId: string | null) => void;
+  products: Product[];
+  query: string;
+  setQuery: (v: string) => void;
+  urgentDemands: { id: string; productId: string; name: string; totalQuantity: number; doneQuantity: number; status: string }[];
+  saving: boolean;
+  onSubmit: (productId: string, packs: number, reason: string, note: string, urgentDemandId: string | null, idempotencyKey: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [productId, setProductId] = useState<string | null>(null);
   const [packs, setPacks] = useState(1);
-  const [urgentId, setUrgentId] = useState<string>("");
+  const [reason, setReason] = useState("");
+  const [note, setNote] = useState("");
+  const [urgentId, setUrgentId] = useState("");
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
+
+  const filtered = products.filter((p) => p.active && (p.name + p.code).toLowerCase().includes(query.toLowerCase()));
+  const selected = products.find((p) => p.id === productId) ?? null;
+  const urgentOptions = selected ? urgentDemands.filter((u) => u.productId === selected.id && u.status === "ATIVO") : [];
 
   return (
-    <div className="border-b py-3" style={{ borderColor: c.line }}>
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-bold">{name}</h3>
-          <small style={{ color: c.muted }}>{sku}</small>
-        </div>
-        <button type="button" onClick={() => setOpen((v) => !v)} className={`${c.btn} ${c.btnSecondary}`}>
-          +
-        </button>
-      </div>
-      {open && (
-        <div className="mt-2 flex flex-wrap items-end gap-2">
-          <div>
-            <label className="block text-xs font-bold">Packs</label>
-            <input type="number" min={1} value={packs} onChange={(e) => setPacks(Math.max(1, Number(e.target.value)))} className={`${c.input} w-24`} />
+    <>
+      <Eyebrow kicker="LIBERAR PRODUÇÃO" title="Abastece o Chão de Fábrica." sub="Sem participantes, sem rateio. Efeito de estoque = zero." />
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
+        <Card>
+          <h2 className="mb-3 text-lg font-bold">Qual item produtivo?</h2>
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nome ou código do produto" className={c.input} />
+          <div className="mt-3">
+            {filtered.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setProductId(p.id)}
+                className="flex w-full items-center justify-between border-b py-3 text-left"
+                style={{ borderColor: c.line }}
+              >
+                <div>
+                  <h3 className="font-bold">{p.name}</h3>
+                  <small style={{ color: c.muted }}>{p.code}</small>
+                </div>
+                {productId === p.id && <span className={c.tag}>SELECIONADO</span>}
+              </button>
+            ))}
           </div>
-          {urgentOptions.length > 0 && (
-            <div>
-              <label className="block text-xs font-bold">Vincular a urgente</label>
-              <select value={urgentId} onChange={(e) => setUrgentId(e.target.value)} className={c.input}>
-                <option value="">Sem vínculo</option>
-                {urgentOptions.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name} · faltam {u.totalQuantity - u.doneQuantity}
-                  </option>
-                ))}
-              </select>
-            </div>
+        </Card>
+        <Card>
+          <h2 className="mb-3 text-lg font-bold">Detalhes da liberação</h2>
+          {!selected ? (
+            <p style={{ color: c.muted }}>Selecione um item produtivo ao lado.</p>
+          ) : (
+            <>
+              <p className="mb-2">
+                <b>{selected.name}</b>
+              </p>
+              <label className="mb-1 block text-xs font-bold">Quantidade (packs)</label>
+              <input type="number" min={1} value={packs} onChange={(e) => setPacks(Math.max(1, Number(e.target.value)))} className={`${c.input} mb-3`} />
+              <label className="mb-1 block text-xs font-bold">Motivo</label>
+              <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ex: reposição de estoque" className={`${c.input} mb-3`} />
+              <label className="mb-1 block text-xs font-bold">Observação (opcional)</label>
+              <textarea value={note} onChange={(e) => setNote(e.target.value)} className={`${c.input} mb-3 min-h-[70px]`} />
+              {urgentOptions.length > 0 && (
+                <>
+                  <label className="mb-1 block text-xs font-bold">Vincular a urgente (opcional)</label>
+                  <select value={urgentId} onChange={(e) => setUrgentId(e.target.value)} className={`${c.input} mb-3`}>
+                    <option value="">Sem vínculo</option>
+                    {urgentOptions.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name} · faltam {u.totalQuantity - u.doneQuantity}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => onSubmit(selected.id, packs, reason, note, urgentId || null, idempotencyKey)}
+                className={`${c.btn} ${c.btnPrimary} w-full mt-1`}
+              >
+                {saving ? "Liberando..." : "Liberar Produção"}
+              </button>
+            </>
           )}
-          <button
-            type="button"
-            onClick={() => {
-              onAdd(packs, urgentId || null);
-              setOpen(false);
-              setPacks(1);
-              setUrgentId("");
-            }}
-            className={`${c.btn} ${c.btnPrimary}`}
-          >
-            Adicionar
-          </button>
-        </div>
-      )}
-    </div>
+        </Card>
+      </div>
+    </>
+  );
+}
+
+function ConfirmarProducaoView({
+  products,
+  query,
+  setQuery,
+  urgentDemands,
+  floorExecutions,
+  confirmProductId,
+  setConfirmProductId,
+  saving,
+  onConfirm,
+}: {
+  products: Product[];
+  query: string;
+  setQuery: (v: string) => void;
+  urgentDemands: { id: string; productId: string; name: string; totalQuantity: number; doneQuantity: number; status: string }[];
+  floorExecutions: { id: string; productId: string; status: string; targetQuantity: number; operationalQuantity: number; productionRecordId: string | null }[];
+  confirmProductId: string | null;
+  setConfirmProductId: (v: string | null) => void;
+  saving: boolean;
+  onConfirm: (productId: string, packs: number, urgentDemandId: string | null, floorExecutionId: string | null, idempotencyKey: string) => void;
+}) {
+  const [packs, setPacks] = useState(1);
+  const [urgentId, setUrgentId] = useState("");
+  const [floorExecutionId, setFloorExecutionId] = useState("");
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
+
+  const filtered = products.filter((p) => p.active && (p.name + p.code).toLowerCase().includes(query.toLowerCase()));
+  const selected = products.find((p) => p.id === confirmProductId) ?? null;
+  const urgentOptions = selected ? urgentDemands.filter((u) => u.productId === selected.id && u.status === "ATIVO") : [];
+  const readyExecutions = selected
+    ? floorExecutions.filter((e) => e.productId === selected.id && e.status === "CONCLUIDO" && !e.productionRecordId)
+    : [];
+
+  return (
+    <>
+      <Eyebrow kicker="QR/CÓDIGO" title="Fecha o produto acabado." sub="Confirmação oficial: entra no estoque uma única vez." />
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
+        <Card>
+          <h2 className="mb-3 text-lg font-bold">Encontrar produto</h2>
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nome ou código do produto" className={c.input} />
+          <div className="mt-3">
+            {filtered.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setConfirmProductId(p.id)}
+                className="flex w-full items-center justify-between border-b py-3 text-left"
+                style={{ borderColor: c.line }}
+              >
+                <div>
+                  <h3 className="font-bold">{p.name}</h3>
+                  <small style={{ color: c.muted }}>{p.code}</small>
+                </div>
+                {confirmProductId === p.id && <span className={c.tag}>SELECIONADO</span>}
+              </button>
+            ))}
+          </div>
+        </Card>
+        <Card>
+          <h2 className="mb-3 text-lg font-bold">Confirmar Produção</h2>
+          {!selected ? (
+            <p style={{ color: c.muted }}>Selecione um produto ao lado.</p>
+          ) : (
+            <>
+              <p className="mb-2">
+                <b>{selected.name}</b>
+              </p>
+              <label className="mb-1 block text-xs font-bold">Quantidade (packs)</label>
+              <input type="number" min={1} value={packs} onChange={(e) => setPacks(Math.max(1, Number(e.target.value)))} className={`${c.input} mb-3`} />
+              {readyExecutions.length > 0 && (
+                <>
+                  <label className="mb-1 block text-xs font-bold">Vincular execução do Chão (opcional)</label>
+                  <select value={floorExecutionId} onChange={(e) => setFloorExecutionId(e.target.value)} className={`${c.input} mb-3`}>
+                    <option value="">Sem vínculo</option>
+                    {readyExecutions.map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.operationalQuantity}/{e.targetQuantity} un concluídas
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
+              {urgentOptions.length > 0 && (
+                <>
+                  <label className="mb-1 block text-xs font-bold">Apropriar em urgente (opcional)</label>
+                  <select value={urgentId} onChange={(e) => setUrgentId(e.target.value)} className={`${c.input} mb-3`}>
+                    <option value="">Sem vínculo</option>
+                    {urgentOptions.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name} · faltam {u.totalQuantity - u.doneQuantity}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => onConfirm(selected.id, packs, urgentId || null, floorExecutionId || null, idempotencyKey)}
+                className={`${c.btn} ${c.btnPrimary} w-full mt-1`}
+              >
+                {saving ? "Confirmando..." : "Confirmar Produção"}
+              </button>
+            </>
+          )}
+        </Card>
+      </div>
+    </>
   );
 }
 

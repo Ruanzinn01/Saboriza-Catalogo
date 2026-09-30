@@ -24,6 +24,7 @@ export function productionRecordFromRow(row: ProductionRow): ProductionRecord {
     unitsQuantity: row.units_quantity,
     status: row.status,
     responsibleId: row.responsible_id,
+    floorExecutionId: row.floor_execution_id ?? null,
     createdAt: row.created_at,
     confirmedAt: row.confirmed_at,
     updatedAt: row.updated_at,

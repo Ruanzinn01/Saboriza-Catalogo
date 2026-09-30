@@ -18,6 +18,13 @@ interface ProductionState {
     employeeIds?: string[],
     urgentDemandId?: string | null
   ) => Promise<{ record: ProductionRecord | null; error: string | null }>;
+  confirmProductionRelease: (
+    productId: string,
+    packsQuantity: number,
+    urgentDemandId: string | null,
+    floorExecutionId: string | null,
+    idempotencyKey: string
+  ) => Promise<{ record: ProductionRecord | null; error: string | null }>;
   refreshAfterProduction: (productIds: string[]) => Promise<void>;
 }
 
@@ -63,6 +70,26 @@ export const useProductionStore = create<ProductionState>()((set) => ({
 
     if (error || !data) {
       return { record: null, error: error?.message ?? "Não foi possível registrar a produção" };
+    }
+
+    const record = productionRecordFromRow(data);
+    set((state) => ({ records: [record, ...state.records] }));
+    return { record, error: null };
+  },
+
+  confirmProductionRelease: async (productId, packsQuantity, urgentDemandId, floorExecutionId, idempotencyKey) => {
+    const { data, error } = await supabase
+      .rpc("confirm_production_release", {
+        p_product_id: productId,
+        p_packs_quantity: packsQuantity,
+        p_urgent_demand_id: urgentDemandId ?? undefined,
+        p_floor_execution_id: floorExecutionId ?? undefined,
+        p_idempotency_key: idempotencyKey,
+      })
+      .single();
+
+    if (error || !data) {
+      return { record: null, error: error?.message ?? "Não foi possível confirmar a produção" };
     }
 
     const record = productionRecordFromRow(data);

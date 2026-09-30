@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
+  Activity,
   Archive,
   BarChart3,
   Boxes,
+  Gauge,
   Building2,
   ClipboardCheck,
   ClipboardList,
@@ -61,6 +63,8 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: LayoutDashboard,
     items: [
       { to: "/admin", label: "Indicadores", icon: TrendingUp, end: true },
+      { to: "/admin/pulso", label: "Pulso", icon: Activity },
+      { to: "/admin/painel-proprietario", label: "Painel do Proprietário", icon: Gauge },
       { to: "/admin/pedidos", label: "Pedidos", icon: ClipboardList, badge: "newOrders" },
     ],
   },
@@ -80,6 +84,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: "/admin/materias-primas", label: "Matérias-primas", icon: Boxes },
       { to: "/admin/produzir", label: "Produziu, Registra", icon: ClipboardCheck, highlight: true },
+      { to: "/admin/chao-de-fabrica", label: "Chão de Fábrica", icon: Factory },
       { to: "/admin/producao", label: "Painel de produção", icon: Factory },
     ],
   },

@@ -31,6 +31,7 @@ import { RawMaterialFormPage } from "@/pages/admin/RawMaterialFormPage";
 import { RawMaterialDetailPage } from "@/pages/admin/RawMaterialDetailPage";
 import { RawMaterialEntryPage } from "@/pages/admin/RawMaterialEntryPage";
 import { ProduzirRegistraPage } from "@/pages/admin/ProduzirRegistraPage";
+import { ChaoDeFabricaPage } from "@/pages/admin/ChaoDeFabricaPage";
 import { ProductionPanelPage } from "@/pages/admin/ProductionPanelPage";
 import { StockPage } from "@/pages/admin/StockPage";
 import { StockInsightsPage } from "@/pages/admin/StockInsightsPage";
@@ -54,6 +55,8 @@ import { SettingsPage } from "@/pages/admin/SettingsPage";
 import { TeamPage } from "@/pages/admin/TeamPage";
 import { ForcaDeVendasPage } from "@/pages/admin/ForcaDeVendasPage";
 import { TarefasPage } from "@/pages/admin/TarefasPage";
+import { PulsoPage } from "@/pages/admin/PulsoPage";
+import { PainelProprietarioPage } from "@/pages/admin/PainelProprietarioPage";
 import { WhatsAppFloatingButton } from "@/components/layout/WhatsAppFloatingButton";
 import { ProtectedPlatformRoute } from "@/components/platform/ProtectedPlatformRoute";
 import { PlatformLayout } from "@/components/platform/PlatformLayout";
@@ -97,6 +100,7 @@ export function App() {
             <Route path="materias-primas/:rawMaterialId" element={<RawMaterialDetailPage />} />
             <Route path="materias-primas/:rawMaterialId/editar" element={<RawMaterialFormPage />} />
             <Route path="produzir" element={<ProduzirRegistraPage />} />
+            <Route path="chao-de-fabrica" element={<ChaoDeFabricaPage />} />
             <Route path="producao" element={<ProductionPanelPage />} />
             <Route path="estoque" element={<StockPage />} />
             <Route path="estoque/indicadores" element={<StockInsightsPage />} />
@@ -130,6 +134,8 @@ export function App() {
             <Route path="fechamento" element={<FechamentoPage />} />
             <Route path="vendas" element={<ForcaDeVendasPage />} />
             <Route path="tarefas" element={<TarefasPage />} />
+            <Route path="pulso" element={<PulsoPage />} />
+            <Route path="painel-proprietario" element={<PainelProprietarioPage />} />
           </Route>
         </Route>
 
