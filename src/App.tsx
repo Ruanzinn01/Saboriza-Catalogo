@@ -41,6 +41,7 @@ import { FaturarListPage } from "@/pages/admin/FaturarListPage";
 import { FaturarOrderPage } from "@/pages/admin/FaturarOrderPage";
 import { AportesPage } from "@/pages/admin/AportesPage";
 import { DespesasPage } from "@/pages/admin/DespesasPage";
+import { ReceitasPage } from "@/pages/admin/ReceitasPage";
 import { SeparaConferePage } from "@/pages/admin/SeparaConferePage";
 import { SeparaConfereOrderPage } from "@/pages/admin/SeparaConfereOrderPage";
 import { CarregaEntregaPage } from "@/pages/admin/CarregaEntregaPage";
@@ -114,6 +115,7 @@ export function App() {
             <Route path="ponto-oris" element={<PontoOrisTerminalPage />} />
             <Route path="aportes" element={<AportesPage />} />
             <Route path="despesas" element={<DespesasPage />} />
+            <Route path="receitas" element={<ReceitasPage />} />
           </Route>
         </Route>
 

@@ -96,6 +96,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { to: "/admin/aportes", label: "Aportes de Sócios", icon: Wallet },
       { to: "/admin/despesas", label: "Despesas", icon: ReceiptText },
+      { to: "/admin/receitas", label: "Receitas", icon: TrendingUp },
     ],
   },
 ];
