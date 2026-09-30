@@ -36,6 +36,7 @@ import { ChaoDeFabricaPage } from "@/pages/admin/ChaoDeFabricaPage";
 import { RotasProducaoPage } from "@/pages/admin/RotasProducaoPage";
 import { PlanosProducaoPage } from "@/pages/admin/PlanosProducaoPage";
 import { CentralProducaoPage } from "@/pages/admin/CentralProducaoPage";
+import { IntegracoesFinanceirasPage } from "@/pages/admin/IntegracoesFinanceirasPage";
 import { ProductionPanelPage } from "@/pages/admin/ProductionPanelPage";
 import { StockPage } from "@/pages/admin/StockPage";
 import { StockInsightsPage } from "@/pages/admin/StockInsightsPage";
@@ -140,6 +141,7 @@ export function App() {
             <Route path="patrimonio" element={<PatrimonioPage />} />
             <Route path="dre" element={<DREPage />} />
             <Route path="fechamento" element={<FechamentoPage />} />
+            <Route path="integracoes" element={<IntegracoesFinanceirasPage />} />
             <Route path="vendas" element={<ForcaDeVendasPage />} />
             <Route path="tarefas" element={<TarefasPage />} />
             <Route path="pulso" element={<PulsoPage />} />

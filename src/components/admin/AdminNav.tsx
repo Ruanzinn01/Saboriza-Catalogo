@@ -109,6 +109,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: "/admin/patrimonio", label: "Patrimônio", icon: Boxes },
       { to: "/admin/dre", label: "DRE Gerencial", icon: BarChart3 },
       { to: "/admin/fechamento", label: "Fechamento Mensal", icon: ClipboardCheck },
+      { to: "/admin/integracoes", label: "Integrações", icon: Wallet },
     ],
   },
   {

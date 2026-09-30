@@ -649,6 +649,57 @@ export type Database = {
           },
         ]
       }
+      company_integration_credentials: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by_user_id: string | null
+          environment: string
+          fiscal_provider_name: string | null
+          id: string
+          key_last4: string | null
+          last_error: string | null
+          last_validated_at: string | null
+          provider: string
+          status: string
+          updated_at: string
+          vault_secret_id: string | null
+          wallet_id: string | null
+        }
+        Insert: {
+          company_id?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          environment?: string
+          fiscal_provider_name?: string | null
+          id?: string
+          key_last4?: string | null
+          last_error?: string | null
+          last_validated_at?: string | null
+          provider: string
+          status?: string
+          updated_at?: string
+          vault_secret_id?: string | null
+          wallet_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          environment?: string
+          fiscal_provider_name?: string | null
+          id?: string
+          key_last4?: string | null
+          last_error?: string | null
+          last_validated_at?: string | null
+          provider?: string
+          status?: string
+          updated_at?: string
+          vault_secret_id?: string | null
+          wallet_id?: string | null
+        }
+        Relationships: []
+      }
       company_partners: {
         Row: {
           company_id: string
@@ -1693,6 +1744,7 @@ export type Database = {
           key: string | null
           number: string | null
           pdf_ref: string | null
+          provider: string | null
           status: string
           updated_at: string
           xml_ref: string | null
@@ -1706,6 +1758,7 @@ export type Database = {
           key?: string | null
           number?: string | null
           pdf_ref?: string | null
+          provider?: string | null
           status?: string
           updated_at?: string
           xml_ref?: string | null
@@ -1719,6 +1772,7 @@ export type Database = {
           key?: string | null
           number?: string | null
           pdf_ref?: string | null
+          provider?: string | null
           status?: string
           updated_at?: string
           xml_ref?: string | null
@@ -6032,6 +6086,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      remove_integration_credential: {
+        Args: { p_environment: string; p_provider: string }
+        Returns: undefined
+      }
       rename_raw_material_category: {
         Args: { p_id: string; p_name: string }
         Returns: undefined
@@ -6102,6 +6160,37 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "raw_material_entries"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_integration_credential: {
+        Args: {
+          p_api_key: string
+          p_environment: string
+          p_fiscal_provider_name?: string
+          p_provider: string
+          p_wallet_id?: string
+        }
+        Returns: {
+          company_id: string
+          created_at: string
+          created_by_user_id: string | null
+          environment: string
+          fiscal_provider_name: string | null
+          id: string
+          key_last4: string | null
+          last_error: string | null
+          last_validated_at: string | null
+          provider: string
+          status: string
+          updated_at: string
+          vault_secret_id: string | null
+          wallet_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "company_integration_credentials"
           isOneToOne: true
           isSetofReturn: false
         }
