@@ -97,6 +97,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: "/admin/aportes", label: "Aportes de Sócios", icon: Wallet },
       { to: "/admin/despesas", label: "Despesas", icon: ReceiptText },
       { to: "/admin/receitas", label: "Receitas", icon: TrendingUp },
+      { to: "/admin/patrimonio", label: "Patrimônio", icon: Boxes },
     ],
   },
 ];
