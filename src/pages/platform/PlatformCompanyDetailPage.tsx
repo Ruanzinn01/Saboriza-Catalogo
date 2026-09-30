@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, LayoutGrid, PauseCircle, PlayCircle } from "lucide-react";
-import { usePlatformStore } from "@/store/platform-store";
+import { PLATFORM_CAPABILITIES, usePlatformStore } from "@/store/platform-store";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
 import { AdminState } from "@/components/admin/AdminState";
 import { Button } from "@/components/ui/Button";
@@ -22,12 +22,24 @@ export function PlatformCompanyDetailPage() {
   const status = usePlatformStore((s) => s.detailStatus);
   const fetchCompanyDetail = usePlatformStore((s) => s.fetchCompanyDetail);
   const setCompanyStatus = usePlatformStore((s) => s.setCompanyStatus);
+  const entitlements = usePlatformStore((s) => s.entitlements);
+  const fetchEntitlements = usePlatformStore((s) => s.fetchEntitlements);
+  const setEntitlement = usePlatformStore((s) => s.setEntitlement);
   const myEmail = useAdminAuthStore((s) => s.session?.user.email ?? "");
   const [togglingStatus, setTogglingStatus] = useState(false);
 
   useEffect(() => {
-    if (companyId) fetchCompanyDetail(companyId);
-  }, [companyId, fetchCompanyDetail]);
+    if (companyId) {
+      fetchCompanyDetail(companyId);
+      fetchEntitlements(companyId);
+    }
+  }, [companyId, fetchCompanyDetail, fetchEntitlements]);
+
+  async function handleToggleCapability(capabilityKey: string, nextEnabled: boolean) {
+    if (!companyId) return;
+    const err = await setEntitlement(companyId, capabilityKey, nextEnabled);
+    if (err) toast.error(err);
+  }
 
   async function handleToggleStatus() {
     if (!companyId || !detail) return;
@@ -103,6 +115,30 @@ export function PlatformCompanyDetailPage() {
         <div className="rounded-3xl border border-cream-50/10 bg-cream-50/5 p-4">
           <p className="text-xs uppercase tracking-wide text-cream-50/50">Pedidos no mês</p>
           <p className="text-lg font-extrabold text-cream-50">{detail.ordersThisMonth}</p>
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-cream-50/10 bg-cream-50/5 p-4">
+        <p className="mb-3 text-xs uppercase tracking-wide text-cream-50/50">Capacidades habilitadas</p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {PLATFORM_CAPABILITIES.map((cap) => {
+            const entitlement = entitlements.find((e) => e.capabilityKey === cap.key);
+            const enabled = entitlement?.enabled ?? false;
+            return (
+              <label
+                key={cap.key}
+                className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-cream-50/10 px-3 py-2 text-sm text-cream-50"
+              >
+                {cap.label}
+                <input
+                  type="checkbox"
+                  checked={enabled}
+                  onChange={(e) => void handleToggleCapability(cap.key, e.target.checked)}
+                  className="h-5 w-5 shrink-0 accent-gold-500"
+                />
+              </label>
+            );
+          })}
         </div>
       </div>
 
