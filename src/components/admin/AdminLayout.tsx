@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ClipboardCheck, ClipboardList, ExternalLink, LayoutGrid, LogOut, Menu, Warehouse } from "lucide-react";
+import { ClipboardCheck, ClipboardList, ExternalLink, LayoutGrid, LogOut, Menu, ShieldCheck, Warehouse } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
 import { useOrdersStore } from "@/store/orders-store";
 import { useSettingsStore } from "@/store/settings-store";
+import { usePlatformStore } from "@/store/platform-store";
 import { Sheet } from "@/components/ui/Sheet";
 import { AdminNav, isNavItemActive, useNavBadges, type NavItem } from "@/components/admin/AdminNav";
 
@@ -46,12 +47,18 @@ export function AdminLayout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isPlatformAdmin = usePlatformStore((state) => state.isPlatformAdmin);
+  const checkPlatformAccess = usePlatformStore((state) => state.checkAccess);
 
   const showTabBar = pathname !== FLOOR_ROUTE;
 
   useEffect(() => {
     fetchSettings();
   }, [fetchSettings]);
+
+  useEffect(() => {
+    void checkPlatformAccess();
+  }, [checkPlatformAccess]);
 
   useEffect(() => {
     if (ordersStatus === "idle") fetchOrders();
@@ -90,6 +97,12 @@ export function AdminLayout() {
 
         <div className="flex flex-col gap-1 border-t border-cream-50/10 px-3 py-3">
           {email && <UserBadge email={email} tone="dark" />}
+          {isPlatformAdmin && (
+            <Link to="/platform" className={cn(footerLinkClasses, "text-gold-400 hover:bg-cream-50/5 hover:text-gold-300")}>
+              <ShieldCheck size={18} />
+              Painel da plataforma
+            </Link>
+          )}
           <a href="/" target="_blank" rel="noreferrer" className={cn(footerLinkClasses, "text-cream-100/85 hover:bg-cream-50/5 hover:text-cream-50")}>
             <ExternalLink size={18} />
             Voltar ao site
@@ -180,6 +193,16 @@ export function AdminLayout() {
           {email && <UserBadge email={email} tone="light" />}
           <AdminNav variant="sheet" onNavigate={() => setMobileMenuOpen(false)} />
           <div className="flex flex-col gap-1 border-t border-ink-900/10 pt-3">
+            {isPlatformAdmin && (
+              <Link
+                to="/platform"
+                onClick={() => setMobileMenuOpen(false)}
+                className={cn(footerLinkClasses, "text-forest-800 hover:bg-ink-900/5")}
+              >
+                <ShieldCheck size={18} />
+                Painel da plataforma
+              </Link>
+            )}
             <a href="/" target="_blank" rel="noreferrer" className={cn(footerLinkClasses, "text-ink-900 hover:bg-ink-900/5")}>
               <ExternalLink size={18} />
               Voltar ao site

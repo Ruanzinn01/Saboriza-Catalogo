@@ -53,10 +53,14 @@ import { EntregaConfirmacaoPage } from "@/pages/admin/EntregaConfirmacaoPage";
 import { SettingsPage } from "@/pages/admin/SettingsPage";
 import { TeamPage } from "@/pages/admin/TeamPage";
 import { WhatsAppFloatingButton } from "@/components/layout/WhatsAppFloatingButton";
+import { ProtectedPlatformRoute } from "@/components/platform/ProtectedPlatformRoute";
+import { PlatformLayout } from "@/components/platform/PlatformLayout";
+import { PlatformDashboardPage } from "@/pages/platform/PlatformDashboardPage";
+import { PlatformCompanyDetailPage } from "@/pages/platform/PlatformCompanyDetailPage";
 
 export function App() {
   const { pathname } = useLocation();
-  const isCustomerFacing = !pathname.startsWith("/admin");
+  const isCustomerFacing = !pathname.startsWith("/admin") && !pathname.startsWith("/platform");
 
   useEffect(() => {
     useCatalogStore.getState().fetchCatalog();
@@ -122,6 +126,13 @@ export function App() {
             <Route path="patrimonio" element={<PatrimonioPage />} />
             <Route path="dre" element={<DREPage />} />
             <Route path="fechamento" element={<FechamentoPage />} />
+          </Route>
+        </Route>
+
+        <Route element={<ProtectedPlatformRoute />}>
+          <Route path="/platform" element={<PlatformLayout />}>
+            <Route index element={<PlatformDashboardPage />} />
+            <Route path="empresas/:companyId" element={<PlatformCompanyDetailPage />} />
           </Route>
         </Route>
 

@@ -7,3 +7,7 @@ Imagens/
 .env
 .env.local
 scripts/output/
+.agents/
+.claude/
+ORIS360_PACOTE_MESTRE_PROGRAMADOR/
+skills-lock.json
