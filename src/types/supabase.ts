@@ -1248,6 +1248,56 @@ export type Database = {
           },
         ]
       }
+      employee_tasks: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          employee_id: string
+          id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          employee_id: string
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          employee_id?: string
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_tasks_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           address_number: string | null
@@ -1263,6 +1313,7 @@ export type Database = {
           cep: string | null
           city: string | null
           code: string
+          commission_rate_percent: number | null
           company_id: string
           complement: string | null
           cost_center: string | null
@@ -1341,6 +1392,7 @@ export type Database = {
           cep?: string | null
           city?: string | null
           code?: string
+          commission_rate_percent?: number | null
           company_id?: string
           complement?: string | null
           cost_center?: string | null
@@ -1419,6 +1471,7 @@ export type Database = {
           cep?: string | null
           city?: string | null
           code?: string
+          commission_rate_percent?: number | null
           company_id?: string
           complement?: string | null
           cost_center?: string | null
@@ -2252,7 +2305,7 @@ export type Database = {
       }
       order_adjustment_requests: {
         Row: {
-          company_id: string
+          company_id: string | null
           created_at: string
           created_by: string | null
           id: string
@@ -2264,7 +2317,7 @@ export type Database = {
           status: string
         }
         Insert: {
-          company_id?: string
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -2276,7 +2329,7 @@ export type Database = {
           status?: string
         }
         Update: {
-          company_id?: string
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -2608,6 +2661,7 @@ export type Database = {
           order_number: string
           payment_terms: string
           phone: string
+          seller_employee_id: string | null
           separation_completed_by: string | null
           separation_finished_at: string | null
           separation_queued_at: string | null
@@ -2653,6 +2707,7 @@ export type Database = {
           order_number?: string
           payment_terms?: string
           phone: string
+          seller_employee_id?: string | null
           separation_completed_by?: string | null
           separation_finished_at?: string | null
           separation_queued_at?: string | null
@@ -2698,6 +2753,7 @@ export type Database = {
           order_number?: string
           payment_terms?: string
           phone?: string
+          seller_employee_id?: string | null
           separation_completed_by?: string | null
           separation_finished_at?: string | null
           separation_queued_at?: string | null
@@ -2730,6 +2786,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_seller_employee_id_fkey"
+            columns: ["seller_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
@@ -2937,6 +3000,21 @@ export type Database = {
           name?: string
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      platform_admins: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -4096,6 +4174,79 @@ export type Database = {
           },
         ]
       }
+      sales_commissions: {
+        Row: {
+          commission_amount: number
+          commission_rate: number
+          company_id: string
+          created_at: string
+          due_date: string
+          employee_id: string
+          id: string
+          installment_number: number | null
+          order_id: string
+          realized_at: string | null
+          receivable_id: string
+          sale_amount: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          commission_amount: number
+          commission_rate: number
+          company_id: string
+          created_at?: string
+          due_date: string
+          employee_id: string
+          id?: string
+          installment_number?: number | null
+          order_id: string
+          realized_at?: string | null
+          receivable_id: string
+          sale_amount: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          commission_amount?: number
+          commission_rate?: number
+          company_id?: string
+          created_at?: string
+          due_date?: string
+          employee_id?: string
+          id?: string
+          installment_number?: number | null
+          order_id?: string
+          realized_at?: string | null
+          receivable_id?: string
+          sale_amount?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_commissions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_commissions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_commissions_receivable_id_fkey"
+            columns: ["receivable_id"]
+            isOneToOne: true
+            referencedRelation: "receivables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       separation_jobs: {
         Row: {
           company_id: string
@@ -5091,6 +5242,15 @@ export type Database = {
         }
         Returns: Json
       }
+      create_platform_company: {
+        Args: {
+          p_display_name: string
+          p_document?: string
+          p_legal_name?: string
+          p_segment?: string
+        }
+        Returns: string
+      }
       create_production:
         | {
             Args: { p_packs_quantity: number; p_product_id: string }
@@ -5229,6 +5389,43 @@ export type Database = {
           net_revenue: number
           operating_expenses: number
           other_revenue: number
+        }[]
+      }
+      get_platform_companies: {
+        Args: never
+        Returns: {
+          active_users: number
+          company_id: string
+          created_at: string
+          display_name: string
+          orders_this_month: number
+          status: string
+        }[]
+      }
+      get_platform_company_detail: {
+        Args: { p_company_id: string }
+        Returns: Json
+      }
+      get_sales_commissions_report: {
+        Args: {
+          p_employee_id?: string
+          p_period_end?: string
+          p_period_start?: string
+        }
+        Returns: {
+          commission_amount: number
+          commission_id: string
+          commission_rate: number
+          customer_name: string
+          due_date: string
+          employee_id: string
+          employee_name: string
+          installment_number: number
+          order_id: string
+          order_number: string
+          realized_at: string
+          sale_amount: number
+          status: string
         }[]
       }
       is_valid_cpf: { Args: { p_cpf: string }; Returns: boolean }
@@ -5381,6 +5578,10 @@ export type Database = {
       }
       set_monthly_close_automation: {
         Args: { p_company_id: string; p_enabled: boolean }
+        Returns: undefined
+      }
+      set_platform_company_status: {
+        Args: { p_company_id: string; p_status: string }
         Returns: undefined
       }
       update_order_items: {
