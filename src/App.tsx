@@ -8,6 +8,7 @@ import { CatalogPage } from "@/pages/CatalogPage";
 import { CheckoutPage } from "@/pages/CheckoutPage";
 import { OrderConfirmedPage } from "@/pages/OrderConfirmedPage";
 import { PontoOrisTerminalPage } from "@/pages/PontoOrisTerminalPage";
+import { Meu360Page } from "@/pages/Meu360Page";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { AdminLoginPage } from "@/pages/admin/AdminLoginPage";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -32,6 +33,9 @@ import { RawMaterialDetailPage } from "@/pages/admin/RawMaterialDetailPage";
 import { RawMaterialEntryPage } from "@/pages/admin/RawMaterialEntryPage";
 import { ProduzirRegistraPage } from "@/pages/admin/ProduzirRegistraPage";
 import { ChaoDeFabricaPage } from "@/pages/admin/ChaoDeFabricaPage";
+import { RotasProducaoPage } from "@/pages/admin/RotasProducaoPage";
+import { PlanosProducaoPage } from "@/pages/admin/PlanosProducaoPage";
+import { CentralProducaoPage } from "@/pages/admin/CentralProducaoPage";
 import { ProductionPanelPage } from "@/pages/admin/ProductionPanelPage";
 import { StockPage } from "@/pages/admin/StockPage";
 import { StockInsightsPage } from "@/pages/admin/StockInsightsPage";
@@ -101,6 +105,9 @@ export function App() {
             <Route path="materias-primas/:rawMaterialId/editar" element={<RawMaterialFormPage />} />
             <Route path="produzir" element={<ProduzirRegistraPage />} />
             <Route path="chao-de-fabrica" element={<ChaoDeFabricaPage />} />
+            <Route path="rotas-producao" element={<RotasProducaoPage />} />
+            <Route path="planos-producao" element={<PlanosProducaoPage />} />
+            <Route path="central-producao" element={<CentralProducaoPage />} />
             <Route path="producao" element={<ProductionPanelPage />} />
             <Route path="estoque" element={<StockPage />} />
             <Route path="estoque/indicadores" element={<StockInsightsPage />} />
@@ -126,6 +133,7 @@ export function App() {
             <Route path="configuracoes" element={<SettingsPage />} />
             <Route path="usuarios" element={<TeamPage />} />
             <Route path="ponto-oris" element={<PontoOrisTerminalPage />} />
+            <Route path="meu360" element={<Meu360Page />} />
             <Route path="aportes" element={<AportesPage />} />
             <Route path="despesas" element={<DespesasPage />} />
             <Route path="receitas" element={<ReceitasPage />} />

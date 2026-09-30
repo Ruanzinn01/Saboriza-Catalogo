@@ -738,12 +738,20 @@ function ConfirmarProducaoView({
               <p className="mb-2">
                 <b>{selected.name}</b>
               </p>
-              <label className="mb-1 block text-xs font-bold">Quantidade (packs)</label>
-              <input type="number" min={1} value={packs} onChange={(e) => setPacks(Math.max(1, Number(e.target.value)))} className={`${c.input} mb-3`} />
               {readyExecutions.length > 0 && (
                 <>
                   <label className="mb-1 block text-xs font-bold">Vincular execução do Chão (opcional)</label>
-                  <select value={floorExecutionId} onChange={(e) => setFloorExecutionId(e.target.value)} className={`${c.input} mb-3`}>
+                  <select
+                    value={floorExecutionId}
+                    onChange={(e) => {
+                      setFloorExecutionId(e.target.value);
+                      const exec = readyExecutions.find((x) => x.id === e.target.value);
+                      if (exec && selected.packQuantity > 0) {
+                        setPacks(Math.max(1, Math.floor(exec.operationalQuantity / selected.packQuantity)));
+                      }
+                    }}
+                    className={`${c.input} mb-3`}
+                  >
                     <option value="">Sem vínculo</option>
                     {readyExecutions.map((e) => (
                       <option key={e.id} value={e.id}>
@@ -753,6 +761,27 @@ function ConfirmarProducaoView({
                   </select>
                 </>
               )}
+              <label className="mb-1 block text-xs font-bold">Quantidade (packs)</label>
+              <input
+                type="number"
+                min={1}
+                value={packs}
+                disabled={!!floorExecutionId}
+                onChange={(e) => setPacks(Math.max(1, Number(e.target.value)))}
+                className={`${c.input} mb-1`}
+              />
+              {floorExecutionId &&
+                (() => {
+                  const exec = readyExecutions.find((x) => x.id === floorExecutionId);
+                  if (!exec) return null;
+                  const remainder = exec.operationalQuantity % selected.packQuantity;
+                  return (
+                    <p className="mb-3 text-xs" style={{ color: c.muted }}>
+                      {exec.operationalQuantity} un produzidas no Chão ÷ {selected.packQuantity} un/pack = {packs} pack(s)
+                      {remainder > 0 ? ` + ${remainder} un de sobra (não vira pack fictício)` : ""}.
+                    </p>
+                  );
+                })()}
               {urgentOptions.length > 0 && (
                 <>
                   <label className="mb-1 block text-xs font-bold">Apropriar em urgente (opcional)</label>

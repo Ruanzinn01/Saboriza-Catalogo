@@ -32,6 +32,8 @@ function executionFromRow(row: {
   id: string;
   product_id: string;
   production_release_id: string | null;
+  route_id: string | null;
+  route_version: number | null;
   route_version_label: string;
   status: string;
   target_quantity: number;
@@ -48,6 +50,8 @@ function executionFromRow(row: {
     id: row.id,
     productId: row.product_id,
     productionReleaseId: row.production_release_id,
+    routeId: row.route_id,
+    routeVersion: row.route_version,
     routeVersionLabel: row.route_version_label,
     status: row.status as FloorExecution["status"],
     targetQuantity: row.target_quantity,
@@ -73,7 +77,8 @@ interface FloorState {
     reason: string,
     note: string,
     urgentDemandId: string | null,
-    idempotencyKey: string
+    idempotencyKey: string,
+    planId?: string | null
   ) => Promise<boolean>;
   assumeExecution: (executionId: string, employeeId: string) => Promise<boolean>;
   advanceQuantity: (executionId: string, delta: number) => Promise<boolean>;
@@ -96,7 +101,7 @@ export const useFloorStore = create<FloorState>()((set, get) => ({
     if (!executionsRes.error && executionsRes.data) set({ executions: executionsRes.data.map(executionFromRow) });
   },
 
-  createRelease: async (productId, packsQuantity, reason, note, urgentDemandId, idempotencyKey) => {
+  createRelease: async (productId, packsQuantity, reason, note, urgentDemandId, idempotencyKey, planId) => {
     if (packsQuantity <= 0) {
       toast.error("Informe uma quantidade válida");
       return false;
@@ -109,10 +114,11 @@ export const useFloorStore = create<FloorState>()((set, get) => ({
         p_note: note || undefined,
         p_urgent_demand_id: urgentDemandId ?? undefined,
         p_idempotency_key: idempotencyKey,
+        p_plan_id: planId ?? undefined,
       })
       .single();
     if (error || !data) {
-      toast.error(error?.message ?? "Não foi possível liberar a produção");
+      toast.error(error?.message ?? "Não foi possível liberar a produção. Confirme se o produto tem rota de produção ativa.");
       return false;
     }
     await get().fetchAll();

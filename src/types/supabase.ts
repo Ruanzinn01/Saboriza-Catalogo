@@ -1793,6 +1793,8 @@ export type Database = {
           product_id: string
           production_record_id: string | null
           production_release_id: string | null
+          route_id: string | null
+          route_version: number | null
           route_version_label: string
           started_at: string | null
           status: string
@@ -1811,6 +1813,8 @@ export type Database = {
           product_id: string
           production_record_id?: string | null
           production_release_id?: string | null
+          route_id?: string | null
+          route_version?: number | null
           route_version_label?: string
           started_at?: string | null
           status?: string
@@ -1829,6 +1833,8 @@ export type Database = {
           product_id?: string
           production_record_id?: string | null
           production_release_id?: string | null
+          route_id?: string | null
+          route_version?: number | null
           route_version_label?: string
           started_at?: string | null
           status?: string
@@ -1856,6 +1862,13 @@ export type Database = {
             columns: ["production_release_id"]
             isOneToOne: false
             referencedRelation: "production_releases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "floor_executions_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "production_routes"
             referencedColumns: ["id"]
           },
         ]
@@ -3397,6 +3410,60 @@ export type Database = {
           },
         ]
       }
+      production_plans: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by_user_id: string | null
+          id: string
+          planned_date: string
+          planned_packs: number
+          product_id: string
+          production_release_id: string | null
+          status: string
+          unit_id: string
+        }
+        Insert: {
+          company_id?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          id?: string
+          planned_date: string
+          planned_packs: number
+          product_id: string
+          production_release_id?: string | null
+          status?: string
+          unit_id?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          id?: string
+          planned_date?: string
+          planned_packs?: number
+          product_id?: string
+          production_release_id?: string | null
+          status?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_plans_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_plans_production_release_id_fkey"
+            columns: ["production_release_id"]
+            isOneToOne: false
+            referencedRelation: "production_releases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       production_records: {
         Row: {
           company_id: string
@@ -3518,6 +3585,7 @@ export type Database = {
           note: string | null
           origin: string
           product_id: string
+          production_plan_id: string | null
           reason: string | null
           requested_packs: number
           requested_units: number
@@ -3533,6 +3601,7 @@ export type Database = {
           note?: string | null
           origin?: string
           product_id: string
+          production_plan_id?: string | null
           reason?: string | null
           requested_packs: number
           requested_units: number
@@ -3548,6 +3617,7 @@ export type Database = {
           note?: string | null
           origin?: string
           product_id?: string
+          production_plan_id?: string | null
           reason?: string | null
           requested_packs?: number
           requested_units?: number
@@ -3563,10 +3633,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "production_releases_production_plan_id_fkey"
+            columns: ["production_plan_id"]
+            isOneToOne: false
+            referencedRelation: "production_plans"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "production_releases_urgent_demand_id_fkey"
             columns: ["urgent_demand_id"]
             isOneToOne: false
             referencedRelation: "urgent_demands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_route_stages: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          route_id: string
+          sequence_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          route_id: string
+          sequence_order: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          route_id?: string
+          sequence_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_route_stages_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "production_routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_routes: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          product_id: string
+          status: string
+          version: number
+        }
+        Insert: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          product_id: string
+          status?: string
+          version: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+          status?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_routes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -5579,6 +5723,7 @@ export type Database = {
           p_idempotency_key?: string
           p_note?: string
           p_packs_quantity: number
+          p_plan_id?: string
           p_product_id: string
           p_reason?: string
           p_urgent_demand_id?: string
@@ -5592,6 +5737,7 @@ export type Database = {
           note: string | null
           origin: string
           product_id: string
+          production_plan_id: string | null
           reason: string | null
           requested_packs: number
           requested_units: number
@@ -5661,6 +5807,8 @@ export type Database = {
           product_id: string
           production_record_id: string | null
           production_release_id: string | null
+          route_id: string | null
+          route_version: number | null
           route_version_label: string
           started_at: string | null
           status: string
@@ -5688,6 +5836,8 @@ export type Database = {
           product_id: string
           production_record_id: string | null
           production_release_id: string | null
+          route_id: string | null
+          route_version: number | null
           route_version_label: string
           started_at: string | null
           status: string
@@ -5715,6 +5865,8 @@ export type Database = {
           product_id: string
           production_record_id: string | null
           production_release_id: string | null
+          route_id: string | null
+          route_version: number | null
           route_version_label: string
           started_at: string | null
           status: string
@@ -5862,6 +6014,23 @@ export type Database = {
       oris360_time_bank_balance: {
         Args: { p_employee_id: string }
         Returns: number
+      }
+      publish_production_route: {
+        Args: { p_product_id: string; p_stage_names: string[] }
+        Returns: {
+          company_id: string
+          created_at: string
+          id: string
+          product_id: string
+          status: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "production_routes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       rename_raw_material_category: {
         Args: { p_id: string; p_name: string }

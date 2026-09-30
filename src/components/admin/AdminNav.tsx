@@ -85,6 +85,9 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: "/admin/materias-primas", label: "Matérias-primas", icon: Boxes },
       { to: "/admin/produzir", label: "Produziu, Registra", icon: ClipboardCheck, highlight: true },
       { to: "/admin/chao-de-fabrica", label: "Chão de Fábrica", icon: Factory },
+      { to: "/admin/rotas-producao", label: "Rotas de Produção", icon: ClipboardList },
+      { to: "/admin/planos-producao", label: "Planos de Produção", icon: ClipboardList },
+      { to: "/admin/central-producao", label: "Central de Gestão", icon: Gauge },
       { to: "/admin/producao", label: "Painel de produção", icon: Factory },
     ],
   },
@@ -123,6 +126,7 @@ export const STANDALONE_NAV_ITEMS: NavItem[] = [
   { to: "/admin/separa-confere", label: "Separa Confere", icon: PackageSearch, badge: "pendingSeparation" },
   { to: "/admin/carrega-entrega", label: "Carrega Entrega", icon: PackageCheck, badge: "pendingFulfillment" },
   { to: "/admin/ponto-oris", label: "Terminal de Ponto", icon: Clock },
+  { to: "/admin/meu360", label: "Meu 360", icon: Gauge },
 ];
 
 export const SETTINGS_ITEM: NavItem = { to: "/admin/configuracoes", label: "Configurações", icon: Settings };
