@@ -8,6 +8,7 @@ import { useFloorStore } from "@/store/floor-store";
 import { useProductionStore } from "@/store/production-store";
 import { useProductionV3Store } from "@/store/production-v3-store";
 import { useRawMaterialsStore } from "@/store/raw-materials-store";
+import { useProductionRoutesStore } from "@/store/production-routes-store";
 import { DIARY_GRADES, OCCURRENCE_TYPES, type OccurrenceType } from "@/types/production-v3";
 import type { Product } from "@/types/product";
 
@@ -51,7 +52,10 @@ type Page = "home" | "liberar" | "confirmar" | "urgent" | "diary" | "produced" |
 export function ProduzirRegistraPage() {
   const products = useCatalogStore((s) => s.products);
   const fetchCatalog = useCatalogStore((s) => s.fetchCatalog);
+  const materials = useRawMaterialsStore((s) => s.materials);
   const fetchMaterials = useRawMaterialsStore((s) => s.fetchMaterials);
+  const productionPlans = useProductionRoutesStore((s) => s.plans);
+  const fetchProductionPlans = useProductionRoutesStore((s) => s.fetchPlans);
   const records = useProductionStore((s) => s.records);
   const fetchRecords = useProductionStore((s) => s.fetchRecords);
   const confirmProductionRelease = useProductionStore((s) => s.confirmProductionRelease);
@@ -97,6 +101,7 @@ export function ProduzirRegistraPage() {
     fetchEmployees();
     fetchUrgentDemands();
     fetchFloorAll();
+    fetchProductionPlans();
     ensureTodayDiary();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -112,10 +117,11 @@ export function ProduzirRegistraPage() {
     reason: string,
     note: string,
     urgentDemandId: string | null,
-    idempotencyKey: string
+    idempotencyKey: string,
+    planId: string | null
   ) {
     setSaving(true);
-    const ok = await createRelease(productId, packs, reason, note, urgentDemandId, idempotencyKey);
+    const ok = await createRelease(productId, packs, reason, note, urgentDemandId, idempotencyKey, planId);
     setSaving(false);
     if (ok) go("home");
   }
@@ -125,11 +131,10 @@ export function ProduzirRegistraPage() {
     packs: number,
     urgentDemandId: string | null,
     floorExecutionId: string | null,
-    idempotencyKey: string,
-    participants?: { employeeId: string; allocatedUnits: number }[]
+    idempotencyKey: string
   ) {
     setSaving(true);
-    const { error } = await confirmProductionRelease(productId, packs, urgentDemandId, floorExecutionId, idempotencyKey, participants);
+    const { error } = await confirmProductionRelease(productId, packs, urgentDemandId, floorExecutionId, idempotencyKey);
     if (error) {
       toast.error(`Falha ao confirmar produção: ${error}`);
       setSaving(false);
@@ -260,6 +265,8 @@ export function ProduzirRegistraPage() {
         {page === "liberar" && (
           <LiberarProducaoView
             products={products}
+            materials={materials}
+            plans={productionPlans}
             query={query}
             setQuery={setQuery}
             urgentDemands={urgentDemands}
@@ -278,7 +285,6 @@ export function ProduzirRegistraPage() {
             confirmProductId={confirmProductId}
             setConfirmProductId={setConfirmProductId}
             saving={saving}
-            eligibleEmployees={eligible}
             onConfirm={handleConfirmarProducao}
           />
         )}
@@ -578,8 +584,12 @@ export function ProduzirRegistraPage() {
   );
 }
 
+type LiberarOrigin = "PLANO" | "AVULSA";
+
 function LiberarProducaoView({
   products,
+  materials,
+  plans,
   query,
   setQuery,
   urgentDemands,
@@ -587,12 +597,17 @@ function LiberarProducaoView({
   onSubmit,
 }: {
   products: Product[];
+  materials: { id: string; code: string; name: string }[];
+  plans: { id: string; productId: string; plannedPacks: number; status: string }[];
   query: string;
   setQuery: (v: string) => void;
   urgentDemands: { id: string; productId: string; name: string; totalQuantity: number; doneQuantity: number; status: string }[];
   saving: boolean;
-  onSubmit: (productId: string, packs: number, reason: string, note: string, urgentDemandId: string | null, idempotencyKey: string) => void;
+  onSubmit: (productId: string, packs: number, reason: string, note: string, urgentDemandId: string | null, idempotencyKey: string, planId: string | null) => void;
 }) {
+  const [origin, setOrigin] = useState<LiberarOrigin>("PLANO");
+  const [expandSearch, setExpandSearch] = useState(false);
+  const [planId, setPlanId] = useState<string | null>(null);
   const [productId, setProductId] = useState<string | null>(null);
   const [packs, setPacks] = useState(1);
   const [reason, setReason] = useState("");
@@ -600,46 +615,143 @@ function LiberarProducaoView({
   const [urgentId, setUrgentId] = useState("");
   const [idempotencyKey] = useState(() => crypto.randomUUID());
 
-  const filtered = products.filter((p) => p.active && (p.name + p.code).toLowerCase().includes(query.toLowerCase()));
+  const pendingPlans = plans.filter((p) => p.status === "PENDENTE");
+  const productById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
+
+  const searching = origin === "AVULSA" || expandSearch;
+  const q = query.toLowerCase();
+  const filteredProducts = searching ? products.filter((p) => p.active && (p.name + p.code).toLowerCase().includes(q)) : [];
+  const filteredMaterials = searching ? materials.filter((m) => (m.name + m.code).toLowerCase().includes(q)) : [];
+
   const selected = products.find((p) => p.id === productId) ?? null;
   const urgentOptions = selected ? urgentDemands.filter((u) => u.productId === selected.id && u.status === "ATIVO") : [];
+
+  function selectPlan(plan: { id: string; productId: string; plannedPacks: number }) {
+    setPlanId(plan.id);
+    setProductId(plan.productId);
+    setPacks(plan.plannedPacks);
+    setExpandSearch(false);
+  }
+
+  function selectSearchedProduct(id: string) {
+    setProductId(id);
+    setPlanId(null);
+  }
 
   return (
     <>
       <Eyebrow kicker="LIBERAR PRODUÇÃO" title="Abastece o Chão de Fábrica." sub="Sem participantes, sem rateio. Efeito de estoque = zero." />
+      <div className="mb-4 flex max-w-[360px] gap-1 rounded-xl p-1" style={{ background: "#edf1f7" }}>
+        {(["PLANO", "AVULSA"] as const).map((o) => (
+          <button
+            key={o}
+            type="button"
+            onClick={() => {
+              setOrigin(o);
+              setProductId(null);
+              setPlanId(null);
+              setExpandSearch(false);
+              setQuery("");
+            }}
+            className={`flex-1 rounded-lg py-2 text-sm font-bold ${origin === o ? "bg-white shadow" : ""}`}
+            style={{ color: origin === o ? c.blue : c.navy }}
+          >
+            {o === "PLANO" ? "Plano do dia" : "Produção avulsa do dia"}
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
         <Card>
-          <h2 className="mb-3 text-lg font-bold">Qual item produtivo?</h2>
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nome ou código do produto" className={c.input} />
-          <div className="mt-3">
-            {filtered.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setProductId(p.id)}
-                className="flex w-full items-center justify-between border-b py-3 text-left"
-                style={{ borderColor: c.line }}
-              >
-                <div>
-                  <h3 className="font-bold">{p.name}</h3>
-                  <small style={{ color: c.muted }}>{p.code}</small>
+          {origin === "PLANO" && !expandSearch ? (
+            <>
+              <h2 className="mb-3 text-lg font-bold">Itens do plano de hoje</h2>
+              {pendingPlans.length === 0 ? (
+                <p style={{ color: c.muted }}>Nenhum plano pendente pra hoje.</p>
+              ) : (
+                <div className="mb-3">
+                  {pendingPlans.map((plan) => {
+                    const product = productById.get(plan.productId);
+                    return (
+                      <button
+                        key={plan.id}
+                        type="button"
+                        onClick={() => selectPlan(plan)}
+                        className="flex w-full items-center justify-between border-b py-3 text-left"
+                        style={{ borderColor: c.line }}
+                      >
+                        <div>
+                          <h3 className="font-bold">{product?.name ?? "Item do plano"}</h3>
+                          <small style={{ color: c.muted }}>{plan.plannedPacks} pack(s) planejados</small>
+                        </div>
+                        {planId === plan.id && <span className={c.tag}>SELECIONADO</span>}
+                      </button>
+                    );
+                  })}
                 </div>
-                {productId === p.id && <span className={c.tag}>SELECIONADO</span>}
+              )}
+              <button type="button" onClick={() => setExpandSearch(true)} className={`${c.btn} ${c.btnGhost} w-full`}>
+                Não encontrei no plano — buscar em todos os itens
               </button>
-            ))}
-          </div>
+            </>
+          ) : (
+            <>
+              <h2 className="mb-3 text-lg font-bold">Buscar item</h2>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Nome, código ou QR do item (produto, matéria-prima, insumo, embalagem...)"
+                className={c.input}
+              />
+              <div className="mt-3">
+                {filteredProducts.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => selectSearchedProduct(p.id)}
+                    className="flex w-full items-center justify-between border-b py-3 text-left"
+                    style={{ borderColor: c.line }}
+                  >
+                    <div>
+                      <h3 className="font-bold">{p.name}</h3>
+                      <small style={{ color: c.muted }}>{p.code} · produto</small>
+                    </div>
+                    {productId === p.id && <span className={c.tag}>SELECIONADO</span>}
+                  </button>
+                ))}
+                {filteredMaterials.map((m) => (
+                  <div key={m.id} className="flex w-full items-center justify-between border-b py-3" style={{ borderColor: c.line }}>
+                    <div>
+                      <h3 className="font-bold" style={{ color: c.muted }}>{m.name}</h3>
+                      <small style={{ color: c.muted }}>{m.code} · matéria-prima/insumo — sem liberação de produção</small>
+                    </div>
+                  </div>
+                ))}
+                {query && filteredProducts.length === 0 && filteredMaterials.length === 0 && (
+                  <p className="py-3" style={{ color: c.muted }}>Nenhum item encontrado.</p>
+                )}
+              </div>
+            </>
+          )}
         </Card>
         <Card>
           <h2 className="mb-3 text-lg font-bold">Detalhes da liberação</h2>
           {!selected ? (
-            <p style={{ color: c.muted }}>Selecione um item produtivo ao lado.</p>
+            <p style={{ color: c.muted }}>Selecione um item ao lado.</p>
           ) : (
             <>
               <p className="mb-2">
-                <b>{selected.name}</b>
+                <b>{selected.name}</b> {planId && <span className={c.tag}>DO PLANO</span>}
               </p>
               <label className="mb-1 block text-xs font-bold">Quantidade (packs)</label>
-              <input type="number" min={1} value={packs} onChange={(e) => setPacks(Math.max(1, Number(e.target.value)))} className={`${c.input} mb-3`} />
+              <input
+                type="number"
+                min={1}
+                value={packs}
+                disabled={!!planId}
+                onChange={(e) => setPacks(Math.max(1, Number(e.target.value)))}
+                className={`${c.input} mb-3`}
+              />
               <label className="mb-1 block text-xs font-bold">Motivo</label>
               <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ex: reposição de estoque" className={`${c.input} mb-3`} />
               <label className="mb-1 block text-xs font-bold">Observação (opcional)</label>
@@ -660,7 +772,7 @@ function LiberarProducaoView({
               <button
                 type="button"
                 disabled={saving}
-                onClick={() => onSubmit(selected.id, packs, reason, note, urgentId || null, idempotencyKey)}
+                onClick={() => onSubmit(selected.id, packs, reason, note, urgentId || null, idempotencyKey, planId)}
                 className={`${c.btn} ${c.btnPrimary} w-full mt-1`}
               >
                 {saving ? "Liberando..." : "Liberar Produção"}
@@ -673,18 +785,6 @@ function LiberarProducaoView({
   );
 }
 
-function splitEqually(totalUnits: number, participantIds: string[]): Record<string, number> {
-  const count = participantIds.length;
-  if (count === 0) return {};
-  const base = Math.floor(totalUnits / count);
-  const remainder = totalUnits % count;
-  const result: Record<string, number> = {};
-  participantIds.forEach((id, idx) => {
-    result[id] = base + (idx < remainder ? 1 : 0);
-  });
-  return result;
-}
-
 function ConfirmarProducaoView({
   products,
   query,
@@ -694,7 +794,6 @@ function ConfirmarProducaoView({
   confirmProductId,
   setConfirmProductId,
   saving,
-  eligibleEmployees,
   onConfirm,
 }: {
   products: Product[];
@@ -705,23 +804,12 @@ function ConfirmarProducaoView({
   confirmProductId: string | null;
   setConfirmProductId: (v: string | null) => void;
   saving: boolean;
-  eligibleEmployees: { id: string; name: string }[];
-  onConfirm: (
-    productId: string,
-    packs: number,
-    urgentDemandId: string | null,
-    floorExecutionId: string | null,
-    idempotencyKey: string,
-    participants?: { employeeId: string; allocatedUnits: number }[]
-  ) => void;
+  onConfirm: (productId: string, packs: number, urgentDemandId: string | null, floorExecutionId: string | null, idempotencyKey: string) => void;
 }) {
   const [packs, setPacks] = useState(1);
   const [urgentId, setUrgentId] = useState("");
   const [floorExecutionId, setFloorExecutionId] = useState("");
   const [idempotencyKey] = useState(() => crypto.randomUUID());
-  const [participantIds, setParticipantIds] = useState<string[]>([]);
-  const [customSplit, setCustomSplit] = useState(false);
-  const [customAllocations, setCustomAllocations] = useState<Record<string, number>>({});
 
   const filtered = products.filter((p) => p.active && (p.name + p.code).toLowerCase().includes(query.toLowerCase()));
   const selected = products.find((p) => p.id === confirmProductId) ?? null;
@@ -822,94 +910,14 @@ function ConfirmarProducaoView({
                 </>
               )}
 
-              {(() => {
-                const totalUnits = packs * selected.packQuantity;
-                const equalSplit = splitEqually(totalUnits, participantIds);
-                const allocations = customSplit ? customAllocations : equalSplit;
-                const allocatedSum = participantIds.reduce((s, id) => s + (allocations[id] ?? 0), 0);
-                const splitOk = participantIds.length === 0 || allocatedSum === totalUnits;
-
-                return (
-                  <>
-                    <label className="mb-1 block text-xs font-bold">Quem produziu (opcional)</label>
-                    <div className="mb-2 max-h-40 overflow-y-auto rounded-lg border p-2" style={{ borderColor: c.line }}>
-                      {eligibleEmployees.length === 0 ? (
-                        <p className="text-xs" style={{ color: c.muted }}>Nenhum colaborador elegível pra produção.</p>
-                      ) : (
-                        eligibleEmployees.map((e) => (
-                          <label key={e.id} className="flex items-center gap-2 py-1 text-sm">
-                            <input
-                              type="checkbox"
-                              checked={participantIds.includes(e.id)}
-                              onChange={(ev) => {
-                                setParticipantIds((prev) => (ev.target.checked ? [...prev, e.id] : prev.filter((id) => id !== e.id)));
-                              }}
-                            />
-                            {e.name}
-                          </label>
-                        ))
-                      )}
-                    </div>
-
-                    {participantIds.length > 0 && (
-                      <>
-                        <label className="mb-2 flex items-center gap-2 text-xs font-bold">
-                          <input type="checkbox" checked={customSplit} onChange={(e) => setCustomSplit(e.target.checked)} />
-                          Rateio personalizado (padrão: igualitário)
-                        </label>
-                        <div className="mb-2 flex flex-col gap-1">
-                          {participantIds.map((id) => {
-                            const employee = eligibleEmployees.find((e) => e.id === id);
-                            const value = allocations[id] ?? 0;
-                            return (
-                              <div key={id} className="flex items-center justify-between gap-2 text-xs">
-                                <span>{employee?.name}</span>
-                                {customSplit ? (
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    value={customAllocations[id] ?? equalSplit[id] ?? 0}
-                                    onChange={(ev) =>
-                                      setCustomAllocations((prev) => ({ ...prev, [id]: Math.max(0, Number(ev.target.value)) }))
-                                    }
-                                    className="w-20 rounded border px-2 py-1"
-                                    style={{ borderColor: c.line }}
-                                  />
-                                ) : (
-                                  <span className="font-bold">{value} un</span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <p className="mb-3 text-xs" style={{ color: splitOk ? c.muted : "#b52b2b" }}>
-                          {allocatedSum} / {totalUnits} un atribuídas{!splitOk && " — a soma precisa bater com a quantidade produzida"}
-                        </p>
-                      </>
-                    )}
-
-                    <button
-                      type="button"
-                      disabled={saving || !splitOk}
-                      onClick={() =>
-                        onConfirm(
-                          selected.id,
-                          packs,
-                          urgentId || null,
-                          floorExecutionId || null,
-                          idempotencyKey,
-                          participantIds.length > 0
-                            ? participantIds.map((id) => ({ employeeId: id, allocatedUnits: allocations[id] ?? 0 }))
-                            : undefined
-                        )
-                      }
-                      className={`${c.btn} ${c.btnPrimary} w-full mt-1`}
-                    >
-                      {saving ? "Confirmando..." : "Confirmar Produção"}
-                    </button>
-                  </>
-                );
-              })()}
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => onConfirm(selected.id, packs, urgentId || null, floorExecutionId || null, idempotencyKey)}
+                className={`${c.btn} ${c.btnPrimary} w-full mt-1`}
+              >
+                {saving ? "Confirmando..." : "Confirmar Produção"}
+              </button>
             </>
           )}
         </Card>

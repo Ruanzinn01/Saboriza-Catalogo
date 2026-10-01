@@ -3646,6 +3646,7 @@ export type Database = {
           reason: string | null
           requested_packs: number
           requested_units: number
+          status: string
           unit_id: string
           urgent_demand_id: string | null
         }
@@ -3662,6 +3663,7 @@ export type Database = {
           reason?: string | null
           requested_packs: number
           requested_units: number
+          status?: string
           unit_id?: string
           urgent_demand_id?: string | null
         }
@@ -3678,6 +3680,7 @@ export type Database = {
           reason?: string | null
           requested_packs?: number
           requested_units?: number
+          status?: string
           unit_id?: string
           urgent_demand_id?: string | null
         }
@@ -5594,7 +5597,6 @@ export type Database = {
           p_floor_execution_id?: string
           p_idempotency_key?: string
           p_packs_quantity: number
-          p_participants?: Json
           p_product_id: string
           p_urgent_demand_id?: string
         }

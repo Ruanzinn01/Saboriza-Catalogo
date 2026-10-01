@@ -118,11 +118,15 @@ export const useFloorStore = create<FloorState>()((set, get) => ({
       })
       .single();
     if (error || !data) {
-      toast.error(error?.message ?? "Não foi possível liberar a produção. Confirme se o produto tem rota de produção ativa.");
+      toast.error(error?.message ?? "Não foi possível liberar a produção");
       return false;
     }
     await get().fetchAll();
-    toast.success("Produção liberada. Já apareceu no Chão de Fábrica.");
+    if (data.status === "PENDENTE_ROTA") {
+      toast.warning("Liberação registrada, mas o item ainda não tem rota de produção configurada — não apareceu no Chão de Fábrica até a rota ser cadastrada.");
+    } else {
+      toast.success("Produção liberada. Já apareceu no Chão de Fábrica.");
+    }
     return true;
   },
 

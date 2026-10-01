@@ -12,19 +12,12 @@ interface ProductionState {
   status: "idle" | "loading" | "ready" | "error";
   fetchRecords: () => Promise<void>;
   fetchProductStock: (productIds: string[]) => Promise<void>;
-  registerProduction: (
-    productId: string,
-    packsQuantity: number,
-    employeeIds?: string[],
-    urgentDemandId?: string | null
-  ) => Promise<{ record: ProductionRecord | null; error: string | null }>;
   confirmProductionRelease: (
     productId: string,
     packsQuantity: number,
     urgentDemandId: string | null,
     floorExecutionId: string | null,
-    idempotencyKey: string,
-    participants?: { employeeId: string; allocatedUnits: number }[]
+    idempotencyKey: string
   ) => Promise<{ record: ProductionRecord | null; error: string | null }>;
   refreshAfterProduction: (productIds: string[]) => Promise<void>;
 }
@@ -59,26 +52,7 @@ export const useProductionStore = create<ProductionState>()((set) => ({
     }));
   },
 
-  registerProduction: async (productId, packsQuantity, employeeIds, urgentDemandId) => {
-    const { data, error } = await supabase
-      .rpc("create_production", {
-        p_product_id: productId,
-        p_packs_quantity: packsQuantity,
-        p_employee_ids: employeeIds && employeeIds.length > 0 ? employeeIds : null,
-        p_urgent_demand_id: urgentDemandId ?? null,
-      })
-      .single();
-
-    if (error || !data) {
-      return { record: null, error: error?.message ?? "Não foi possível registrar a produção" };
-    }
-
-    const record = productionRecordFromRow(data);
-    set((state) => ({ records: [record, ...state.records] }));
-    return { record, error: null };
-  },
-
-  confirmProductionRelease: async (productId, packsQuantity, urgentDemandId, floorExecutionId, idempotencyKey, participants) => {
+  confirmProductionRelease: async (productId, packsQuantity, urgentDemandId, floorExecutionId, idempotencyKey) => {
     const { data, error } = await supabase
       .rpc("confirm_production_release", {
         p_product_id: productId,
@@ -86,9 +60,6 @@ export const useProductionStore = create<ProductionState>()((set) => ({
         p_urgent_demand_id: urgentDemandId ?? undefined,
         p_floor_execution_id: floorExecutionId ?? undefined,
         p_idempotency_key: idempotencyKey,
-        p_participants: participants && participants.length > 0
-          ? participants.map((p) => ({ employee_id: p.employeeId, allocated_units: p.allocatedUnits }))
-          : undefined,
       })
       .single();
 
