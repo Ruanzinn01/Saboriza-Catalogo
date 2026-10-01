@@ -216,6 +216,11 @@ async function handlePunch(body: Record<string, unknown>) {
     return jsonResponse({ punch_id: existing.id, server_time: existing.server_time, type: existing.type });
   }
 
+  const { data: allowedAttempt } = await serviceClient.rpc("check_pin_rate_limit", { p_device_id: device.id });
+  if (allowedAttempt === false) {
+    return jsonResponse({ error: "muitas tentativas de PIN erradas — aguarde alguns minutos" }, 429);
+  }
+
   const { data: employee } = await serviceClient
     .from("employees")
     .select("id, company_id, timesheet_pin_hash")
@@ -229,8 +234,10 @@ async function handlePunch(body: Record<string, unknown>) {
 
   const pinHash = await sha256Hex(pin);
   if (pinHash !== employee.timesheet_pin_hash) {
+    await serviceClient.rpc("record_pin_attempt", { p_device_id: device.id, p_employee_id: employee.id, p_success: false });
     return jsonResponse({ error: "PIN inválido" }, 401);
   }
+  await serviceClient.rpc("record_pin_attempt", { p_device_id: device.id, p_employee_id: employee.id, p_success: true });
 
   const photoPath = `${employee.company_id}/ponto-oris/${employee.id}/${idempotencyKey}.jpg`;
   const { error: uploadError } = await serviceClient.storage

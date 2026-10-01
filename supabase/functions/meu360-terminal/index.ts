@@ -42,7 +42,10 @@ async function resolveDevice(deviceId: string, deviceCredential: string) {
   return device;
 }
 
-async function resolveEmployee(companyId: string, employeeId: string, pin: string) {
+async function resolveEmployee(deviceId: string, companyId: string, employeeId: string, pin: string) {
+  const { data: allowedAttempt } = await serviceClient.rpc("check_pin_rate_limit", { p_device_id: deviceId });
+  if (allowedAttempt === false) return "RATE_LIMITED" as const;
+
   const { data: employee } = await serviceClient
     .from("employees")
     .select("id, name, company_id, status, can_operate_production, timesheet_pin_hash, meu360_enabled")
@@ -53,7 +56,11 @@ async function resolveEmployee(companyId: string, employeeId: string, pin: strin
   if (!employee || employee.status !== "ATIVO" || !employee.meu360_enabled || !employee.timesheet_pin_hash) return null;
 
   const pinHash = await sha256Hex(pin);
-  if (pinHash !== employee.timesheet_pin_hash) return null;
+  if (pinHash !== employee.timesheet_pin_hash) {
+    await serviceClient.rpc("record_pin_attempt", { p_device_id: deviceId, p_employee_id: employee.id, p_success: false });
+    return null;
+  }
+  await serviceClient.rpc("record_pin_attempt", { p_device_id: deviceId, p_employee_id: employee.id, p_success: true });
 
   return employee;
 }
@@ -101,7 +108,8 @@ async function handleSession(body: Record<string, unknown>) {
   const device = await resolveDevice(deviceId, deviceCredential);
   if (!device) return jsonResponse({ error: "dispositivo invalido ou revogado" }, 401);
 
-  const employee = await resolveEmployee(device.company_id, employeeId, pin);
+  const employee = await resolveEmployee(deviceId, device.company_id, employeeId, pin);
+  if (employee === "RATE_LIMITED") return jsonResponse({ error: "muitas tentativas de PIN erradas — aguarde alguns minutos" }, 429);
   if (!employee || !employee.can_operate_production) return jsonResponse({ error: "PIN invalido ou colaborador sem producao" }, 401);
 
   const { data: executions } = await serviceClient
@@ -137,7 +145,8 @@ async function handleAction(body: Record<string, unknown>) {
   const device = await resolveDevice(deviceId, deviceCredential);
   if (!device) return jsonResponse({ error: "dispositivo invalido ou revogado" }, 401);
 
-  const employee = await resolveEmployee(device.company_id, employeeId, pin);
+  const employee = await resolveEmployee(deviceId, device.company_id, employeeId, pin);
+  if (employee === "RATE_LIMITED") return jsonResponse({ error: "muitas tentativas de PIN erradas — aguarde alguns minutos" }, 429);
   if (!employee || !employee.can_operate_production) return jsonResponse({ error: "PIN invalido ou colaborador sem producao" }, 401);
 
   const { data: exec } = await serviceClient.from("floor_executions").select("id, company_id").eq("id", floorExecutionId).maybeSingle();

@@ -1,73 +1,80 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
 import { useSettingsStore } from "@/store/settings-store";
 import { CatalogPage } from "@/pages/CatalogPage";
-import { CheckoutPage } from "@/pages/CheckoutPage";
-import { OrderConfirmedPage } from "@/pages/OrderConfirmedPage";
-import { PontoOrisTerminalPage } from "@/pages/PontoOrisTerminalPage";
-import { Meu360Page } from "@/pages/Meu360Page";
-import { NotFoundPage } from "@/pages/NotFoundPage";
-import { AdminLoginPage } from "@/pages/admin/AdminLoginPage";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
-import { IndicatorsPage } from "@/pages/admin/IndicatorsPage";
-import { ProductsPage } from "@/pages/admin/ProductsPage";
-import { ProductFormPage } from "@/pages/admin/ProductFormPage";
-import { RawMaterialCategoriesPage } from "@/pages/admin/RawMaterialCategoriesPage";
-import { CategoriesPage } from "@/pages/admin/CategoriesPage";
-import { CustomersPage } from "@/pages/admin/CustomersPage";
-import { CustomerFormPage } from "@/pages/admin/CustomerFormPage";
-import { CustomerDetailPage } from "@/pages/admin/CustomerDetailPage";
-import { EmployeesPage } from "@/pages/admin/EmployeesPage";
-import { EmployeeProfilePage } from "@/pages/admin/EmployeeProfilePage";
-import { EmployeeTimesheetPage } from "@/pages/admin/EmployeeTimesheetPage";
-import { SuppliersPage } from "@/pages/admin/SuppliersPage";
-import { SupplierFormPage } from "@/pages/admin/SupplierFormPage";
-import { SupplierDetailPage } from "@/pages/admin/SupplierDetailPage";
-import { RawMaterialsPage } from "@/pages/admin/RawMaterialsPage";
-import { RawMaterialFormPage } from "@/pages/admin/RawMaterialFormPage";
-import { RawMaterialDetailPage } from "@/pages/admin/RawMaterialDetailPage";
-import { RawMaterialEntryPage } from "@/pages/admin/RawMaterialEntryPage";
-import { ProduzirRegistraPage } from "@/pages/admin/ProduzirRegistraPage";
-import { ChaoDeFabricaPage } from "@/pages/admin/ChaoDeFabricaPage";
-import { RotasProducaoPage } from "@/pages/admin/RotasProducaoPage";
-import { PlanosProducaoPage } from "@/pages/admin/PlanosProducaoPage";
-import { CentralProducaoPage } from "@/pages/admin/CentralProducaoPage";
-import { IntegracoesFinanceirasPage } from "@/pages/admin/IntegracoesFinanceirasPage";
-import { ProductionPanelPage } from "@/pages/admin/ProductionPanelPage";
-import { StockPage } from "@/pages/admin/StockPage";
-import { StockInsightsPage } from "@/pages/admin/StockInsightsPage";
-import { ProductStockDetailPage } from "@/pages/admin/ProductStockDetailPage";
-import { OrdersPage } from "@/pages/admin/OrdersPage";
-import { OrderEditorPage } from "@/pages/admin/OrderEditorPage";
-import { FaturarListPage } from "@/pages/admin/FaturarListPage";
-import { FaturarOrderPage } from "@/pages/admin/FaturarOrderPage";
-import { AportesPage } from "@/pages/admin/AportesPage";
-import { DespesasPage } from "@/pages/admin/DespesasPage";
-import { ReceitasPage } from "@/pages/admin/ReceitasPage";
-import { PatrimonioPage } from "@/pages/admin/PatrimonioPage";
-import { DREPage } from "@/pages/admin/DREPage";
-import { FechamentoPage } from "@/pages/admin/FechamentoPage";
-import { SeparaConferePage } from "@/pages/admin/SeparaConferePage";
-import { SeparaConfereOrderPage } from "@/pages/admin/SeparaConfereOrderPage";
-import { CarregaEntregaPage } from "@/pages/admin/CarregaEntregaPage";
-import { CarregamentoOrderPage } from "@/pages/admin/CarregamentoOrderPage";
-import { EntregaConfirmacaoPage } from "@/pages/admin/EntregaConfirmacaoPage";
-import { SettingsPage } from "@/pages/admin/SettingsPage";
-import { TeamPage } from "@/pages/admin/TeamPage";
-import { ForcaDeVendasPage } from "@/pages/admin/ForcaDeVendasPage";
-import { TarefasPage } from "@/pages/admin/TarefasPage";
-import { PulsoPage } from "@/pages/admin/PulsoPage";
-import { PainelProprietarioPage } from "@/pages/admin/PainelProprietarioPage";
-import { FinanceiroGeralPage } from "@/pages/admin/FinanceiroGeralPage";
 import { WhatsAppFloatingButton } from "@/components/layout/WhatsAppFloatingButton";
 import { ProtectedPlatformRoute } from "@/components/platform/ProtectedPlatformRoute";
 import { PlatformLayout } from "@/components/platform/PlatformLayout";
-import { PlatformDashboardPage } from "@/pages/platform/PlatformDashboardPage";
-import { PlatformCompanyDetailPage } from "@/pages/platform/PlatformCompanyDetailPage";
+import { AdminState } from "@/components/admin/AdminState";
+
+const CheckoutPage = lazy(() => import("@/pages/CheckoutPage").then((m) => ({ default: m.CheckoutPage })));
+const OrderConfirmedPage = lazy(() => import("@/pages/OrderConfirmedPage").then((m) => ({ default: m.OrderConfirmedPage })));
+const PontoOrisTerminalPage = lazy(() => import("@/pages/PontoOrisTerminalPage").then((m) => ({ default: m.PontoOrisTerminalPage })));
+const Meu360Page = lazy(() => import("@/pages/Meu360Page").then((m) => ({ default: m.Meu360Page })));
+const NotFoundPage = lazy(() => import("@/pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })));
+const AdminLoginPage = lazy(() => import("@/pages/admin/AdminLoginPage").then((m) => ({ default: m.AdminLoginPage })));
+const IndicatorsPage = lazy(() => import("@/pages/admin/IndicatorsPage").then((m) => ({ default: m.IndicatorsPage })));
+const ProductsPage = lazy(() => import("@/pages/admin/ProductsPage").then((m) => ({ default: m.ProductsPage })));
+const ProductFormPage = lazy(() => import("@/pages/admin/ProductFormPage").then((m) => ({ default: m.ProductFormPage })));
+const RawMaterialCategoriesPage = lazy(() => import("@/pages/admin/RawMaterialCategoriesPage").then((m) => ({ default: m.RawMaterialCategoriesPage })));
+const CategoriesPage = lazy(() => import("@/pages/admin/CategoriesPage").then((m) => ({ default: m.CategoriesPage })));
+const CustomersPage = lazy(() => import("@/pages/admin/CustomersPage").then((m) => ({ default: m.CustomersPage })));
+const CustomerFormPage = lazy(() => import("@/pages/admin/CustomerFormPage").then((m) => ({ default: m.CustomerFormPage })));
+const CustomerDetailPage = lazy(() => import("@/pages/admin/CustomerDetailPage").then((m) => ({ default: m.CustomerDetailPage })));
+const EmployeesPage = lazy(() => import("@/pages/admin/EmployeesPage").then((m) => ({ default: m.EmployeesPage })));
+const EmployeeProfilePage = lazy(() => import("@/pages/admin/EmployeeProfilePage").then((m) => ({ default: m.EmployeeProfilePage })));
+const EmployeeTimesheetPage = lazy(() => import("@/pages/admin/EmployeeTimesheetPage").then((m) => ({ default: m.EmployeeTimesheetPage })));
+const SuppliersPage = lazy(() => import("@/pages/admin/SuppliersPage").then((m) => ({ default: m.SuppliersPage })));
+const SupplierFormPage = lazy(() => import("@/pages/admin/SupplierFormPage").then((m) => ({ default: m.SupplierFormPage })));
+const SupplierDetailPage = lazy(() => import("@/pages/admin/SupplierDetailPage").then((m) => ({ default: m.SupplierDetailPage })));
+const RawMaterialsPage = lazy(() => import("@/pages/admin/RawMaterialsPage").then((m) => ({ default: m.RawMaterialsPage })));
+const RawMaterialFormPage = lazy(() => import("@/pages/admin/RawMaterialFormPage").then((m) => ({ default: m.RawMaterialFormPage })));
+const RawMaterialDetailPage = lazy(() => import("@/pages/admin/RawMaterialDetailPage").then((m) => ({ default: m.RawMaterialDetailPage })));
+const RawMaterialEntryPage = lazy(() => import("@/pages/admin/RawMaterialEntryPage").then((m) => ({ default: m.RawMaterialEntryPage })));
+const ProduzirRegistraPage = lazy(() => import("@/pages/admin/ProduzirRegistraPage").then((m) => ({ default: m.ProduzirRegistraPage })));
+const ChaoDeFabricaPage = lazy(() => import("@/pages/admin/ChaoDeFabricaPage").then((m) => ({ default: m.ChaoDeFabricaPage })));
+const RotasProducaoPage = lazy(() => import("@/pages/admin/RotasProducaoPage").then((m) => ({ default: m.RotasProducaoPage })));
+const PlanosProducaoPage = lazy(() => import("@/pages/admin/PlanosProducaoPage").then((m) => ({ default: m.PlanosProducaoPage })));
+const CentralProducaoPage = lazy(() => import("@/pages/admin/CentralProducaoPage").then((m) => ({ default: m.CentralProducaoPage })));
+const IntegracoesFinanceirasPage = lazy(() => import("@/pages/admin/IntegracoesFinanceirasPage").then((m) => ({ default: m.IntegracoesFinanceirasPage })));
+const ErrosSistemaPage = lazy(() => import("@/pages/admin/ErrosSistemaPage").then((m) => ({ default: m.ErrosSistemaPage })));
+const ProductionPanelPage = lazy(() => import("@/pages/admin/ProductionPanelPage").then((m) => ({ default: m.ProductionPanelPage })));
+const StockPage = lazy(() => import("@/pages/admin/StockPage").then((m) => ({ default: m.StockPage })));
+const StockInsightsPage = lazy(() => import("@/pages/admin/StockInsightsPage").then((m) => ({ default: m.StockInsightsPage })));
+const ProductStockDetailPage = lazy(() => import("@/pages/admin/ProductStockDetailPage").then((m) => ({ default: m.ProductStockDetailPage })));
+const OrdersPage = lazy(() => import("@/pages/admin/OrdersPage").then((m) => ({ default: m.OrdersPage })));
+const OrderEditorPage = lazy(() => import("@/pages/admin/OrderEditorPage").then((m) => ({ default: m.OrderEditorPage })));
+const FaturarListPage = lazy(() => import("@/pages/admin/FaturarListPage").then((m) => ({ default: m.FaturarListPage })));
+const FaturarOrderPage = lazy(() => import("@/pages/admin/FaturarOrderPage").then((m) => ({ default: m.FaturarOrderPage })));
+const AportesPage = lazy(() => import("@/pages/admin/AportesPage").then((m) => ({ default: m.AportesPage })));
+const DespesasPage = lazy(() => import("@/pages/admin/DespesasPage").then((m) => ({ default: m.DespesasPage })));
+const ReceitasPage = lazy(() => import("@/pages/admin/ReceitasPage").then((m) => ({ default: m.ReceitasPage })));
+const PatrimonioPage = lazy(() => import("@/pages/admin/PatrimonioPage").then((m) => ({ default: m.PatrimonioPage })));
+const DREPage = lazy(() => import("@/pages/admin/DREPage").then((m) => ({ default: m.DREPage })));
+const FechamentoPage = lazy(() => import("@/pages/admin/FechamentoPage").then((m) => ({ default: m.FechamentoPage })));
+const SeparaConferePage = lazy(() => import("@/pages/admin/SeparaConferePage").then((m) => ({ default: m.SeparaConferePage })));
+const SeparaConfereOrderPage = lazy(() => import("@/pages/admin/SeparaConfereOrderPage").then((m) => ({ default: m.SeparaConfereOrderPage })));
+const CarregaEntregaPage = lazy(() => import("@/pages/admin/CarregaEntregaPage").then((m) => ({ default: m.CarregaEntregaPage })));
+const CarregamentoOrderPage = lazy(() => import("@/pages/admin/CarregamentoOrderPage").then((m) => ({ default: m.CarregamentoOrderPage })));
+const EntregaConfirmacaoPage = lazy(() => import("@/pages/admin/EntregaConfirmacaoPage").then((m) => ({ default: m.EntregaConfirmacaoPage })));
+const SettingsPage = lazy(() => import("@/pages/admin/SettingsPage").then((m) => ({ default: m.SettingsPage })));
+const TeamPage = lazy(() => import("@/pages/admin/TeamPage").then((m) => ({ default: m.TeamPage })));
+const ForcaDeVendasPage = lazy(() => import("@/pages/admin/ForcaDeVendasPage").then((m) => ({ default: m.ForcaDeVendasPage })));
+const TarefasPage = lazy(() => import("@/pages/admin/TarefasPage").then((m) => ({ default: m.TarefasPage })));
+const PulsoPage = lazy(() => import("@/pages/admin/PulsoPage").then((m) => ({ default: m.PulsoPage })));
+const PainelProprietarioPage = lazy(() => import("@/pages/admin/PainelProprietarioPage").then((m) => ({ default: m.PainelProprietarioPage })));
+const FinanceiroGeralPage = lazy(() => import("@/pages/admin/FinanceiroGeralPage").then((m) => ({ default: m.FinanceiroGeralPage })));
+const PlatformDashboardPage = lazy(() => import("@/pages/platform/PlatformDashboardPage").then((m) => ({ default: m.PlatformDashboardPage })));
+const PlatformCompanyDetailPage = lazy(() => import("@/pages/platform/PlatformCompanyDetailPage").then((m) => ({ default: m.PlatformCompanyDetailPage })));
+
+function RouteFallback() {
+  return <AdminState variant="loading" message="Carregando..." />;
+}
 
 export function App() {
   const { pathname } = useLocation();
@@ -83,83 +90,86 @@ export function App() {
     <>
       <Toaster position="top-center" richColors />
       {isCustomerFacing && <WhatsAppFloatingButton />}
-      <Routes>
-        <Route path="/" element={<CatalogPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/pedido-confirmado/:orderId" element={<OrderConfirmedPage />} />
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
+          <Route path="/" element={<CatalogPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/pedido-confirmado/:orderId" element={<OrderConfirmedPage />} />
 
-        <Route path="/admin/login" element={<AdminLoginPage />} />
-        <Route element={<ProtectedRoute />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<IndicatorsPage />} />
-            <Route path="produtos" element={<ProductsPage />} />
-            <Route path="produtos/:productId" element={<ProductFormPage />} />
-            <Route path="categorias" element={<CategoriesPage />} />
-            <Route path="clientes" element={<CustomersPage />} />
-            <Route path="clientes/novo" element={<CustomerFormPage />} />
-            <Route path="clientes/:customerId" element={<CustomerDetailPage />} />
-            <Route path="clientes/:customerId/editar" element={<CustomerFormPage />} />
-            <Route path="materias-primas" element={<RawMaterialsPage />} />
-            <Route path="materias-primas/novo" element={<RawMaterialFormPage />} />
-            <Route path="materias-primas/categorias" element={<RawMaterialCategoriesPage />} />
-            <Route path="materias-primas/entrada" element={<RawMaterialEntryPage />} />
-            <Route path="materias-primas/:rawMaterialId" element={<RawMaterialDetailPage />} />
-            <Route path="materias-primas/:rawMaterialId/editar" element={<RawMaterialFormPage />} />
-            <Route path="produzir" element={<ProduzirRegistraPage />} />
-            <Route path="chao-de-fabrica" element={<ChaoDeFabricaPage />} />
-            <Route path="rotas-producao" element={<RotasProducaoPage />} />
-            <Route path="planos-producao" element={<PlanosProducaoPage />} />
-            <Route path="central-producao" element={<CentralProducaoPage />} />
-            <Route path="producao" element={<ProductionPanelPage />} />
-            <Route path="estoque" element={<StockPage />} />
-            <Route path="estoque/indicadores" element={<StockInsightsPage />} />
-            <Route path="estoque/:productId" element={<ProductStockDetailPage />} />
-            <Route path="colaboradores" element={<EmployeesPage />} />
-            <Route path="colaboradores/novo" element={<EmployeeProfilePage />} />
-            <Route path="colaboradores/:employeeId" element={<EmployeeProfilePage />} />
-            <Route path="colaboradores/:employeeId/espelho" element={<EmployeeTimesheetPage />} />
-            <Route path="fornecedores" element={<SuppliersPage />} />
-            <Route path="fornecedores/novo" element={<SupplierFormPage />} />
-            <Route path="fornecedores/:supplierId" element={<SupplierDetailPage />} />
-            <Route path="fornecedores/:supplierId/editar" element={<SupplierFormPage />} />
-            <Route path="pedidos" element={<OrdersPage />} />
-            <Route path="pedidos/novo" element={<OrderEditorPage />} />
-            <Route path="pedidos/:orderId" element={<OrderEditorPage />} />
-            <Route path="faturar" element={<FaturarListPage />} />
-            <Route path="faturar/:orderId" element={<FaturarOrderPage />} />
-            <Route path="separa-confere" element={<SeparaConferePage />} />
-            <Route path="separa-confere/:orderId" element={<SeparaConfereOrderPage />} />
-            <Route path="carrega-entrega" element={<CarregaEntregaPage />} />
-            <Route path="carrega-entrega/carregar/:orderId" element={<CarregamentoOrderPage />} />
-            <Route path="carrega-entrega/entregar/:orderId" element={<EntregaConfirmacaoPage />} />
-            <Route path="configuracoes" element={<SettingsPage />} />
-            <Route path="usuarios" element={<TeamPage />} />
-            <Route path="ponto-oris" element={<PontoOrisTerminalPage />} />
-            <Route path="meu360" element={<Meu360Page />} />
-            <Route path="aportes" element={<AportesPage />} />
-            <Route path="despesas" element={<DespesasPage />} />
-            <Route path="receitas" element={<ReceitasPage />} />
-            <Route path="patrimonio" element={<PatrimonioPage />} />
-            <Route path="dre" element={<DREPage />} />
-            <Route path="fechamento" element={<FechamentoPage />} />
-            <Route path="integracoes" element={<IntegracoesFinanceirasPage />} />
-            <Route path="vendas" element={<ForcaDeVendasPage />} />
-            <Route path="tarefas" element={<TarefasPage />} />
-            <Route path="pulso" element={<PulsoPage />} />
-            <Route path="painel-proprietario" element={<PainelProprietarioPage />} />
-            <Route path="financeiro-geral" element={<FinanceiroGeralPage />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<IndicatorsPage />} />
+              <Route path="produtos" element={<ProductsPage />} />
+              <Route path="produtos/:productId" element={<ProductFormPage />} />
+              <Route path="categorias" element={<CategoriesPage />} />
+              <Route path="clientes" element={<CustomersPage />} />
+              <Route path="clientes/novo" element={<CustomerFormPage />} />
+              <Route path="clientes/:customerId" element={<CustomerDetailPage />} />
+              <Route path="clientes/:customerId/editar" element={<CustomerFormPage />} />
+              <Route path="materias-primas" element={<RawMaterialsPage />} />
+              <Route path="materias-primas/novo" element={<RawMaterialFormPage />} />
+              <Route path="materias-primas/categorias" element={<RawMaterialCategoriesPage />} />
+              <Route path="materias-primas/entrada" element={<RawMaterialEntryPage />} />
+              <Route path="materias-primas/:rawMaterialId" element={<RawMaterialDetailPage />} />
+              <Route path="materias-primas/:rawMaterialId/editar" element={<RawMaterialFormPage />} />
+              <Route path="produzir" element={<ProduzirRegistraPage />} />
+              <Route path="chao-de-fabrica" element={<ChaoDeFabricaPage />} />
+              <Route path="rotas-producao" element={<RotasProducaoPage />} />
+              <Route path="planos-producao" element={<PlanosProducaoPage />} />
+              <Route path="central-producao" element={<CentralProducaoPage />} />
+              <Route path="producao" element={<ProductionPanelPage />} />
+              <Route path="estoque" element={<StockPage />} />
+              <Route path="estoque/indicadores" element={<StockInsightsPage />} />
+              <Route path="estoque/:productId" element={<ProductStockDetailPage />} />
+              <Route path="colaboradores" element={<EmployeesPage />} />
+              <Route path="colaboradores/novo" element={<EmployeeProfilePage />} />
+              <Route path="colaboradores/:employeeId" element={<EmployeeProfilePage />} />
+              <Route path="colaboradores/:employeeId/espelho" element={<EmployeeTimesheetPage />} />
+              <Route path="fornecedores" element={<SuppliersPage />} />
+              <Route path="fornecedores/novo" element={<SupplierFormPage />} />
+              <Route path="fornecedores/:supplierId" element={<SupplierDetailPage />} />
+              <Route path="fornecedores/:supplierId/editar" element={<SupplierFormPage />} />
+              <Route path="pedidos" element={<OrdersPage />} />
+              <Route path="pedidos/novo" element={<OrderEditorPage />} />
+              <Route path="pedidos/:orderId" element={<OrderEditorPage />} />
+              <Route path="faturar" element={<FaturarListPage />} />
+              <Route path="faturar/:orderId" element={<FaturarOrderPage />} />
+              <Route path="separa-confere" element={<SeparaConferePage />} />
+              <Route path="separa-confere/:orderId" element={<SeparaConfereOrderPage />} />
+              <Route path="carrega-entrega" element={<CarregaEntregaPage />} />
+              <Route path="carrega-entrega/carregar/:orderId" element={<CarregamentoOrderPage />} />
+              <Route path="carrega-entrega/entregar/:orderId" element={<EntregaConfirmacaoPage />} />
+              <Route path="configuracoes" element={<SettingsPage />} />
+              <Route path="usuarios" element={<TeamPage />} />
+              <Route path="ponto-oris" element={<PontoOrisTerminalPage />} />
+              <Route path="meu360" element={<Meu360Page />} />
+              <Route path="aportes" element={<AportesPage />} />
+              <Route path="despesas" element={<DespesasPage />} />
+              <Route path="receitas" element={<ReceitasPage />} />
+              <Route path="patrimonio" element={<PatrimonioPage />} />
+              <Route path="dre" element={<DREPage />} />
+              <Route path="fechamento" element={<FechamentoPage />} />
+              <Route path="integracoes" element={<IntegracoesFinanceirasPage />} />
+              <Route path="erros-sistema" element={<ErrosSistemaPage />} />
+              <Route path="vendas" element={<ForcaDeVendasPage />} />
+              <Route path="tarefas" element={<TarefasPage />} />
+              <Route path="pulso" element={<PulsoPage />} />
+              <Route path="painel-proprietario" element={<PainelProprietarioPage />} />
+              <Route path="financeiro-geral" element={<FinanceiroGeralPage />} />
+            </Route>
           </Route>
-        </Route>
 
-        <Route element={<ProtectedPlatformRoute />}>
-          <Route path="/platform" element={<PlatformLayout />}>
-            <Route index element={<PlatformDashboardPage />} />
-            <Route path="empresas/:companyId" element={<PlatformCompanyDetailPage />} />
+          <Route element={<ProtectedPlatformRoute />}>
+            <Route path="/platform" element={<PlatformLayout />}>
+              <Route index element={<PlatformDashboardPage />} />
+              <Route path="empresas/:companyId" element={<PlatformCompanyDetailPage />} />
+            </Route>
           </Route>
-        </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Suspense>
     </>
   );
 }

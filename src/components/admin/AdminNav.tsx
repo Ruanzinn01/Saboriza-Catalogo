@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Activity,
+  AlertTriangle,
   Archive,
   BarChart3,
   Boxes,
@@ -131,6 +132,7 @@ export const STANDALONE_NAV_ITEMS: NavItem[] = [
 
 export const SETTINGS_ITEM: NavItem = { to: "/admin/configuracoes", label: "Configurações", icon: Settings };
 export const TEAM_ITEM: NavItem = { to: "/admin/usuarios", label: "Usuários", icon: UsersRound };
+export const ERRORS_ITEM: NavItem = { to: "/admin/erros-sistema", label: "Erros do Sistema", icon: AlertTriangle };
 
 export function isNavItemActive(pathname: string, item: NavItem): boolean {
   if (item.excludePrefixes?.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) return false;
@@ -350,6 +352,7 @@ export function AdminNav({ variant, onNavigate }: AdminNavProps) {
       <div className={cn("mt-1 flex flex-col gap-1 border-t pt-2", styles.divider)}>
         {STANDALONE_NAV_ITEMS.map(renderItem)}
         {renderItem(TEAM_ITEM)}
+        {renderItem(ERRORS_ITEM)}
         {renderItem(SETTINGS_ITEM)}
       </div>
     </nav>
