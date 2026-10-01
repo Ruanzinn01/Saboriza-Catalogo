@@ -330,7 +330,25 @@ export const useFaturarStore = create<FaturarState>((set, get) => ({
     set({ isConfirming: false });
 
     if (error || !data) return { billingId: null, error: error?.message ?? "Não foi possível confirmar o faturamento" };
-    return { billingId: data as unknown as string, error: null };
+    const billingId = data as unknown as string;
+
+    const hasAsaas = paymentMethods.some((p) => (p.type === "BOLETO" || p.type === "PIX") && p.asaas);
+    if (hasAsaas) {
+      const { data: pmRows } = await supabase.from("payment_methods").select("id").eq("billing_id", billingId);
+      const pmIds = (pmRows ?? []).map((r) => r.id);
+      if (pmIds.length > 0) {
+        const { data: instRows } = await supabase.from("installments").select("id").in("payment_method_id", pmIds);
+        const instIds = (instRows ?? []).map((r) => r.id);
+        if (instIds.length > 0) {
+          const { data: chargeRows } = await supabase.from("charges").select("id").in("installment_id", instIds);
+          for (const c of chargeRows ?? []) {
+            await supabase.functions.invoke("asaas-create-charge", { body: { charge_id: c.id } });
+          }
+        }
+      }
+    }
+
+    return { billingId, error: null };
   },
 
   reset: () =>

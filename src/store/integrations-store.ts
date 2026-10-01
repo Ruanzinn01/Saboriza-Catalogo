@@ -5,11 +5,13 @@ import type { IntegrationCredential, IntegrationEnvironment, IntegrationProvider
 
 function fromRow(row: {
   id: string;
+  company_id: string;
   provider: string;
   environment: string;
   key_last4: string | null;
   wallet_id: string | null;
   fiscal_provider_name: string | null;
+  webhook_token: string | null;
   status: string;
   last_validated_at: string | null;
   last_error: string | null;
@@ -17,11 +19,13 @@ function fromRow(row: {
 }): IntegrationCredential {
   return {
     id: row.id,
+    companyId: row.company_id,
     provider: row.provider as IntegrationProvider,
     environment: row.environment as IntegrationEnvironment,
     keyLast4: row.key_last4,
     walletId: row.wallet_id,
     fiscalProviderName: row.fiscal_provider_name,
+    webhookToken: row.webhook_token,
     status: row.status as IntegrationCredential["status"],
     lastValidatedAt: row.last_validated_at,
     lastError: row.last_error,
@@ -41,6 +45,7 @@ interface IntegrationsState {
     fiscalProviderName?: string | null
   ) => Promise<boolean>;
   removeCredential: (provider: IntegrationProvider, environment: IntegrationEnvironment) => Promise<boolean>;
+  testConnection: (credentialId: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 export const useIntegrationsStore = create<IntegrationsState>()((set, get) => ({
@@ -85,5 +90,21 @@ export const useIntegrationsStore = create<IntegrationsState>()((set, get) => ({
     await get().fetchAll();
     toast.success("Credencial removida");
     return true;
+  },
+
+  testConnection: async (credentialId) => {
+    const { data, error } = await supabase.functions.invoke("asaas-test-connection", { body: { credential_id: credentialId } });
+    if (error) {
+      toast.error("Não foi possível testar a conexão");
+      await get().fetchAll();
+      return { ok: false, error: error.message };
+    }
+    await get().fetchAll();
+    if (!data?.ok) {
+      toast.error(data?.error ?? "Falha na conexão com o Asaas");
+      return { ok: false, error: data?.error };
+    }
+    toast.success("Conexão com o Asaas validada");
+    return { ok: true };
   },
 }));

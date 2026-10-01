@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useIntegrationsStore } from "@/store/integrations-store";
 import type { IntegrationCredential, IntegrationEnvironment, IntegrationProvider } from "@/types/integrations";
 import { Button } from "@/components/ui/Button";
+const SUPABASE_FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL as string}/functions/v1`;
 
 const STATUS_LABEL: Record<IntegrationCredential["status"], string> = {
   NAO_CONFIGURADO: "Não configurado",
@@ -36,11 +38,13 @@ function CredentialCard({
 }) {
   const saveCredential = useIntegrationsStore((s) => s.saveCredential);
   const removeCredential = useIntegrationsStore((s) => s.removeCredential);
+  const testConnection = useIntegrationsStore((s) => s.testConnection);
   const [editing, setEditing] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [walletId, setWalletId] = useState(existing?.walletId ?? "");
   const [fiscalProviderName, setFiscalProviderName] = useState(existing?.fiscalProviderName ?? "");
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
 
   const status = existing?.status ?? "NAO_CONFIGURADO";
 
@@ -60,6 +64,26 @@ function CredentialCard({
     setSaving(false);
   }
 
+  async function handleTest() {
+    if (!existing) return;
+    setTesting(true);
+    await testConnection(existing.id);
+    setTesting(false);
+  }
+
+  function copyWebhookUrl() {
+    if (!existing) return;
+    const webhookUrl = `${SUPABASE_FUNCTIONS_URL}/asaas-webhook?company=${existing.companyId}`;
+    navigator.clipboard.writeText(webhookUrl);
+    toast.success("URL do webhook copiada");
+  }
+
+  function copyWebhookToken() {
+    if (!existing?.webhookToken) return;
+    navigator.clipboard.writeText(existing.webhookToken);
+    toast.success("Token do webhook copiado");
+  }
+
   return (
     <div className="rounded-2xl border border-forest-950/10 bg-white p-5">
       <div className="flex items-center justify-between">
@@ -71,20 +95,43 @@ function CredentialCard({
       </div>
 
       {existing && !editing && (
-        <div className="mt-3 flex items-center justify-between rounded-xl bg-forest-950/5 px-4 py-3">
-          <div className="text-sm">
-            <span className="font-mono">•••• {existing.keyLast4}</span>
-            {existing.walletId && <span className="ml-3 text-ink-muted">wallet: {existing.walletId}</span>}
-            {existing.fiscalProviderName && <span className="ml-3 text-ink-muted">{existing.fiscalProviderName}</span>}
+        <div className="mt-3 flex flex-col gap-3 rounded-xl bg-forest-950/5 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="text-sm">
+              <span className="font-mono">•••• {existing.keyLast4}</span>
+              {existing.walletId && <span className="ml-3 text-ink-muted">wallet: {existing.walletId}</span>}
+              {existing.fiscalProviderName && <span className="ml-3 text-ink-muted">{existing.fiscalProviderName}</span>}
+            </div>
+            <div className="flex gap-2">
+              {provider === "ASAAS" && (
+                <Button size="sm" variant="outline" disabled={testing} onClick={() => void handleTest()}>
+                  {testing ? "Testando..." : "Testar conexão"}
+                </Button>
+              )}
+              <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+                Atualizar chave
+              </Button>
+              <Button size="sm" variant="ghost" disabled={saving} onClick={() => void handleRemove()}>
+                Remover
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-              Atualizar chave
-            </Button>
-            <Button size="sm" variant="ghost" disabled={saving} onClick={() => void handleRemove()}>
-              Remover
-            </Button>
-          </div>
+          {existing.lastError && <p className="text-xs text-red-700">{existing.lastError}</p>}
+          {existing.lastValidatedAt && !existing.lastError && (
+            <p className="text-xs text-emerald-700">Validado em {new Date(existing.lastValidatedAt).toLocaleString("pt-BR")}</p>
+          )}
+          {provider === "ASAAS" && existing.webhookToken && (
+            <div className="flex flex-wrap items-center gap-2 border-t border-forest-950/10 pt-3 text-xs text-ink-muted">
+              <span className="font-bold text-ink-900">Webhook:</span>
+              <button onClick={copyWebhookUrl} className="rounded-lg border border-forest-950/15 bg-white px-2 py-1 font-mono hover:bg-forest-950/5">
+                Copiar URL
+              </button>
+              <button onClick={copyWebhookToken} className="rounded-lg border border-forest-950/15 bg-white px-2 py-1 font-mono hover:bg-forest-950/5">
+                Copiar token (asaas-access-token)
+              </button>
+              <span>Cole os dois na configuração de webhook do painel Asaas.</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -158,8 +205,9 @@ export function IntegracoesFinanceirasPage() {
         <h1 className="text-2xl font-extrabold text-forest-950">Integrações Financeiras</h1>
         <p className="text-sm text-ink-muted">
           Cada empresa cadastra a própria conta — a Saboriza e cada franquia futura usam credenciais separadas. A chave fica
-          criptografada no Supabase Vault, nunca em texto puro. Salvar aqui deixa tudo pronto; a chamada real pra API do
-          Asaas e do emissor fiscal ainda não está ligada — isso é a próxima etapa, fora deste escopo.
+          criptografada no Supabase Vault, nunca em texto puro. O Asaas já está ligado de verdade: o Faturar gera a cobrança
+          real por aqui, e o webhook mantém o status sincronizado automaticamente. Emissão fiscal ainda é só cadastro de
+          credencial — a chamada real ao emissor é a próxima etapa.
         </p>
       </div>
 

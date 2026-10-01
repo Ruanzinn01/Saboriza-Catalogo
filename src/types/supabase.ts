@@ -665,6 +665,7 @@ export type Database = {
           updated_at: string
           vault_secret_id: string | null
           wallet_id: string | null
+          webhook_token: string | null
         }
         Insert: {
           company_id?: string
@@ -681,6 +682,7 @@ export type Database = {
           updated_at?: string
           vault_secret_id?: string | null
           wallet_id?: string | null
+          webhook_token?: string | null
         }
         Update: {
           company_id?: string
@@ -697,6 +699,7 @@ export type Database = {
           updated_at?: string
           vault_secret_id?: string | null
           wallet_id?: string | null
+          webhook_token?: string | null
         }
         Relationships: []
       }
