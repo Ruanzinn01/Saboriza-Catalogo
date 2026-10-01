@@ -103,7 +103,6 @@ export function OrderEditorPage() {
   const [linkSearch, setLinkSearch] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
-  const [faturando, setFaturando] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   useEffect(() => {
@@ -353,15 +352,11 @@ export function OrderEditorPage() {
             <Button
               type="button"
               size="sm"
-              disabled={faturando}
-              className="bg-[#128C4A] text-cream-50 hover:bg-[#0e6e3a]"
-              onClick={async () => {
-                setFaturando(true);
-                await updateStatus(order.id, "COMPLETED");
-                setFaturando(false);
-              }}
+              variant="outline"
+              className="border-[#128C4A] text-[#128C4A] hover:bg-[#128C4A]/10"
+              onClick={() => navigate(`/admin/faturar/${order.id}`)}
             >
-              <Receipt size={16} /> {faturando ? "Faturando..." : "Faturar"}
+              <Receipt size={16} /> Faturar
             </Button>
           )}
           <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
