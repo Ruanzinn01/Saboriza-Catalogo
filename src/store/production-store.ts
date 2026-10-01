@@ -23,7 +23,8 @@ interface ProductionState {
     packsQuantity: number,
     urgentDemandId: string | null,
     floorExecutionId: string | null,
-    idempotencyKey: string
+    idempotencyKey: string,
+    participants?: { employeeId: string; allocatedUnits: number }[]
   ) => Promise<{ record: ProductionRecord | null; error: string | null }>;
   refreshAfterProduction: (productIds: string[]) => Promise<void>;
 }
@@ -77,7 +78,7 @@ export const useProductionStore = create<ProductionState>()((set) => ({
     return { record, error: null };
   },
 
-  confirmProductionRelease: async (productId, packsQuantity, urgentDemandId, floorExecutionId, idempotencyKey) => {
+  confirmProductionRelease: async (productId, packsQuantity, urgentDemandId, floorExecutionId, idempotencyKey, participants) => {
     const { data, error } = await supabase
       .rpc("confirm_production_release", {
         p_product_id: productId,
@@ -85,6 +86,9 @@ export const useProductionStore = create<ProductionState>()((set) => ({
         p_urgent_demand_id: urgentDemandId ?? undefined,
         p_floor_execution_id: floorExecutionId ?? undefined,
         p_idempotency_key: idempotencyKey,
+        p_participants: participants && participants.length > 0
+          ? participants.map((p) => ({ employee_id: p.employeeId, allocated_units: p.allocatedUnits }))
+          : undefined,
       })
       .single();
 

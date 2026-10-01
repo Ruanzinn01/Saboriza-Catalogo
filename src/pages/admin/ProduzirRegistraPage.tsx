@@ -125,10 +125,11 @@ export function ProduzirRegistraPage() {
     packs: number,
     urgentDemandId: string | null,
     floorExecutionId: string | null,
-    idempotencyKey: string
+    idempotencyKey: string,
+    participants?: { employeeId: string; allocatedUnits: number }[]
   ) {
     setSaving(true);
-    const { error } = await confirmProductionRelease(productId, packs, urgentDemandId, floorExecutionId, idempotencyKey);
+    const { error } = await confirmProductionRelease(productId, packs, urgentDemandId, floorExecutionId, idempotencyKey, participants);
     if (error) {
       toast.error(`Falha ao confirmar produção: ${error}`);
       setSaving(false);
@@ -277,6 +278,7 @@ export function ProduzirRegistraPage() {
             confirmProductId={confirmProductId}
             setConfirmProductId={setConfirmProductId}
             saving={saving}
+            eligibleEmployees={eligible}
             onConfirm={handleConfirmarProducao}
           />
         )}
@@ -671,6 +673,18 @@ function LiberarProducaoView({
   );
 }
 
+function splitEqually(totalUnits: number, participantIds: string[]): Record<string, number> {
+  const count = participantIds.length;
+  if (count === 0) return {};
+  const base = Math.floor(totalUnits / count);
+  const remainder = totalUnits % count;
+  const result: Record<string, number> = {};
+  participantIds.forEach((id, idx) => {
+    result[id] = base + (idx < remainder ? 1 : 0);
+  });
+  return result;
+}
+
 function ConfirmarProducaoView({
   products,
   query,
@@ -680,6 +694,7 @@ function ConfirmarProducaoView({
   confirmProductId,
   setConfirmProductId,
   saving,
+  eligibleEmployees,
   onConfirm,
 }: {
   products: Product[];
@@ -690,12 +705,23 @@ function ConfirmarProducaoView({
   confirmProductId: string | null;
   setConfirmProductId: (v: string | null) => void;
   saving: boolean;
-  onConfirm: (productId: string, packs: number, urgentDemandId: string | null, floorExecutionId: string | null, idempotencyKey: string) => void;
+  eligibleEmployees: { id: string; name: string }[];
+  onConfirm: (
+    productId: string,
+    packs: number,
+    urgentDemandId: string | null,
+    floorExecutionId: string | null,
+    idempotencyKey: string,
+    participants?: { employeeId: string; allocatedUnits: number }[]
+  ) => void;
 }) {
   const [packs, setPacks] = useState(1);
   const [urgentId, setUrgentId] = useState("");
   const [floorExecutionId, setFloorExecutionId] = useState("");
   const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const [participantIds, setParticipantIds] = useState<string[]>([]);
+  const [customSplit, setCustomSplit] = useState(false);
+  const [customAllocations, setCustomAllocations] = useState<Record<string, number>>({});
 
   const filtered = products.filter((p) => p.active && (p.name + p.code).toLowerCase().includes(query.toLowerCase()));
   const selected = products.find((p) => p.id === confirmProductId) ?? null;
@@ -795,14 +821,95 @@ function ConfirmarProducaoView({
                   </select>
                 </>
               )}
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => onConfirm(selected.id, packs, urgentId || null, floorExecutionId || null, idempotencyKey)}
-                className={`${c.btn} ${c.btnPrimary} w-full mt-1`}
-              >
-                {saving ? "Confirmando..." : "Confirmar Produção"}
-              </button>
+
+              {(() => {
+                const totalUnits = packs * selected.packQuantity;
+                const equalSplit = splitEqually(totalUnits, participantIds);
+                const allocations = customSplit ? customAllocations : equalSplit;
+                const allocatedSum = participantIds.reduce((s, id) => s + (allocations[id] ?? 0), 0);
+                const splitOk = participantIds.length === 0 || allocatedSum === totalUnits;
+
+                return (
+                  <>
+                    <label className="mb-1 block text-xs font-bold">Quem produziu (opcional)</label>
+                    <div className="mb-2 max-h-40 overflow-y-auto rounded-lg border p-2" style={{ borderColor: c.line }}>
+                      {eligibleEmployees.length === 0 ? (
+                        <p className="text-xs" style={{ color: c.muted }}>Nenhum colaborador elegível pra produção.</p>
+                      ) : (
+                        eligibleEmployees.map((e) => (
+                          <label key={e.id} className="flex items-center gap-2 py-1 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={participantIds.includes(e.id)}
+                              onChange={(ev) => {
+                                setParticipantIds((prev) => (ev.target.checked ? [...prev, e.id] : prev.filter((id) => id !== e.id)));
+                              }}
+                            />
+                            {e.name}
+                          </label>
+                        ))
+                      )}
+                    </div>
+
+                    {participantIds.length > 0 && (
+                      <>
+                        <label className="mb-2 flex items-center gap-2 text-xs font-bold">
+                          <input type="checkbox" checked={customSplit} onChange={(e) => setCustomSplit(e.target.checked)} />
+                          Rateio personalizado (padrão: igualitário)
+                        </label>
+                        <div className="mb-2 flex flex-col gap-1">
+                          {participantIds.map((id) => {
+                            const employee = eligibleEmployees.find((e) => e.id === id);
+                            const value = allocations[id] ?? 0;
+                            return (
+                              <div key={id} className="flex items-center justify-between gap-2 text-xs">
+                                <span>{employee?.name}</span>
+                                {customSplit ? (
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    value={customAllocations[id] ?? equalSplit[id] ?? 0}
+                                    onChange={(ev) =>
+                                      setCustomAllocations((prev) => ({ ...prev, [id]: Math.max(0, Number(ev.target.value)) }))
+                                    }
+                                    className="w-20 rounded border px-2 py-1"
+                                    style={{ borderColor: c.line }}
+                                  />
+                                ) : (
+                                  <span className="font-bold">{value} un</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <p className="mb-3 text-xs" style={{ color: splitOk ? c.muted : "#b52b2b" }}>
+                          {allocatedSum} / {totalUnits} un atribuídas{!splitOk && " — a soma precisa bater com a quantidade produzida"}
+                        </p>
+                      </>
+                    )}
+
+                    <button
+                      type="button"
+                      disabled={saving || !splitOk}
+                      onClick={() =>
+                        onConfirm(
+                          selected.id,
+                          packs,
+                          urgentId || null,
+                          floorExecutionId || null,
+                          idempotencyKey,
+                          participantIds.length > 0
+                            ? participantIds.map((id) => ({ employeeId: id, allocatedUnits: allocations[id] ?? 0 }))
+                            : undefined
+                        )
+                      }
+                      className={`${c.btn} ${c.btnPrimary} w-full mt-1`}
+                    >
+                      {saving ? "Confirmando..." : "Confirmar Produção"}
+                    </button>
+                  </>
+                );
+              })()}
             </>
           )}
         </Card>
