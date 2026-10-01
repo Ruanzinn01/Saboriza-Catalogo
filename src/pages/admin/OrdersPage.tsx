@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import type { Order, OrderStatus } from "@/types/order";
 
-type StatusFilter = "ALL" | OrderStatus;
+type StatusFilter = "ALL" | OrderStatus | "A_FATURAR";
 
 function formatOrderDate(iso: string) {
   const date = new Date(iso);
@@ -97,12 +97,18 @@ export function OrdersPage() {
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     return orders.filter((order) => {
-      const matchesStatus = statusFilter === "ALL" || order.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "ALL"
+          ? true
+          : statusFilter === "A_FATURAR"
+            ? operationalSubstatus(order) === "a_faturar"
+            : order.status === statusFilter;
       const matchesQuery =
         !query ||
         order.number.toLowerCase().includes(query) ||
         order.customer.name.toLowerCase().includes(query) ||
-        order.customer.company.toLowerCase().includes(query);
+        order.customer.company.toLowerCase().includes(query) ||
+        (operationalSubstatus(order) === "a_faturar" && "a faturar".includes(query));
       return matchesStatus && matchesQuery;
     });
   }, [orders, search, statusFilter]);
@@ -118,15 +124,18 @@ export function OrdersPage() {
       COMPLETED: 0,
       FINALIZADO: 0,
       CANCELLED: 0,
+      A_FATURAR: 0,
     };
     orders.forEach((order) => {
       map[order.status] += 1;
+      if (operationalSubstatus(order) === "a_faturar") map.A_FATURAR += 1;
     });
     return map;
   }, [orders]);
 
   const filterTabs: { value: StatusFilter; label: string }[] = [
     { value: "ALL", label: "Todos" },
+    { value: "A_FATURAR", label: "A Faturar" },
     ...ORDER_STATUS_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
   ];
 

@@ -46,7 +46,7 @@ export const useFinanceiroGeralStore = create<FinanceiroGeralState>((set) => ({
       return;
     }
 
-    const raw = data as {
+    const raw = data as unknown as {
       saldo_disponivel: UnavailableMetric;
       projecao_caixa: UnavailableMetric;
       entradas_mes: { total: number; vendas: number; outras_receitas: number; aportes: number };

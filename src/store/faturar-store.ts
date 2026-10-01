@@ -146,7 +146,7 @@ export const useFaturarStore = create<FaturarState>((set, get) => ({
     const { data: orderRows, error } = await supabase
       .from("orders")
       .select("*")
-      .eq("status", "COMPLETED")
+      .eq("status", "CONFIRMED")
       .not("separation_finished_at", "is", null);
 
     if (error || !orderRows) {

@@ -19,7 +19,6 @@ import {
   PackageCheck,
   PackageSearch,
   Plus,
-  Receipt,
   ReceiptText,
   Wallet,
   Settings,
@@ -124,7 +123,6 @@ export const NAV_GROUPS: NavGroup[] = [
 ];
 
 export const STANDALONE_NAV_ITEMS: NavItem[] = [
-  { to: "/admin/faturar", label: "Faturar", icon: Receipt },
   { to: "/admin/separa-confere", label: "Separa Confere", icon: PackageSearch, badge: "pendingSeparation" },
   { to: "/admin/carrega-entrega", label: "Carrega Entrega", icon: PackageCheck, badge: "pendingFulfillment" },
   { to: "/admin/ponto-oris", label: "Terminal de Ponto", icon: Clock },

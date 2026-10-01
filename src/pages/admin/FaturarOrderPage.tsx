@@ -60,6 +60,7 @@ export function FaturarOrderPage() {
   const [showChargeSettings, setShowChargeSettings] = useState(false);
   const [releaseInput, setReleaseInput] = useState("");
   const [billingDone, setBillingDone] = useState<string | null>(null);
+  const [processingStep, setProcessingStep] = useState<string | null>(null);
 
   useEffect(() => {
     if (orderId) fetchOrder(orderId);
@@ -88,12 +89,27 @@ export function FaturarOrderPage() {
   );
 
   async function handleConfirm() {
+    setShowConfirm(false);
+    const steps = [
+      "Validando pedido e pagamentos...",
+      "Criando contas a receber...",
+      paymentMethods.some((p) => (p.type === "BOLETO" || p.type === "PIX") && p.asaas)
+        ? "Gerando cobranças no Asaas..."
+        : "Registrando condições financeiras...",
+      fiscalChoice === "EMITIR_NFE" ? "Emitindo NF-e..." : "Registrando operação sem documento fiscal...",
+      "Liberando para Entrega Registra...",
+    ];
+    for (const step of steps) {
+      setProcessingStep(step);
+      await new Promise((resolve) => setTimeout(resolve, 450));
+    }
+
     const { billingId, error } = await confirmBilling();
+    setProcessingStep(null);
     if (error || !billingId) {
       toast.error(error ?? "Não foi possível confirmar o faturamento");
       return;
     }
-    setShowConfirm(false);
     setBillingDone(billingId);
   }
 
@@ -109,29 +125,44 @@ export function FaturarOrderPage() {
     win.document.close();
   }
 
-  function printOrderDocument() {
-    if (!order) return;
+  function orderDocumentHtml() {
+    if (!order) return "";
     const rows = order.items
       .map((i) => `<tr><td>${i.name}</td><td class="num">${i.packs}</td><td class="num">${brl(i.unitPrice * i.packs)}</td></tr>`)
       .join("");
-    printDocument(
-      `Pedido #${order.number}`,
-      `<h1>Pedido #${order.number}${fiscalChoice === "EMITIR_NFE" ? " — NF-e em processamento" : ""}</h1>` +
-        `<p><b>Cliente:</b> ${order.customer.company || order.customer.name}<br><b>Endereço:</b> ${order.customer.address || "-----"}</p>` +
-        `<table><thead><tr><th>Produto</th><th class="num">Qtd.</th><th class="num">Total</th></tr></thead><tbody>${rows}</tbody></table>` +
-        `<p style="text-align:right;margin-top:12px"><b>Total: ${brl(total)}</b></p>`
+    return (
+      `<h1>${fiscalChoice === "EMITIR_NFE" ? "DANFE — " : ""}Pedido #${order.number}${fiscalChoice === "EMITIR_NFE" ? " — NF-e em processamento" : ""}</h1>` +
+      `<p><b>Cliente:</b> ${order.customer.company || order.customer.name}<br><b>Endereço:</b> ${order.customer.address || "-----"}</p>` +
+      `<table><thead><tr><th>Produto</th><th class="num">Qtd.</th><th class="num">Total</th></tr></thead><tbody>${rows}</tbody></table>` +
+      `<p style="text-align:right;margin-top:12px"><b>Total: ${brl(total)}</b></p>`
     );
   }
 
-  function printBoletos() {
+  function boletosDocumentHtml() {
     const boletos = paymentMethods.filter((p) => p.type === "BOLETO");
+    if (boletos.length === 0) return "";
     const rows = boletos
       .flatMap((p) => p.installments.map((i) => `<tr><td>${i.number}/${p.installments.length}</td><td>${fmtDate(i.dueDate)}</td><td class="num">${brl(i.amount)}</td></tr>`))
       .join("");
-    printDocument(
-      `Boletos — Pedido #${order?.number}`,
+    return (
       `<h1>Boletos do Pedido #${order?.number}</h1>` +
-        `<table><thead><tr><th>Parcela</th><th>Vencimento</th><th class="num">Valor</th></tr></thead><tbody>${rows}</tbody></table>`
+      `<table><thead><tr><th>Parcela</th><th>Vencimento</th><th class="num">Valor</th></tr></thead><tbody>${rows}</tbody></table>`
+    );
+  }
+
+  function printOrderDocument() {
+    printDocument(`Pedido #${order?.number}`, orderDocumentHtml());
+  }
+
+  function printBoletos() {
+    printDocument(`Boletos — Pedido #${order?.number}`, boletosDocumentHtml());
+  }
+
+  function printAll() {
+    const boletosHtml = boletosDocumentHtml();
+    printDocument(
+      `Pedido #${order?.number} — Documentos`,
+      orderDocumentHtml() + (boletosHtml ? `<div style="page-break-before:always">${boletosHtml}</div>` : "")
     );
   }
 
@@ -181,6 +212,17 @@ export function FaturarOrderPage() {
           ) : (
             <p className="mt-2 text-xs text-ink-muted">Sem boletos neste faturamento. As demais formas de pagamento continuam registradas no financeiro.</p>
           )}
+          <button
+            onClick={printAll}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-forest-950 py-3 text-sm font-extrabold text-white hover:bg-forest-900"
+          >
+            <Printer size={16} /> IMPRIMIR TUDO
+          </button>
+          <p className="mt-1 text-center text-xs text-ink-muted">
+            {boletoCount > 0
+              ? `Imprime em sequência: ${fiscalChoice === "EMITIR_NFE" ? "DANFE" : "PDF do Pedido"} → boletos.`
+              : `Imprime: ${fiscalChoice === "EMITIR_NFE" ? "DANFE" : "PDF do Pedido"}.`}
+          </p>
         </div>
 
         <Button onClick={() => navigate("/admin/faturar")}>Voltar à lista</Button>
@@ -482,6 +524,18 @@ export function FaturarOrderPage() {
               <Button disabled={isConfirming} onClick={() => void handleConfirm()}>
                 {isConfirming ? "Confirmando..." : "Confirmar faturamento"}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {processingStep && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center">
+            <h2 className="mb-3 text-lg font-extrabold text-forest-950">Processando faturamento</h2>
+            <p className="text-sm text-ink-700/70">{processingStep}</p>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-forest-950/10">
+              <div className="h-full animate-pulse rounded-full bg-forest-700" style={{ width: "70%" }} />
             </div>
           </div>
         </div>
