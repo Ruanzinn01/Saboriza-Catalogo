@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      asaas_webhook_events: {
+        Row: {
+          company_id: string | null
+          event_id: string
+          event_type: string
+          id: string
+          payload: Json
+          process_error: string | null
+          processed_at: string | null
+          received_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          event_id: string
+          event_type: string
+          id?: string
+          payload: Json
+          process_error?: string | null
+          processed_at?: string | null
+          received_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          event_id?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          process_error?: string | null
+          processed_at?: string | null
+          received_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asaas_webhook_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asset_consignments: {
         Row: {
           asset_unit_id: string
@@ -542,8 +583,10 @@ export type Database = {
           id: string
           idempotency_key: string
           installment_id: string
+          last_error: string | null
           provider: string
           status: string
+          technical_state: string
           updated_at: string
         }
         Insert: {
@@ -553,8 +596,10 @@ export type Database = {
           id?: string
           idempotency_key: string
           installment_id: string
+          last_error?: string | null
           provider?: string
           status?: string
+          technical_state?: string
           updated_at?: string
         }
         Update: {
@@ -564,8 +609,10 @@ export type Database = {
           id?: string
           idempotency_key?: string
           installment_id?: string
+          last_error?: string | null
           provider?: string
           status?: string
+          technical_state?: string
           updated_at?: string
         }
         Relationships: [
@@ -577,6 +624,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      client_errors: {
+        Row: {
+          company_id: string | null
+          context: Json | null
+          created_at: string
+          id: string
+          message: string
+          severity: string
+          stack: string | null
+          url: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          context?: Json | null
+          created_at?: string
+          id?: string
+          message: string
+          severity?: string
+          stack?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          context?: Json | null
+          created_at?: string
+          id?: string
+          message?: string
+          severity?: string
+          stack?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       companies: {
         Row: {
@@ -920,6 +1006,7 @@ export type Database = {
       customers: {
         Row: {
           address: string
+          asaas_customer_id: string | null
           cep: string
           city: string
           cnpj: string
@@ -938,6 +1025,7 @@ export type Database = {
         }
         Insert: {
           address?: string
+          asaas_customer_id?: string | null
           cep?: string
           city?: string
           cnpj?: string
@@ -956,6 +1044,7 @@ export type Database = {
         }
         Update: {
           address?: string
+          asaas_customer_id?: string | null
           cep?: string
           city?: string
           cnpj?: string
@@ -5592,38 +5681,72 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      confirm_production_release: {
-        Args: {
-          p_floor_execution_id?: string
-          p_idempotency_key?: string
-          p_packs_quantity: number
-          p_product_id: string
-          p_urgent_demand_id?: string
-        }
-        Returns: {
-          company_id: string
-          confirmed_at: string
-          created_at: string
-          floor_execution_id: string | null
-          id: string
-          idempotency_key: string | null
-          packs_quantity: number
-          product_id: string
-          responsible_id: string | null
-          status: string
-          unit_id: string
-          units_quantity: number
-          updated_at: string
-          urgent_allocated_units: number
-          urgent_demand_id: string | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "production_records"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      confirm_production_release:
+        | {
+            Args: {
+              p_floor_execution_id?: string
+              p_idempotency_key?: string
+              p_packs_quantity: number
+              p_product_id: string
+              p_urgent_demand_id?: string
+            }
+            Returns: {
+              company_id: string
+              confirmed_at: string
+              created_at: string
+              floor_execution_id: string | null
+              id: string
+              idempotency_key: string | null
+              packs_quantity: number
+              product_id: string
+              responsible_id: string | null
+              status: string
+              unit_id: string
+              units_quantity: number
+              updated_at: string
+              urgent_allocated_units: number
+              urgent_demand_id: string | null
+            }
+            SetofOptions: {
+              from: "*"
+              to: "production_records"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_floor_execution_id?: string
+              p_idempotency_key?: string
+              p_packs_quantity: number
+              p_participants?: Json
+              p_product_id: string
+              p_urgent_demand_id?: string
+            }
+            Returns: {
+              company_id: string
+              confirmed_at: string
+              created_at: string
+              floor_execution_id: string | null
+              id: string
+              idempotency_key: string | null
+              packs_quantity: number
+              product_id: string
+              responsible_id: string | null
+              status: string
+              unit_id: string
+              units_quantity: number
+              updated_at: string
+              urgent_allocated_units: number
+              urgent_demand_id: string | null
+            }
+            SetofOptions: {
+              from: "*"
+              to: "production_records"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       confirm_raw_material_entry: {
         Args: { p_entry_id: string }
         Returns: {
@@ -5801,6 +5924,7 @@ export type Database = {
           reason: string | null
           requested_packs: number
           requested_units: number
+          status: string
           unit_id: string
           urgent_demand_id: string | null
         }
@@ -5941,6 +6065,27 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_client_errors: {
+        Args: { p_limit?: number }
+        Returns: {
+          company_id: string | null
+          context: Json | null
+          created_at: string
+          id: string
+          message: string
+          severity: string
+          stack: string | null
+          url: string | null
+          user_agent: string | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "client_errors"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_dre_monthly: {
         Args: { p_company_id: string }
         Returns: {
@@ -5956,7 +6101,10 @@ export type Database = {
           other_revenue: number
         }[]
       }
-      get_financeiro_geral_summary: { Args: { p_company_id: string }; Returns: Json }
+      get_financeiro_geral_summary: {
+        Args: { p_company_id: string }
+        Returns: Json
+      }
       get_owner_panel_summary: { Args: { p_company_id: string }; Returns: Json }
       get_platform_companies: {
         Args: never
@@ -6076,6 +6224,10 @@ export type Database = {
         Args: { p_employee_id: string }
         Returns: number
       }
+      platform_bootstrap_company_owner: {
+        Args: { p_company_id: string }
+        Returns: string
+      }
       publish_production_route: {
         Args: { p_product_id: string; p_stage_names: string[] }
         Returns: {
@@ -6093,6 +6245,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      read_vault_secret: { Args: { p_secret_id: string }; Returns: string }
       remove_integration_credential: {
         Args: { p_environment: string; p_provider: string }
         Returns: undefined
@@ -6194,6 +6347,7 @@ export type Database = {
           updated_at: string
           vault_secret_id: string | null
           wallet_id: string | null
+          webhook_token: string | null
         }
         SetofOptions: {
           from: "*"
