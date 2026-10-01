@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Plus, Printer, Settings2, Trash2 } from "lucide-react";
 import { useFaturarStore, generatesCredit, type PaymentType } from "@/store/faturar-store";
 import { AdminState } from "@/components/admin/AdminState";
 import { Button } from "@/components/ui/Button";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const PAYMENT_TYPES: PaymentType[] = ["BOLETO", "PIX", "DINHEIRO", "CARTAO", "TRANSFERENCIA", "OUTROS"];
+const fmtDate = (iso: string) => new Date(iso + "T00:00:00").toLocaleDateString("pt-BR");
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -40,6 +41,9 @@ export function FaturarOrderPage() {
   const addPaymentMethod = useFaturarStore((s) => s.addPaymentMethod);
   const removePaymentMethod = useFaturarStore((s) => s.removePaymentMethod);
   const updatePaymentMethod = useFaturarStore((s) => s.updatePaymentMethod);
+  const updateInstallment = useFaturarStore((s) => s.updateInstallment);
+  const chargeSettings = useFaturarStore((s) => s.chargeSettings);
+  const setChargeSettings = useFaturarStore((s) => s.setChargeSettings);
   const fiscalChoice = useFaturarStore((s) => s.fiscalChoice);
   const setFiscalChoice = useFaturarStore((s) => s.setFiscalChoice);
   const noFiscalReason = useFaturarStore((s) => s.noFiscalReason);
@@ -53,6 +57,7 @@ export function FaturarOrderPage() {
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [showRelease, setShowRelease] = useState(false);
+  const [showChargeSettings, setShowChargeSettings] = useState(false);
   const [releaseInput, setReleaseInput] = useState("");
   const [billingDone, setBillingDone] = useState<string | null>(null);
 
@@ -92,10 +97,49 @@ export function FaturarOrderPage() {
     setBillingDone(billingId);
   }
 
+  function printDocument(title: string, bodyHtml: string) {
+    const win = window.open("", "_blank", "width=800,height=900");
+    if (!win) return;
+    win.document.write(
+      `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${title}</title>` +
+        `<style>body{font-family:Arial,sans-serif;padding:24px;color:#172231}h1{font-size:18px}table{width:100%;border-collapse:collapse;margin-top:12px}` +
+        `td,th{border-bottom:1px solid #dce3ea;padding:8px;text-align:left}td.num,th.num{text-align:right}</style></head>` +
+        `<body>${bodyHtml}<script>window.onload=()=>window.print()<\/script></body></html>`
+    );
+    win.document.close();
+  }
+
+  function printOrderDocument() {
+    if (!order) return;
+    const rows = order.items
+      .map((i) => `<tr><td>${i.name}</td><td class="num">${i.packs}</td><td class="num">${brl(i.unitPrice * i.packs)}</td></tr>`)
+      .join("");
+    printDocument(
+      `Pedido #${order.number}`,
+      `<h1>Pedido #${order.number}${fiscalChoice === "EMITIR_NFE" ? " — NF-e em processamento" : ""}</h1>` +
+        `<p><b>Cliente:</b> ${order.customer.company || order.customer.name}<br><b>Endereço:</b> ${order.customer.address || "-----"}</p>` +
+        `<table><thead><tr><th>Produto</th><th class="num">Qtd.</th><th class="num">Total</th></tr></thead><tbody>${rows}</tbody></table>` +
+        `<p style="text-align:right;margin-top:12px"><b>Total: ${brl(total)}</b></p>`
+    );
+  }
+
+  function printBoletos() {
+    const boletos = paymentMethods.filter((p) => p.type === "BOLETO");
+    const rows = boletos
+      .flatMap((p) => p.installments.map((i) => `<tr><td>${i.number}/${p.installments.length}</td><td>${fmtDate(i.dueDate)}</td><td class="num">${brl(i.amount)}</td></tr>`))
+      .join("");
+    printDocument(
+      `Boletos — Pedido #${order?.number}`,
+      `<h1>Boletos do Pedido #${order?.number}</h1>` +
+        `<table><thead><tr><th>Parcela</th><th>Vencimento</th><th class="num">Valor</th></tr></thead><tbody>${rows}</tbody></table>`
+    );
+  }
+
   if (orderStatus === "loading" || orderStatus === "idle") return <AdminState variant="loading" message="Carregando pedido..." />;
   if (orderStatus === "error" || !order) return <AdminState variant="error" message="Não foi possível carregar este pedido." />;
 
   if (billingDone) {
+    const boletoCount = paymentMethods.filter((p) => p.type === "BOLETO").reduce((n, p) => n + p.installments.length, 0);
     return (
       <div className="flex flex-col items-center gap-4 rounded-3xl border border-forest-950/10 bg-white p-10 text-center">
         <CheckCircle2 className="text-emerald-600" size={56} />
@@ -108,6 +152,37 @@ export function FaturarOrderPage() {
           </span>
           <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-800">Liberado para Entrega Registra ✓</span>
         </div>
+
+        <div className="mt-2 w-full max-w-lg text-left">
+          <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-ink-muted">Documentos para entrega</h2>
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-forest-950/10 p-4">
+            <div>
+              <p className="font-bold text-forest-950">
+                {fiscalChoice === "EMITIR_NFE" ? `DANFE — NF-e do Pedido #${order.number}` : `PDF do Pedido #${order.number}`}
+              </p>
+              <p className="text-xs text-ink-muted">
+                {fiscalChoice === "EMITIR_NFE" ? "Documento fiscal em processamento" : "Documento do pedido para acompanhar a entrega"}
+              </p>
+            </div>
+            <button onClick={printOrderDocument} className="flex items-center gap-1 rounded-lg border border-ink-900/15 px-3 py-1.5 text-xs font-semibold hover:bg-forest-950/5">
+              <Printer size={14} /> Imprimir
+            </button>
+          </div>
+          {boletoCount > 0 ? (
+            <div className="mt-2 flex items-center justify-between gap-3 rounded-2xl border border-forest-950/10 p-4">
+              <div>
+                <p className="font-bold text-forest-950">Boletos — {boletoCount}</p>
+                <p className="text-xs text-ink-muted">Carnê de cobrança deste faturamento</p>
+              </div>
+              <button onClick={printBoletos} className="flex items-center gap-1 rounded-lg border border-ink-900/15 px-3 py-1.5 text-xs font-semibold hover:bg-forest-950/5">
+                <Printer size={14} /> Imprimir
+              </button>
+            </div>
+          ) : (
+            <p className="mt-2 text-xs text-ink-muted">Sem boletos neste faturamento. As demais formas de pagamento continuam registradas no financeiro.</p>
+          )}
+        </div>
+
         <Button onClick={() => navigate("/admin/faturar")}>Voltar à lista</Button>
       </div>
     );
@@ -258,6 +333,67 @@ export function FaturarOrderPage() {
                   </label>
                 )}
               </div>
+
+              {(pm.type === "BOLETO" || pm.type === "PIX") && (
+                <label className="mt-3 flex items-center gap-2 text-sm text-ink-900">
+                  <input
+                    type="checkbox"
+                    checked={pm.asaas}
+                    onChange={(e) => updatePaymentMethod(pm.id, { asaas: e.target.checked })}
+                    className="h-4 w-4"
+                  />
+                  Gerar cobrança no Asaas
+                </label>
+              )}
+
+              {pm.installments.length > 0 && (
+                <div className="mt-3 flex flex-col gap-2">
+                  {pm.installments.map((inst, i) => (
+                    <div key={i} className="grid grid-cols-[auto_1fr_1fr] items-center gap-2 text-sm">
+                      <span className="font-bold text-ink-muted">{inst.number}/{pm.installments.length}</span>
+                      <input
+                        type="date"
+                        value={inst.dueDate}
+                        onChange={(e) => updateInstallment(pm.id, i, { dueDate: e.target.value })}
+                        className="h-9 rounded-lg border border-ink-900/15 px-2 text-sm"
+                      />
+                      <input
+                        type="number"
+                        value={inst.amount}
+                        onChange={(e) => updateInstallment(pm.id, i, { amount: Number(e.target.value) })}
+                        className="h-9 rounded-lg border border-ink-900/15 px-2 text-sm"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {pm.type === "BOLETO" && (
+                <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50/60 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-bold text-forest-950">⚙ Encargos e desconto <span className="font-normal text-emerald-700">Padrão da empresa</span></p>
+                    <button onClick={() => setShowChargeSettings(true)} className="flex items-center gap-1 rounded-lg border border-ink-900/15 bg-white px-2 py-1 text-xs font-semibold hover:bg-forest-950/5">
+                      <Settings2 size={12} /> Alterar
+                    </button>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <span className="rounded-md bg-white px-2 py-1 text-xs font-bold text-ink-900">
+                      {chargeSettings.fineOn ? `Multa ${chargeSettings.fineType === "percent" ? `${chargeSettings.fine}%` : brl(chargeSettings.fine)}` : "Sem multa"}
+                    </span>
+                    <span className="rounded-md bg-white px-2 py-1 text-xs font-bold text-ink-900">
+                      {chargeSettings.interestOn ? `Juros ${chargeSettings.interest}% a.m.` : "Sem juros"}
+                    </span>
+                    <span className="rounded-md bg-white px-2 py-1 text-xs font-bold text-ink-900">
+                      {chargeSettings.discountOn ? `Desconto ${chargeSettings.discountType === "percent" ? `${chargeSettings.discount}%` : brl(chargeSettings.discount)}` : "Sem desconto"}
+                    </span>
+                  </div>
+                  <label className="mt-2 flex items-center gap-2 text-xs text-ink-700">
+                    <input type="checkbox" checked={chargeSettings.autoMessages} onChange={(e) => setChargeSettings({ autoMessages: e.target.checked })} className="h-4 w-4" />
+                    Enviar mensagens automáticas ao cliente
+                  </label>
+                </div>
+              )}
+
               <p className="mt-2 text-xs text-ink-muted">
                 {generatesCredit(pm.type, pm.mode) ? "Gera exposição de crédito." : "Não gera exposição de crédito."}
               </p>
@@ -322,9 +458,25 @@ export function FaturarOrderPage() {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6">
             <h2 className="mb-3 text-lg font-extrabold text-forest-950">Confirmar faturamento?</h2>
-            <p className="text-sm text-ink-700/70">
-              Pedido #{order.number} — {brl(total)}. Esta ação cria as contas a receber e libera o pedido para Entrega Registra.
-            </p>
+            <div className="flex flex-col gap-2 text-sm text-ink-700/70">
+              <p><b>Pedido:</b> #{order.number} — {brl(total)}</p>
+              <div>
+                <b>Pagamento</b>
+                {paymentMethods.map((pm) => (
+                  <p key={pm.id}>{pm.type}: {brl(pm.amount)} {pm.mode === "term" ? `(${pm.daysText} dias)` : "(à vista)"}</p>
+                ))}
+              </div>
+              <p><b>Fiscal:</b> {fiscalChoice === "EMITIR_NFE" ? "Emitir NF-e" : "Sem documento fiscal nesta operação"}</p>
+              {paymentMethods.some((p) => p.type === "BOLETO") && (
+                <p className="rounded-lg bg-forest-950/5 p-2">
+                  <b>Encargos dos boletos:</b> Multa {chargeSettings.fineOn ? (chargeSettings.fineType === "percent" ? `${chargeSettings.fine}%` : brl(chargeSettings.fine)) : "não"} •
+                  {" "}Juros {chargeSettings.interestOn ? `${chargeSettings.interest}% a.m.` : "não"} •
+                  {" "}Desconto {chargeSettings.discountOn ? (chargeSettings.discountType === "percent" ? `${chargeSettings.discount}%` : brl(chargeSettings.discount)) : "nenhum"}
+                  <br />Mensagens automáticas: <b>{chargeSettings.autoMessages ? "Ativadas" : "Desativadas"}</b>
+                </p>
+              )}
+              <p className="text-xs">Esta ação cria as contas a receber e libera o pedido para Entrega Registra.</p>
+            </div>
             <div className="mt-5 flex justify-end gap-2">
               <button onClick={() => setShowConfirm(false)} className="rounded-lg border border-ink-900/15 px-4 py-2 text-sm font-semibold">Cancelar</button>
               <Button disabled={isConfirming} onClick={() => void handleConfirm()}>
@@ -361,6 +513,80 @@ export function FaturarOrderPage() {
               >
                 Autorizar este faturamento
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showChargeSettings && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6">
+            <h2 className="mb-1 text-lg font-extrabold text-forest-950">Configurações da cobrança</h2>
+            <p className="mb-4 text-xs text-ink-muted">Estas regras serão aplicadas a todos os boletos deste pagamento.</p>
+
+            <div className="border-b border-forest-950/10 pb-4">
+              <p className="mb-2 text-sm font-bold text-forest-950">Juros por atraso</p>
+              <label className="mb-2 flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={chargeSettings.interestOn} onChange={(e) => setChargeSettings({ interestOn: e.target.checked })} className="h-4 w-4" />
+                Aplicar juros
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-ink-muted">
+                Juros ao mês (%)
+                <input type="number" value={chargeSettings.interest} onChange={(e) => setChargeSettings({ interest: Number(e.target.value) })} className="h-9 w-32 rounded-lg border border-ink-900/15 px-2 text-sm" />
+              </label>
+            </div>
+
+            <div className="border-b border-forest-950/10 py-4">
+              <p className="mb-2 text-sm font-bold text-forest-950">Multa por atraso</p>
+              <label className="mb-2 flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={chargeSettings.fineOn} onChange={(e) => setChargeSettings({ fineOn: e.target.checked })} className="h-4 w-4" />
+                Aplicar multa
+              </label>
+              <div className="mb-2 flex gap-4 text-sm">
+                <label className="flex items-center gap-1"><input type="radio" checked={chargeSettings.fineType === "percent"} onChange={() => setChargeSettings({ fineType: "percent" })} /> Percentual</label>
+                <label className="flex items-center gap-1"><input type="radio" checked={chargeSettings.fineType === "fixed"} onChange={() => setChargeSettings({ fineType: "fixed" })} /> Valor fixo</label>
+              </div>
+              <label className="flex flex-col gap-1 text-xs text-ink-muted">
+                {chargeSettings.fineType === "percent" ? "Multa (%)" : "Multa (R$)"}
+                <input type="number" value={chargeSettings.fine} onChange={(e) => setChargeSettings({ fine: Number(e.target.value) })} className="h-9 w-32 rounded-lg border border-ink-900/15 px-2 text-sm" />
+              </label>
+            </div>
+
+            <div className="py-4">
+              <p className="mb-2 text-sm font-bold text-forest-950">Desconto por antecipação</p>
+              <label className="mb-2 flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={chargeSettings.discountOn} onChange={(e) => setChargeSettings({ discountOn: e.target.checked })} className="h-4 w-4" />
+                Aplicar desconto
+              </label>
+              {chargeSettings.discountOn && (
+                <div className="flex flex-col gap-3">
+                  <div className="flex gap-4 text-sm">
+                    <label className="flex items-center gap-1"><input type="radio" checked={chargeSettings.discountType === "percent"} onChange={() => setChargeSettings({ discountType: "percent" })} /> Percentual</label>
+                    <label className="flex items-center gap-1"><input type="radio" checked={chargeSettings.discountType === "fixed"} onChange={() => setChargeSettings({ discountType: "fixed" })} /> Valor fixo</label>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="flex flex-col gap-1 text-xs text-ink-muted">
+                      {chargeSettings.discountType === "percent" ? "Desconto (%)" : "Desconto (R$)"}
+                      <input type="number" value={chargeSettings.discount} onChange={(e) => setChargeSettings({ discount: Number(e.target.value) })} className="h-9 rounded-lg border border-ink-900/15 px-2 text-sm" />
+                    </label>
+                    <label className="flex flex-col gap-1 text-xs text-ink-muted">
+                      Prazo máximo do desconto
+                      <select value={chargeSettings.discountDeadline} onChange={(e) => setChargeSettings({ discountDeadline: e.target.value })} className="h-9 rounded-lg border border-ink-900/15 px-2 text-sm">
+                        <option>Até o dia do vencimento</option>
+                        <option>1 dia antes</option>
+                        <option>3 dias antes</option>
+                        <option>5 dias antes</option>
+                        <option>7 dias antes</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowChargeSettings(false)} className="rounded-lg border border-ink-900/15 px-4 py-2 text-sm font-semibold">Cancelar</button>
+              <Button onClick={() => setShowChargeSettings(false)}>Aplicar aos boletos</Button>
             </div>
           </div>
         </div>

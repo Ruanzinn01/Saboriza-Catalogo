@@ -11,7 +11,9 @@ export interface Expense {
   nature: ExpenseNature;
   employeeId: string | null;
   amount: number;
+  paidAmount: number | null;
   status: ExpenseStatus;
+  competence: string | null;
   dueDate: string | null;
   paidAt: string | null;
 }
@@ -22,6 +24,7 @@ export interface NewExpenseInput {
   nature: ExpenseNature;
   amount: number;
   dueDate?: string;
+  competence?: string;
   employeeId?: string;
 }
 
@@ -36,9 +39,20 @@ export interface SalaryObligation {
   remaining: number;
 }
 
+export interface SalaryAdvance {
+  id: string;
+  obligationId: string;
+  amount: number;
+  status: "SOLICITADO" | "PAGO" | "ESTORNADO";
+  requestedAt: string;
+  paidAt: string | null;
+  reversedAdvanceId: string | null;
+}
+
 interface DespesasState {
   expenses: Expense[];
   obligations: SalaryObligation[];
+  advances: SalaryAdvance[];
   status: "idle" | "loading" | "ready" | "error";
 
   fetchAll: () => Promise<void>;
@@ -48,11 +62,13 @@ interface DespesasState {
   generateObligation: (employeeId: string, employeeName: string, competence: string, baseSalary: number) => Promise<string | null>;
   createAdvance: (obligationId: string, amount: number) => Promise<string | null>;
   payAdvance: (id: string) => Promise<string | null>;
+  reverseAdvance: (id: string) => Promise<string | null>;
 }
 
 export const useDespesasStore = create<DespesasState>((set, get) => ({
   expenses: [],
   obligations: [],
+  advances: [],
   status: "idle",
 
   fetchAll: async () => {
@@ -61,7 +77,7 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
     const [{ data: expenseRows, error: expenseError }, { data: obligationRows, error: obligationError }, { data: advanceRows }] = await Promise.all([
       supabase.from("expenses").select("*").order("created_at", { ascending: false }),
       supabase.from("salary_obligations").select("id, employee_id, competence, base_salary, status, employees(name)").order("competence", { ascending: false }),
-      supabase.from("salary_advances").select("salary_obligation_id, amount, status"),
+      supabase.from("salary_advances").select("id, salary_obligation_id, amount, status, requested_at, paid_at, reversed_advance_id"),
     ]);
 
     if (expenseError || obligationError) {
@@ -69,10 +85,21 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
       return;
     }
 
+    const advances: SalaryAdvance[] = (advanceRows ?? []).map((a) => ({
+      id: a.id,
+      obligationId: a.salary_obligation_id,
+      amount: a.amount,
+      status: a.status as SalaryAdvance["status"],
+      requestedAt: a.requested_at,
+      paidAt: a.paid_at,
+      reversedAdvanceId: a.reversed_advance_id,
+    }));
+
+    const reversedOriginalIds = new Set(advances.filter((a) => a.status === "ESTORNADO" && a.reversedAdvanceId).map((a) => a.reversedAdvanceId));
     const paidByObligation = new Map<string, number>();
-    (advanceRows ?? []).forEach((a) => {
-      if (a.status !== "PAGO") return;
-      paidByObligation.set(a.salary_obligation_id, (paidByObligation.get(a.salary_obligation_id) ?? 0) + a.amount);
+    advances.forEach((a) => {
+      if (a.status !== "PAGO" || reversedOriginalIds.has(a.id)) return;
+      paidByObligation.set(a.obligationId, (paidByObligation.get(a.obligationId) ?? 0) + a.amount);
     });
 
     set({
@@ -83,7 +110,9 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
         nature: e.nature as ExpenseNature,
         employeeId: e.employee_id,
         amount: e.amount,
+        paidAmount: e.paid_amount,
         status: e.status as ExpenseStatus,
+        competence: e.competence,
         dueDate: e.due_date,
         paidAt: e.paid_at,
       })),
@@ -100,6 +129,7 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
           remaining: o.base_salary - paid,
         };
       }),
+      advances,
       status: "ready",
     });
   },
@@ -111,6 +141,7 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
       nature: input.nature,
       amount: input.amount,
       due_date: input.dueDate || null,
+      competence: input.competence || null,
       employee_id: input.employeeId || null,
     });
     if (error) return error.message;
@@ -119,7 +150,19 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
   },
 
   markExpensePaid: async (id, paidAmount) => {
-    const { error } = await supabase.from("expenses").update({ status: "PAGO", paid_at: new Date().toISOString(), paid_amount: paidAmount }).eq("id", id);
+    const { data: expense } = await supabase.from("expenses").select("amount, paid_amount, due_date").eq("id", id).maybeSingle();
+    const alreadyPaid = expense?.paid_amount ?? 0;
+    const total = expense?.amount ?? paidAmount;
+    const newPaid = alreadyPaid + paidAmount;
+    const isOverdue = !!expense?.due_date && expense.due_date < new Date().toISOString().slice(0, 10);
+    const { error } = await supabase
+      .from("expenses")
+      .update({
+        status: newPaid >= total ? "PAGO" : isOverdue ? "ATRASADO" : "ABERTO",
+        paid_at: new Date().toISOString(),
+        paid_amount: newPaid,
+      })
+      .eq("id", id);
     if (error) return error.message;
     await get().fetchAll();
     return null;
@@ -141,6 +184,26 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
 
   payAdvance: async (id) => {
     const { error } = await supabase.from("salary_advances").update({ status: "PAGO", paid_at: new Date().toISOString() }).eq("id", id);
+    if (error) return error.message;
+    await get().fetchAll();
+    return null;
+  },
+
+  reverseAdvance: async (id) => {
+    const { data: original, error: fetchError } = await supabase
+      .from("salary_advances")
+      .select("salary_obligation_id, amount")
+      .eq("id", id)
+      .maybeSingle();
+    if (fetchError || !original) return fetchError?.message ?? "Vale original não encontrado";
+
+    const { error } = await supabase.from("salary_advances").insert({
+      salary_obligation_id: original.salary_obligation_id,
+      amount: original.amount,
+      status: "ESTORNADO",
+      paid_at: new Date().toISOString(),
+      reversed_advance_id: id,
+    });
     if (error) return error.message;
     await get().fetchAll();
     return null;

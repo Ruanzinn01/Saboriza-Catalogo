@@ -5950,6 +5950,7 @@ export type Database = {
           other_revenue: number
         }[]
       }
+      get_financeiro_geral_summary: { Args: { p_company_id: string }; Returns: Json }
       get_owner_panel_summary: { Args: { p_company_id: string }; Returns: Json }
       get_platform_companies: {
         Args: never

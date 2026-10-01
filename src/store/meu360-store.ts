@@ -114,7 +114,7 @@ export const useMeu360Store = create<Meu360State>()((set, get) => ({
     set({
       busy: false,
       step: "sessao",
-      executions: (data.executions ?? []).map((e: Record<string, unknown>) => ({
+      executions: ((data.executions ?? []) as unknown as Record<string, unknown>[]).map((e) => ({
         id: e.id as string,
         productId: e.product_id as string,
         status: e.status as string,

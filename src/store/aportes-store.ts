@@ -21,6 +21,8 @@ export interface Contribution {
   plannedDate: string | null;
   realizedDate: string | null;
   notes: string | null;
+  expenseId: string | null;
+  reversedContributionId: string | null;
   createdAt: string;
 }
 
@@ -32,6 +34,7 @@ export interface NewContributionInput {
   plannedDate?: string;
   realizedDate?: string;
   notes?: string;
+  expenseId?: string;
 }
 
 interface AportesState {
@@ -43,8 +46,8 @@ interface AportesState {
   createPartner: (name: string, document?: string) => Promise<string | null>;
   createContribution: (input: NewContributionInput) => Promise<string | null>;
   realizePlanned: (id: string, realizedDate: string) => Promise<string | null>;
-  cancelContribution: (id: string) => Promise<string | null>;
-  reverseContribution: (id: string) => Promise<string | null>;
+  cancelContribution: (id: string, reason: string) => Promise<string | null>;
+  reverseContribution: (id: string, reason: string) => Promise<string | null>;
 }
 
 export const useAportesStore = create<AportesState>((set, get) => ({
@@ -58,7 +61,7 @@ export const useAportesStore = create<AportesState>((set, get) => ({
       supabase.from("company_partners").select("id, name, document, status").order("name"),
       supabase
         .from("partner_contributions")
-        .select("id, partner_id, amount, status, origin, planned_date, realized_date, notes, created_at, company_partners(name)")
+        .select("id, partner_id, amount, status, origin, planned_date, realized_date, notes, expense_id, reversed_contribution_id, created_at, company_partners(name)")
         .order("created_at", { ascending: false }),
     ]);
 
@@ -79,6 +82,8 @@ export const useAportesStore = create<AportesState>((set, get) => ({
         plannedDate: c.planned_date,
         realizedDate: c.realized_date,
         notes: c.notes,
+        expenseId: c.expense_id,
+        reversedContributionId: c.reversed_contribution_id,
         createdAt: c.created_at,
       })),
       status: "ready",
@@ -101,8 +106,17 @@ export const useAportesStore = create<AportesState>((set, get) => ({
       planned_date: input.plannedDate || null,
       realized_date: input.realizedDate || null,
       notes: input.notes || null,
+      expense_id: input.expenseId || null,
     });
     if (error) return error.message;
+
+    if (input.expenseId && input.status === "REALIZADO") {
+      await supabase
+        .from("expenses")
+        .update({ status: "PAGO", paid_at: input.realizedDate || new Date().toISOString().slice(0, 10), paid_amount: input.amount })
+        .eq("id", input.expenseId);
+    }
+
     await get().fetchAll();
     return null;
   },
@@ -117,15 +131,32 @@ export const useAportesStore = create<AportesState>((set, get) => ({
     return null;
   },
 
-  cancelContribution: async (id) => {
-    const { error } = await supabase.from("partner_contributions").update({ status: "CANCELADO" }).eq("id", id);
+  cancelContribution: async (id, reason) => {
+    const { data: original } = await supabase.from("partner_contributions").select("notes").eq("id", id).maybeSingle();
+    const notes = [original?.notes, `Cancelado: ${reason}`].filter(Boolean).join(" | ");
+    const { error } = await supabase.from("partner_contributions").update({ status: "CANCELADO", notes }).eq("id", id);
     if (error) return error.message;
     await get().fetchAll();
     return null;
   },
 
-  reverseContribution: async (id) => {
-    const { error } = await supabase.from("partner_contributions").update({ status: "ESTORNADO" }).eq("id", id);
+  reverseContribution: async (id, reason) => {
+    const { data: original, error: fetchError } = await supabase
+      .from("partner_contributions")
+      .select("partner_id, amount, origin")
+      .eq("id", id)
+      .maybeSingle();
+    if (fetchError || !original) return fetchError?.message ?? "Aporte original não encontrado";
+
+    const { error } = await supabase.from("partner_contributions").insert({
+      partner_id: original.partner_id,
+      amount: original.amount,
+      origin: original.origin,
+      status: "ESTORNADO",
+      realized_date: new Date().toISOString().slice(0, 10),
+      notes: `Estorno do aporte original: ${reason}`,
+      reversed_contribution_id: id,
+    });
     if (error) return error.message;
     await get().fetchAll();
     return null;

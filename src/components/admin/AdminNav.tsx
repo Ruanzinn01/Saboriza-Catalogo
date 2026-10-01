@@ -103,6 +103,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Financeiro",
     icon: Wallet,
     items: [
+      { to: "/admin/financeiro-geral", label: "Financeiro Geral", icon: Wallet },
       { to: "/admin/aportes", label: "Aportes de Sócios", icon: Wallet },
       { to: "/admin/despesas", label: "Despesas", icon: ReceiptText },
       { to: "/admin/receitas", label: "Receitas", icon: TrendingUp },

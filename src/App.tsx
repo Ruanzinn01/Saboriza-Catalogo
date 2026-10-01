@@ -62,6 +62,7 @@ import { ForcaDeVendasPage } from "@/pages/admin/ForcaDeVendasPage";
 import { TarefasPage } from "@/pages/admin/TarefasPage";
 import { PulsoPage } from "@/pages/admin/PulsoPage";
 import { PainelProprietarioPage } from "@/pages/admin/PainelProprietarioPage";
+import { FinanceiroGeralPage } from "@/pages/admin/FinanceiroGeralPage";
 import { WhatsAppFloatingButton } from "@/components/layout/WhatsAppFloatingButton";
 import { ProtectedPlatformRoute } from "@/components/platform/ProtectedPlatformRoute";
 import { PlatformLayout } from "@/components/platform/PlatformLayout";
@@ -146,6 +147,7 @@ export function App() {
             <Route path="tarefas" element={<TarefasPage />} />
             <Route path="pulso" element={<PulsoPage />} />
             <Route path="painel-proprietario" element={<PainelProprietarioPage />} />
+            <Route path="financeiro-geral" element={<FinanceiroGeralPage />} />
           </Route>
         </Route>
 

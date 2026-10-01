@@ -23,7 +23,36 @@ export interface PaymentMethodDraft {
   amount: number;
   daysText: string;
   installments: InstallmentDraft[];
+  asaas: boolean;
 }
+
+export interface ChargeSettings {
+  interestOn: boolean;
+  interest: number;
+  fineOn: boolean;
+  fineType: "percent" | "fixed";
+  fine: number;
+  discountOn: boolean;
+  discountType: "percent" | "fixed";
+  discount: number;
+  discountDeadline: string;
+  autoMessages: boolean;
+}
+
+const DEFAULT_CHARGE_SETTINGS: ChargeSettings = {
+  interestOn: true,
+  interest: 6,
+  fineOn: true,
+  fineType: "percent",
+  fine: 2,
+  discountOn: false,
+  discountType: "percent",
+  discount: 0,
+  discountDeadline: "Até o dia do vencimento",
+  autoMessages: true,
+};
+
+const ASAAS_TYPES: PaymentType[] = ["BOLETO", "PIX"];
 
 export interface CreditSnapshot {
   credit_limit: number;
@@ -84,6 +113,10 @@ interface FaturarState {
   addPaymentMethod: () => void;
   removePaymentMethod: (id: number) => void;
   updatePaymentMethod: (id: number, patch: Partial<PaymentMethodDraft>) => void;
+  updateInstallment: (pmId: number, index: number, patch: Partial<InstallmentDraft>) => void;
+
+  chargeSettings: ChargeSettings;
+  setChargeSettings: (patch: Partial<ChargeSettings>) => void;
 
   fiscalChoice: "EMITIR_NFE" | "SEM_DOCUMENTO_FISCAL";
   setFiscalChoice: (choice: "EMITIR_NFE" | "SEM_DOCUMENTO_FISCAL") => void;
@@ -169,17 +202,25 @@ export const useFaturarStore = create<FaturarState>((set, get) => ({
       amount: order.total,
       daysText: "28,35,42",
       installments: [],
+      asaas: true,
     };
     defaultPm.installments = buildInstallments(defaultPm);
 
-    set({ currentOrder: order, orderStatus: "ready", paymentMethods: [defaultPm], fiscalChoice: "EMITIR_NFE", noFiscalReason: "" });
+    set({
+      currentOrder: order,
+      orderStatus: "ready",
+      paymentMethods: [defaultPm],
+      fiscalChoice: "EMITIR_NFE",
+      noFiscalReason: "",
+      chargeSettings: { ...DEFAULT_CHARGE_SETTINGS },
+    });
     await get().refreshQuote();
   },
 
   paymentMethods: [],
 
   addPaymentMethod: () => {
-    const pm: PaymentMethodDraft = { id: nextPmId++, type: "PIX", mode: "cash", amount: 0, daysText: "30", installments: [] };
+    const pm: PaymentMethodDraft = { id: nextPmId++, type: "PIX", mode: "cash", amount: 0, daysText: "30", installments: [], asaas: true };
     pm.installments = buildInstallments(pm);
     set((s) => ({ paymentMethods: [...s.paymentMethods, pm] }));
     void get().refreshQuote();
@@ -195,12 +236,30 @@ export const useFaturarStore = create<FaturarState>((set, get) => ({
       paymentMethods: s.paymentMethods.map((p) => {
         if (p.id !== id) return p;
         const next = { ...p, ...patch };
-        next.installments = buildInstallments(next);
+        if ("type" in patch && !ASAAS_TYPES.includes(next.type)) next.asaas = false;
+        if ("type" in patch || "mode" in patch || "amount" in patch || "daysText" in patch) {
+          next.installments = buildInstallments(next);
+        }
         return next;
       }),
     }));
     void get().refreshQuote();
   },
+
+  updateInstallment: (pmId, index, patch) => {
+    set((s) => ({
+      paymentMethods: s.paymentMethods.map((p) => {
+        if (p.id !== pmId) return p;
+        const installments = p.installments.map((inst, i) => (i === index ? { ...inst, ...patch } : inst));
+        const amount = Number(installments.reduce((sum, i) => sum + i.amount, 0).toFixed(2));
+        return { ...p, installments, amount };
+      }),
+    }));
+    void get().refreshQuote();
+  },
+
+  chargeSettings: { ...DEFAULT_CHARGE_SETTINGS },
+  setChargeSettings: (patch) => set((s) => ({ chargeSettings: { ...s.chargeSettings, ...patch } })),
 
   fiscalChoice: "EMITIR_NFE",
   setFiscalChoice: (choice) => set({ fiscalChoice: choice }),
@@ -230,7 +289,7 @@ export const useFaturarStore = create<FaturarState>((set, get) => ({
   isConfirming: false,
 
   confirmBilling: async () => {
-    const { currentOrder, paymentMethods, fiscalChoice } = get();
+    const { currentOrder, paymentMethods, fiscalChoice, chargeSettings } = get();
     if (!currentOrder) return { billingId: null, error: "Pedido não carregado" };
 
     set({ isConfirming: true });
@@ -240,8 +299,22 @@ export const useFaturarStore = create<FaturarState>((set, get) => ({
       amount: p.amount,
       condition: p.mode === "cash" ? "À vista" : `${p.daysText} dias`,
       generates_credit: generatesCredit(p.type, p.mode),
-      fees: {},
-      auto_messages: true,
+      asaas: p.type === "BOLETO" || p.type === "PIX" ? p.asaas : false,
+      fees:
+        p.type === "BOLETO"
+          ? {
+              interest_on: chargeSettings.interestOn,
+              interest_percent: chargeSettings.interest,
+              fine_on: chargeSettings.fineOn,
+              fine_type: chargeSettings.fineType,
+              fine: chargeSettings.fine,
+              discount_on: chargeSettings.discountOn,
+              discount_type: chargeSettings.discountType,
+              discount: chargeSettings.discount,
+              discount_deadline: chargeSettings.discountDeadline,
+            }
+          : {},
+      auto_messages: chargeSettings.autoMessages,
       installments: p.installments.map((i) => ({ number: i.number, days: i.days, due_date: i.dueDate, amount: i.amount })),
     }));
 
@@ -270,6 +343,7 @@ export const useFaturarStore = create<FaturarState>((set, get) => ({
       releaseReason: "",
       fiscalChoice: "EMITIR_NFE",
       noFiscalReason: "",
+      chargeSettings: { ...DEFAULT_CHARGE_SETTINGS },
     }),
 }));
 

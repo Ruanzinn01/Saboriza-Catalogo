@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus, RotateCcw, XCircle, CheckCircle2 } from "lucide-react";
 import { useAportesStore, type ContributionOrigin } from "@/store/aportes-store";
+import { useDespesasStore } from "@/store/despesas-store";
 import { AdminState } from "@/components/admin/AdminState";
 import { Button } from "@/components/ui/Button";
 
@@ -27,14 +28,23 @@ function NewContributionForm({ onDone }: { onDone: () => void }) {
   const partners = useAportesStore((s) => s.partners);
   const createPartner = useAportesStore((s) => s.createPartner);
   const createContribution = useAportesStore((s) => s.createContribution);
+  const expenses = useDespesasStore((s) => s.expenses);
+  const fetchExpenses = useDespesasStore((s) => s.fetchAll);
 
   const [partnerId, setPartnerId] = useState(partners[0]?.id ?? "");
   const [newPartnerName, setNewPartnerName] = useState("");
   const [amount, setAmount] = useState("");
   const [origin, setOrigin] = useState<ContributionOrigin>("PIX");
+  const [expenseId, setExpenseId] = useState("");
   const [isPlanned, setIsPlanned] = useState(false);
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (origin === "PAGAMENTO_DIRETO_DESPESA") void fetchExpenses();
+  }, [origin, fetchExpenses]);
+
+  const openExpenses = expenses.filter((e) => e.status === "ABERTO" || e.status === "AGENDADO" || e.status === "ATRASADO");
 
   async function submit() {
     let finalPartnerId = partnerId;
@@ -52,6 +62,10 @@ function NewContributionForm({ onDone }: { onDone: () => void }) {
       toast.error("Escolha o sócio e informe o valor");
       return;
     }
+    if (origin === "PAGAMENTO_DIRETO_DESPESA" && !expenseId) {
+      toast.error("Escolha a despesa paga diretamente pelo sócio");
+      return;
+    }
 
     setSaving(true);
     const err = await createContribution({
@@ -61,6 +75,7 @@ function NewContributionForm({ onDone }: { onDone: () => void }) {
       origin,
       plannedDate: isPlanned ? date : undefined,
       realizedDate: isPlanned ? undefined : date,
+      expenseId: origin === "PAGAMENTO_DIRETO_DESPESA" ? expenseId : undefined,
     });
     setSaving(false);
     if (err) {
@@ -101,6 +116,18 @@ function NewContributionForm({ onDone }: { onDone: () => void }) {
             ))}
           </select>
         </label>
+        {origin === "PAGAMENTO_DIRETO_DESPESA" && (
+          <label className="flex flex-col gap-1 text-sm text-ink-900 sm:col-span-2">
+            Despesa paga diretamente pelo sócio
+            <select value={expenseId} onChange={(e) => setExpenseId(e.target.value)} className="h-11 rounded-xl border border-ink-900/15 px-3 text-sm">
+              <option value="">Selecione a despesa</option>
+              {openExpenses.map((e) => (
+                <option key={e.id} value={e.id}>{e.description} — {brl(e.amount)}</option>
+              ))}
+            </select>
+            <span className="text-xs text-ink-muted">Ao registrar, a despesa é marcada como paga automaticamente.</span>
+          </label>
+        )}
         <label className="flex items-center gap-2 text-sm text-ink-900">
           <input type="checkbox" checked={isPlanned} onChange={(e) => setIsPlanned(e.target.checked)} />
           Aporte planejado (ainda não ocorreu)
@@ -125,6 +152,9 @@ export function AportesPage() {
   const cancelContribution = useAportesStore((s) => s.cancelContribution);
   const reverseContribution = useAportesStore((s) => s.reverseContribution);
   const [showForm, setShowForm] = useState(false);
+  const [reasonModal, setReasonModal] = useState<{ kind: "cancel" | "reverse"; id: string } | null>(null);
+  const [reasonText, setReasonText] = useState("");
+  const [savingReason, setSavingReason] = useState(false);
 
   useEffect(() => {
     fetchAll();
@@ -132,7 +162,8 @@ export function AportesPage() {
 
   const metrics = useMemo(() => {
     const now = new Date();
-    const realized = contributions.filter((c) => c.status === "REALIZADO");
+    const reversedOriginalIds = new Set(contributions.filter((c) => c.status === "ESTORNADO" && c.reversedContributionId).map((c) => c.reversedContributionId));
+    const realized = contributions.filter((c) => c.status === "REALIZADO" && !reversedOriginalIds.has(c.id));
     const thisMonth = realized.filter((c) => c.realizedDate && new Date(c.realizedDate).getMonth() === now.getMonth() && new Date(c.realizedDate).getFullYear() === now.getFullYear());
     const thisYear = realized.filter((c) => c.realizedDate && new Date(c.realizedDate).getFullYear() === now.getFullYear());
     const partnersSet = new Set(realized.map((c) => c.partnerId));
@@ -216,7 +247,7 @@ export function AportesPage() {
                       )}
                       {(c.status === "PLANEJADO" || c.status === "A_CONFIRMAR") && (
                         <button
-                          onClick={() => void handleAction(cancelContribution, c.id, "Aporte cancelado")}
+                          onClick={() => { setReasonModal({ kind: "cancel", id: c.id }); setReasonText(""); }}
                           aria-label="Cancelar"
                           className="flex h-9 w-9 items-center justify-center rounded-full text-red-700 hover:bg-red-50"
                         >
@@ -225,7 +256,7 @@ export function AportesPage() {
                       )}
                       {c.status === "REALIZADO" && (
                         <button
-                          onClick={() => void handleAction(reverseContribution, c.id, "Aporte estornado")}
+                          onClick={() => { setReasonModal({ kind: "reverse", id: c.id }); setReasonText(""); }}
                           aria-label="Estornar"
                           className="flex h-9 w-9 items-center justify-center rounded-full text-red-700 hover:bg-red-50"
                         >
@@ -238,6 +269,48 @@ export function AportesPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {reasonModal && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6">
+            <h2 className="mb-3 text-lg font-extrabold text-forest-950">
+              {reasonModal.kind === "cancel" ? "Cancelar aporte" : "Estornar aporte"}
+            </h2>
+            <p className="text-sm text-ink-700/70">
+              {reasonModal.kind === "cancel"
+                ? "Informe o motivo do cancelamento."
+                : "O aporte original é preservado; um lançamento de estorno vinculado será criado."}
+            </p>
+            <textarea
+              value={reasonText}
+              onChange={(e) => setReasonText(e.target.value)}
+              placeholder="Motivo (mínimo 5 caracteres)"
+              className="mt-3 w-full rounded-xl border border-ink-900/15 p-3 text-sm"
+              rows={3}
+            />
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setReasonModal(null)} className="rounded-lg border border-ink-900/15 px-4 py-2 text-sm font-semibold">Voltar</button>
+              <Button
+                disabled={savingReason || reasonText.trim().length < 5}
+                onClick={async () => {
+                  setSavingReason(true);
+                  const action = reasonModal.kind === "cancel" ? cancelContribution : reverseContribution;
+                  const err = await action(reasonModal.id, reasonText.trim());
+                  setSavingReason(false);
+                  if (err) {
+                    toast.error(err);
+                    return;
+                  }
+                  toast.success(reasonModal.kind === "cancel" ? "Aporte cancelado" : "Aporte estornado");
+                  setReasonModal(null);
+                }}
+              >
+                {savingReason ? "Salvando..." : "Confirmar"}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>
