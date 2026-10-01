@@ -34,7 +34,8 @@ function OperationalSubstatusBadge({ order }: { order: Order }) {
 function OrderCard({ order }: { order: Order }) {
   const substatus = operationalSubstatus(order);
   const showSeparar = order.status === "CONFIRMED" && !order.separationFinishedAt;
-  const showFaturar = substatus === "a_faturar";
+  const showFaturar = order.status === "CONFIRMED";
+  const canFaturar = substatus === "a_faturar";
 
   return (
     <div className="flex flex-col overflow-hidden rounded-3xl border border-forest-950/10 bg-white transition-colors hover:border-forest-700/30">
@@ -69,14 +70,22 @@ function OrderCard({ order }: { order: Order }) {
               <PackageSearch size={14} /> Separar
             </Link>
           )}
-          {showFaturar && (
-            <Link
-              to={`/admin/faturar/${order.id}`}
-              className="flex items-center gap-1.5 rounded-lg bg-gold-500/20 px-3 py-1.5 text-xs font-bold text-gold-700 hover:bg-gold-500/30"
-            >
-              <Receipt size={14} /> Faturar
-            </Link>
-          )}
+          {showFaturar &&
+            (canFaturar ? (
+              <Link
+                to={`/admin/faturar/${order.id}`}
+                className="flex items-center gap-1.5 rounded-lg bg-gold-500/20 px-3 py-1.5 text-xs font-bold text-gold-700 hover:bg-gold-500/30"
+              >
+                <Receipt size={14} /> Faturar
+              </Link>
+            ) : (
+              <span
+                className="flex cursor-not-allowed items-center gap-1.5 rounded-lg bg-ink-900/5 px-3 py-1.5 text-xs font-bold text-ink-muted"
+                title="Finalize a separação pra liberar o faturamento"
+              >
+                <Receipt size={14} /> Faturar
+              </span>
+            ))}
         </div>
       )}
     </div>
