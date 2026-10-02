@@ -81,11 +81,13 @@ export const useTeamStore = create<TeamState>((set, get) => ({
   },
 
   fetchRolesCatalog: async () => {
+    const companyId = get().companyId ?? (await resolveCurrentCompanyId());
+    if (!companyId) return;
     const { data, error } = await supabase.functions.invoke<{
       roles?: { id: string; name: string; permission_keys: string[] }[];
       permissions?: PermissionInfo[];
       error?: string;
-    }>("iam-manage-members", { body: { action: "list-roles" } });
+    }>("iam-manage-members", { body: { action: "list-roles", company_id: companyId } });
 
     if (error || !data || data.error) return;
 
@@ -96,8 +98,10 @@ export const useTeamStore = create<TeamState>((set, get) => ({
   },
 
   inviteMember: async (email, roleId) => {
+    const companyId = get().companyId ?? (await resolveCurrentCompanyId());
+    if (!companyId) return "Não foi possível identificar a empresa";
     const { data, error } = await supabase.functions.invoke<{ ok?: boolean; error?: string }>("iam-manage-members", {
-      body: { action: "invite", email, role_id: roleId },
+      body: { action: "invite", email, role_id: roleId, company_id: companyId },
     });
     if (error || !data?.ok) return data?.error ?? "Não foi possível convidar este e-mail";
     await get().fetchTeam();
@@ -105,8 +109,10 @@ export const useTeamStore = create<TeamState>((set, get) => ({
   },
 
   revokeMember: async (membershipId) => {
+    const companyId = get().companyId ?? (await resolveCurrentCompanyId());
+    if (!companyId) return "Não foi possível identificar a empresa";
     const { data, error } = await supabase.functions.invoke<{ ok?: boolean; error?: string }>("iam-manage-members", {
-      body: { action: "revoke", membership_id: membershipId },
+      body: { action: "revoke", membership_id: membershipId, company_id: companyId },
     });
     if (error || !data?.ok) return data?.error ?? "Não foi possível revogar o acesso";
     await get().fetchTeam();
@@ -114,8 +120,10 @@ export const useTeamStore = create<TeamState>((set, get) => ({
   },
 
   updateMemberRole: async (membershipId, roleId) => {
+    const companyId = get().companyId ?? (await resolveCurrentCompanyId());
+    if (!companyId) return "Não foi possível identificar a empresa";
     const { data, error } = await supabase.functions.invoke<{ ok?: boolean; error?: string }>("iam-manage-members", {
-      body: { action: "update-member-role", membership_id: membershipId, role_id: roleId },
+      body: { action: "update-member-role", membership_id: membershipId, role_id: roleId, company_id: companyId },
     });
     if (error || !data?.ok) return data?.error ?? "Não foi possível trocar o papel";
     await get().fetchTeam();
@@ -123,9 +131,11 @@ export const useTeamStore = create<TeamState>((set, get) => ({
   },
 
   createRole: async (name) => {
+    const companyId = get().companyId ?? (await resolveCurrentCompanyId());
+    if (!companyId) return "Não foi possível identificar a empresa";
     const { data, error } = await supabase.functions.invoke<{ ok?: boolean; role_id?: string; error?: string }>(
       "iam-manage-members",
-      { body: { action: "create-role", name } }
+      { body: { action: "create-role", name, company_id: companyId } }
     );
     if (error || !data?.ok) return data?.error ?? "Não foi possível criar o papel";
     await get().fetchRolesCatalog();
@@ -133,8 +143,10 @@ export const useTeamStore = create<TeamState>((set, get) => ({
   },
 
   saveRolePermissions: async (roleId, permissionKeys) => {
+    const companyId = get().companyId ?? (await resolveCurrentCompanyId());
+    if (!companyId) return "Não foi possível identificar a empresa";
     const { data, error } = await supabase.functions.invoke<{ ok?: boolean; error?: string }>("iam-manage-members", {
-      body: { action: "update-role-permissions", role_id: roleId, permission_keys: permissionKeys },
+      body: { action: "update-role-permissions", role_id: roleId, permission_keys: permissionKeys, company_id: companyId },
     });
     if (error || !data?.ok) return data?.error ?? "Não foi possível salvar as permissões";
     await get().fetchRolesCatalog();

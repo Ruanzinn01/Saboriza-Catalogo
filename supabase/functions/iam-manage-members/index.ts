@@ -22,7 +22,10 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-async function resolveCallerCompany(authHeader: string) {
+// Resolve a empresa do chamador. Se o front mandar company_id explicito (seletor de empresa),
+// valida que o chamador e membership ACTIVE dessa empresa especifica. Sem company_id no corpo
+// (chamadas antigas), cai no vinculo ACTIVE mais antigo, igual sempre foi.
+async function resolveCallerCompany(authHeader: string, requestedCompanyId?: string | null) {
   const callerClient = createClient(SUPABASE_URL, ANON_KEY, {
     global: { headers: { Authorization: authHeader } },
   });
@@ -30,14 +33,15 @@ async function resolveCallerCompany(authHeader: string) {
   const { data: userData } = await callerClient.auth.getUser();
   if (!userData?.user) return null;
 
-  const { data: membership } = await serviceClient
+  let query = serviceClient
     .from("memberships")
     .select("company_id")
     .eq("user_id", userData.user.id)
-    .eq("status", "ACTIVE")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .eq("status", "ACTIVE");
+
+  query = requestedCompanyId ? query.eq("company_id", requestedCompanyId) : query.order("created_at", { ascending: true });
+
+  const { data: membership } = await query.limit(1).maybeSingle();
 
   if (!membership) return null;
 
@@ -53,7 +57,7 @@ async function handleInvite(req: Request, body: Record<string, unknown>) {
 
   if (!email || !roleId) return jsonResponse({ error: "email e role_id são obrigatórios" }, 400);
 
-  const resolved = await resolveCallerCompany(authHeader);
+  const resolved = await resolveCallerCompany(authHeader, body.company_id as string | undefined);
   if (!resolved) return jsonResponse({ error: "sem empresa ativa" }, 403);
   const { callerClient, companyId } = resolved;
 
@@ -101,7 +105,7 @@ async function handleRevoke(req: Request, body: Record<string, unknown>) {
   const membershipId = body.membership_id as string;
   if (!membershipId) return jsonResponse({ error: "membership_id é obrigatório" }, 400);
 
-  const resolved = await resolveCallerCompany(authHeader);
+  const resolved = await resolveCallerCompany(authHeader, body.company_id as string | undefined);
   if (!resolved) return jsonResponse({ error: "sem empresa ativa" }, 403);
   const { callerClient, companyId } = resolved;
 
@@ -123,11 +127,11 @@ async function handleRevoke(req: Request, body: Record<string, unknown>) {
 }
 
 // Lista papeis da empresa (com as permissoes concedidas) + catalogo completo de permissoes disponiveis.
-async function handleListRoles(req: Request) {
+async function handleListRoles(req: Request, body: Record<string, unknown>) {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return jsonResponse({ error: "não autenticado" }, 401);
 
-  const resolved = await resolveCallerCompany(authHeader);
+  const resolved = await resolveCallerCompany(authHeader, body.company_id as string | undefined);
   if (!resolved) return jsonResponse({ error: "sem empresa ativa" }, 403);
   const { callerClient, companyId } = resolved;
 
@@ -164,7 +168,7 @@ async function handleCreateRole(req: Request, body: Record<string, unknown>) {
   const name = (body.name as string)?.trim();
   if (!name) return jsonResponse({ error: "nome é obrigatório" }, 400);
 
-  const resolved = await resolveCallerCompany(authHeader);
+  const resolved = await resolveCallerCompany(authHeader, body.company_id as string | undefined);
   if (!resolved) return jsonResponse({ error: "sem empresa ativa" }, 403);
   const { callerClient, companyId } = resolved;
 
@@ -193,7 +197,7 @@ async function handleUpdateRolePermissions(req: Request, body: Record<string, un
   const permissionKeys = (body.permission_keys as string[]) ?? [];
   if (!roleId) return jsonResponse({ error: "role_id é obrigatório" }, 400);
 
-  const resolved = await resolveCallerCompany(authHeader);
+  const resolved = await resolveCallerCompany(authHeader, body.company_id as string | undefined);
   if (!resolved) return jsonResponse({ error: "sem empresa ativa" }, 403);
   const { callerClient, companyId } = resolved;
 
@@ -233,7 +237,7 @@ async function handleUpdateMemberRole(req: Request, body: Record<string, unknown
   const roleId = body.role_id as string;
   if (!membershipId || !roleId) return jsonResponse({ error: "membership_id e role_id são obrigatórios" }, 400);
 
-  const resolved = await resolveCallerCompany(authHeader);
+  const resolved = await resolveCallerCompany(authHeader, body.company_id as string | undefined);
   if (!resolved) return jsonResponse({ error: "sem empresa ativa" }, 403);
   const { callerClient, companyId } = resolved;
 
@@ -275,7 +279,7 @@ Deno.serve(async (req) => {
     case "revoke":
       return handleRevoke(req, body);
     case "list-roles":
-      return handleListRoles(req);
+      return handleListRoles(req, body);
     case "create-role":
       return handleCreateRole(req, body);
     case "update-role-permissions":
