@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Building2, PackageSearch, Plus, Receipt, Search, Tag } from "lucide-react";
+import { Building2, PackageSearch, Plus, Search, Tag } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { OPERATIONAL_SUBSTATUS_LABELS, ORDER_STATUS_OPTIONS, groupOrdersByDay, operationalSubstatus } from "@/lib/order-status";
 import { useOrdersStore } from "@/store/orders-store";
@@ -32,17 +32,7 @@ function OperationalSubstatusBadge({ order }: { order: Order }) {
 }
 
 function OrderCard({ order }: { order: Order }) {
-  const substatus = operationalSubstatus(order);
   const showSeparar = order.status === "CONFIRMED" && !order.separationFinishedAt;
-  const canFaturar = substatus === "a_faturar";
-  const faturarDisabledReason =
-    order.status === "CANCELLED"
-      ? "Pedido cancelado"
-      : order.status === "NEW" || order.status === "IN_REVIEW"
-        ? "Confirme o pedido antes de faturar"
-        : order.status === "COMPLETED" || order.status === "FINALIZADO"
-          ? "Pedido já faturado"
-          : "Finalize a separação pra liberar o faturamento";
 
   return (
     <div className="flex flex-col overflow-hidden rounded-3xl border border-forest-950/10 bg-white transition-colors hover:border-forest-700/30">
@@ -75,21 +65,6 @@ function OrderCard({ order }: { order: Order }) {
           >
             <PackageSearch size={14} /> Separar
           </Link>
-        )}
-        {canFaturar ? (
-          <Link
-            to={`/admin/faturar/${order.id}`}
-            className="flex items-center gap-1.5 rounded-lg bg-gold-500/20 px-3 py-1.5 text-xs font-bold text-gold-700 hover:bg-gold-500/30"
-          >
-            <Receipt size={14} /> Faturar
-          </Link>
-        ) : (
-          <span
-            className="flex cursor-not-allowed items-center gap-1.5 rounded-lg bg-ink-900/5 px-3 py-1.5 text-xs font-bold text-ink-muted"
-            title={faturarDisabledReason}
-          >
-            <Receipt size={14} /> Faturar
-          </span>
         )}
       </div>
     </div>

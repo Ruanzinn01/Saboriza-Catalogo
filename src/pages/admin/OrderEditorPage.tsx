@@ -353,17 +353,35 @@ export function OrderEditorPage() {
 
       {order && (
         <div className="flex flex-wrap gap-2 rounded-3xl border border-forest-950/10 bg-white p-4">
-          {operationalSubstatus(order) === "a_faturar" && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="border-[#128C4A] text-[#128C4A] hover:bg-[#128C4A]/10"
-              onClick={() => navigate(`/admin/faturar/${order.id}`)}
-            >
-              <Receipt size={16} /> Faturar
-            </Button>
-          )}
+          {(() => {
+            const canFaturar = operationalSubstatus(order) === "a_faturar";
+            const faturarDisabledReason = canFaturar
+              ? undefined
+              : order.status === "CANCELLED"
+                ? "Pedido cancelado"
+                : order.status === "NEW" || order.status === "IN_REVIEW"
+                  ? "Confirme o pedido antes de faturar"
+                  : order.status === "COMPLETED" || order.status === "FINALIZADO"
+                    ? "Pedido já faturado"
+                    : "Finalize a separação pra liberar o faturamento";
+            return (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={!canFaturar}
+                title={faturarDisabledReason}
+                className={
+                  canFaturar
+                    ? "border-[#128C4A] text-[#128C4A] hover:bg-[#128C4A]/10"
+                    : "cursor-not-allowed text-ink-muted"
+                }
+                onClick={() => canFaturar && navigate(`/admin/faturar/${order.id}`)}
+              >
+                <Receipt size={16} /> Faturar
+              </Button>
+            );
+          })()}
           <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
             <Eye size={16} /> Visualizar pedido
           </Button>
