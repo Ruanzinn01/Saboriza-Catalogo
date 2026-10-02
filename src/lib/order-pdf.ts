@@ -4,8 +4,6 @@ import { calculateLineTotal } from "@/lib/pricing";
 import type { Order } from "@/types/order";
 import type { Settings } from "@/types/settings";
 
-const LOGO_URL = "/brand/logo-saboriza-transparente.png";
-
 async function loadImageAsDataUrl(url: string): Promise<string | null> {
   try {
     const response = await fetch(url);
@@ -74,11 +72,11 @@ export async function generateOrderPdf(order: Order, settings: Settings): Promis
   doc.rect(contentX, y, contentWidth, headerHeight);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
-  doc.text(settings.factoryName || "Saboriza", contentX + contentWidth * 0.35, y + 11, { align: "center" });
+  doc.text(settings.factoryName || "Empresa", contentX + contentWidth * 0.35, y + 11, { align: "center" });
   doc.setFontSize(10);
   doc.text(`Pedido Nº ${order.number.replace("#", "")}`, contentX + contentWidth * 0.35, y + 18, { align: "center" });
 
-  const logoDataUrl = await loadImageAsDataUrl(LOGO_URL);
+  const logoDataUrl = settings.logoUrl ? await loadImageAsDataUrl(settings.logoUrl) : null;
   if (logoDataUrl) {
     const logoSize = 20;
     doc.addImage(logoDataUrl, "PNG", contentX + contentWidth - logoSize - 3, y + 3, logoSize, logoSize);

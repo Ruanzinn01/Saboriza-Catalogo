@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { orderFromRow } from "@/lib/mappers/order-mapper";
 import { useCatalogStore } from "@/store/catalog-store";
 import type { Order, OrderCustomer, OrderStatus } from "@/types/order";
@@ -24,9 +25,14 @@ export const useOrdersStore = create<OrdersState>()((set, get) => ({
 
   fetchOrders: async () => {
     set({ status: "loading" });
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ status: "error" });
+      return;
+    }
     const [{ data: orderRows, error: orderError }, { data: itemRows, error: itemError }] = await Promise.all([
-      supabase.from("orders").select("*").order("created_at", { ascending: false }),
-      supabase.from("order_items").select("*"),
+      supabase.from("orders").select("*").eq("company_id", companyId).order("created_at", { ascending: false }),
+      supabase.from("order_items").select("*").eq("company_id", companyId),
     ]);
 
     if (orderError || itemError) {

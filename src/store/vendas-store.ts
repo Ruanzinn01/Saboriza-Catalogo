@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 
 export interface Seller {
   id: string;
@@ -42,9 +43,12 @@ export const useVendasStore = create<VendasState>()((set, get) => ({
   status: "idle",
 
   fetchSellers: async () => {
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return;
     const { data, error } = await supabase
       .from("employees")
       .select("id, name, commission_rate_percent")
+      .eq("company_id", companyId)
       .eq("status", "ATIVO")
       .order("name", { ascending: true });
 

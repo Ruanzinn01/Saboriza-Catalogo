@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { supplierFromRow } from "@/lib/mappers/supplier-mapper";
 import type { Supplier, SupplierInput } from "@/types/supplier";
 
@@ -37,7 +38,12 @@ export const useSuppliersStore = create<SuppliersState>()((set, get) => ({
 
   fetchSuppliers: async () => {
     set({ status: "loading" });
-    const { data, error } = await supabase.from("suppliers").select("*").order("name", { ascending: true });
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ status: "error" });
+      return;
+    }
+    const { data, error } = await supabase.from("suppliers").select("*").eq("company_id", companyId).order("name", { ascending: true });
 
     if (error) {
       toast.error("Não foi possível carregar os fornecedores");
@@ -61,7 +67,16 @@ export const useSuppliersStore = create<SuppliersState>()((set, get) => ({
   },
 
   createSupplier: async (input) => {
-    const { data, error } = await supabase.from("suppliers").insert(toRow(input)).select("*").single();
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      toast.error("Não foi possível identificar a empresa");
+      return null;
+    }
+    const { data, error } = await supabase
+      .from("suppliers")
+      .insert({ ...toRow(input), company_id: companyId })
+      .select("*")
+      .single();
 
     if (error || !data) {
       toast.error("Não foi possível cadastrar o fornecedor");

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { rawMaterialEntryFromRow } from "@/lib/mappers/raw-material-entry-mapper";
 import { rawMaterialFromRow } from "@/lib/mappers/raw-material-mapper";
 import { useRawMaterialsStore } from "@/store/raw-materials-store";
@@ -56,7 +57,16 @@ export const useRawMaterialEntriesStore = create<RawMaterialEntriesState>()((set
   },
 
   saveDraft: async (input) => {
-    const { data, error } = await supabase.from("raw_material_entries").insert(toRow(input)).select("*").single();
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      toast.error("Não foi possível identificar a empresa");
+      return null;
+    }
+    const { data, error } = await supabase
+      .from("raw_material_entries")
+      .insert({ ...toRow(input), company_id: companyId })
+      .select("*")
+      .single();
 
     if (error || !data) {
       toast.error("Não foi possível salvar o rascunho da entrada");

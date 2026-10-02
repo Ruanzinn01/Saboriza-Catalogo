@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompany } from "@/lib/current-company";
 
 type TerminalStep = "device-setup" | "matricula" | "pin" | "tipo" | "foto" | "enviando" | "sucesso";
 
@@ -95,7 +96,7 @@ export const usePontoOrisTerminalStore = create<PontoOrisTerminalState>((set, ge
   registerDevice: async (label) => {
     set({ isRegisteringDevice: true, errorMessage: null });
 
-    const { data: company } = await supabase.from("companies").select("display_name").limit(1).maybeSingle();
+    const company = await resolveCurrentCompany();
 
     const { data, error } = await supabase.functions.invoke<{
       device_id?: string;
@@ -116,7 +117,7 @@ export const usePontoOrisTerminalStore = create<PontoOrisTerminalState>((set, ge
     get().saveDevice({
       deviceId: data.device_id,
       deviceCredential: data.device_credential,
-      companyLabel: company?.display_name ?? "Saboriza",
+      companyLabel: company?.display_name ?? "Empresa",
     });
     return null;
   },

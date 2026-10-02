@@ -4,7 +4,7 @@ import { calculateLineTotal } from "./pricing";
 
 const DIVIDER = "━━━━━━━━━━━━━━━━━━";
 
-export function formatOrderWhatsAppMessage(order: Order) {
+export function formatOrderWhatsAppMessage(order: Order, companyName: string) {
   const itemLines = order.items
     .map((item) => {
       const units = item.packs * item.packQuantity;
@@ -20,7 +20,7 @@ export function formatOrderWhatsAppMessage(order: Order) {
   const hasDiscount = order.discountAmount > 0;
 
   return [
-    "🏭 *NOVO PEDIDO — SABORIZA*",
+    `🏭 *NOVO PEDIDO — ${companyName.toUpperCase()}*`,
     "",
     DIVIDER,
     "",

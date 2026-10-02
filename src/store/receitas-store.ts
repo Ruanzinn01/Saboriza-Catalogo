@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 
 export type RevenueOrigin = "MANUAL" | "CONTRATO_RECORRENCIA" | "INTEGRACAO" | "OUTRO_MODULO";
 export type ReceivableStatus = "ABERTO" | "RECEBIDO" | "VENCIDO" | "CANCELADO";
@@ -58,14 +59,24 @@ export const useReceitasStore = create<ReceitasState>((set, get) => ({
   fetchAll: async () => {
     set({ status: "loading" });
 
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ status: "error" });
+      return;
+    }
+
     const [{ data: rows, error }, { data: receiptRows }] = await Promise.all([
       supabase
         .from("revenue_receivables")
         .select(
           "id, due_date, effective_date, status, principal, open_balance, installment_number, total_installments, revenue_id, revenues(id, description, category, origin, payer_origin_id, customers(name))"
         )
+        .eq("company_id", companyId)
         .order("due_date", { ascending: false }),
-      supabase.from("revenue_receipts").select("id, receivable_id, received_amount, effective_date, reversed_receipt_id"),
+      supabase
+        .from("revenue_receipts")
+        .select("id, receivable_id, received_amount, effective_date, reversed_receipt_id")
+        .eq("company_id", companyId),
     ]);
 
     if (error) {
@@ -112,9 +123,12 @@ export const useReceitasStore = create<ReceitasState>((set, get) => ({
   },
 
   createRevenue: async (input) => {
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return "Não foi possível identificar a empresa";
     const { data: revenue, error: revenueError } = await supabase
       .from("revenues")
       .insert({
+        company_id: companyId,
         description: input.description,
         category: input.category,
         origin: input.origin,
@@ -134,6 +148,7 @@ export const useReceitasStore = create<ReceitasState>((set, get) => ({
       due.setMonth(due.getMonth() + i);
       const principal = i === totalInstallments - 1 ? Number((input.amount - each * (totalInstallments - 1)).toFixed(2)) : each;
       return {
+        company_id: companyId,
         revenue_id: revenue.id,
         installment_number: i + 1,
         total_installments: totalInstallments,
@@ -155,8 +170,12 @@ export const useReceitasStore = create<ReceitasState>((set, get) => ({
     const { data: receivable } = await supabase.from("revenue_receivables").select("open_balance, due_date").eq("id", receivableId).maybeSingle();
     if (!receivable) return "Título não encontrado";
 
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return "Não foi possível identificar a empresa";
+
     const now = new Date().toISOString();
     const { error: receiptError } = await supabase.from("revenue_receipts").insert({
+      company_id: companyId,
       receivable_id: receivableId,
       received_amount: receivedAmount,
       principal_received: receivedAmount,
@@ -190,8 +209,12 @@ export const useReceitasStore = create<ReceitasState>((set, get) => ({
       .maybeSingle();
     if (fetchError || !original) return fetchError?.message ?? "Recebimento original não encontrado";
 
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return "Não foi possível identificar a empresa";
+
     const now = new Date().toISOString();
     const { error: insertError } = await supabase.from("revenue_receipts").insert({
+      company_id: companyId,
       receivable_id: original.receivable_id,
       received_amount: -original.received_amount,
       principal_received: -original.received_amount,

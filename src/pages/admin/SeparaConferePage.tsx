@@ -219,7 +219,7 @@ export function SeparaConferePage() {
           <h2 className="text-lg font-extrabold text-forest-950">Separa Confere</h2>
           <p className="font-mono text-xs text-ink-muted">v{packageJson.version}</p>
           <p className="max-w-sm text-sm text-ink-700/80">
-            Ferramenta de separação e conferência física dos produtos de um pedido, integrada ao Saboriza.
+            Ferramenta de separação e conferência física dos produtos de um pedido, integrada ao Óris360.
           </p>
           <p className="text-xs font-semibold text-ink-muted">Logado como {session?.user.user_metadata?.name || session?.user.email}</p>
         </div>

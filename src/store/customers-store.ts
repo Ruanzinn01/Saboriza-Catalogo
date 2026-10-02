@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { customerFromRow } from "@/lib/mappers/customer-mapper";
 import type { Customer, CustomerInput } from "@/types/customer";
 
@@ -37,7 +38,12 @@ export const useCustomersStore = create<CustomersState>()((set, get) => ({
 
   fetchCustomers: async () => {
     set({ status: "loading" });
-    const { data, error } = await supabase.from("customers").select("*").order("name", { ascending: true });
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ status: "error" });
+      return;
+    }
+    const { data, error } = await supabase.from("customers").select("*").eq("company_id", companyId).order("name", { ascending: true });
 
     if (error) {
       toast.error("Não foi possível carregar os clientes");
@@ -61,7 +67,16 @@ export const useCustomersStore = create<CustomersState>()((set, get) => ({
   },
 
   createCustomer: async (input) => {
-    const { data, error } = await supabase.from("customers").insert(toRow(input)).select("*").single();
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      toast.error("Não foi possível identificar a empresa");
+      return null;
+    }
+    const { data, error } = await supabase
+      .from("customers")
+      .insert({ ...toRow(input), company_id: companyId })
+      .select("*")
+      .single();
 
     if (error || !data) {
       toast.error("Não foi possível cadastrar o cliente");

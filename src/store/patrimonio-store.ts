@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 
 export type AssetStatus = "ATIVO" | "BAIXADO";
 
@@ -55,14 +56,25 @@ export const usePatrimonioStore = create<PatrimonioState>((set, get) => ({
   fetchAll: async () => {
     set({ status: "loading" });
 
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ status: "error" });
+      return;
+    }
+
     const [{ data: rows, error }, { data: movementRows }] = await Promise.all([
       supabase
         .from("asset_units")
         .select(
           "id, acquisition_value, estimated_current_value, acquisition_date, status, current_responsible_id, expense_id, asset_models(name, category), employees(name), expenses(description)"
         )
+        .eq("company_id", companyId)
         .order("created_at", { ascending: false }),
-      supabase.from("asset_movements").select("id, asset_unit_id, type, notes, responsible_employee_id, created_at").order("created_at", { ascending: false }),
+      supabase
+        .from("asset_movements")
+        .select("id, asset_unit_id, type, notes, responsible_employee_id, created_at")
+        .eq("company_id", companyId)
+        .order("created_at", { ascending: false }),
     ]);
 
     if (error) {
@@ -102,15 +114,19 @@ export const usePatrimonioStore = create<PatrimonioState>((set, get) => ({
   },
 
   createAsset: async (input) => {
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return "Não foi possível identificar a empresa";
+
     const { data: model, error: modelError } = await supabase
       .from("asset_models")
-      .insert({ name: input.modelName, category: input.category })
+      .insert({ name: input.modelName, category: input.category, company_id: companyId })
       .select("id")
       .single();
     if (modelError) return modelError.message;
 
     const quantity = Math.max(1, input.quantity ?? 1);
     const units = Array.from({ length: quantity }, () => ({
+      company_id: companyId,
       asset_model_id: model.id,
       acquisition_value: input.acquisitionValue,
       acquisition_date: input.acquisitionDate || null,
@@ -129,7 +145,10 @@ export const usePatrimonioStore = create<PatrimonioState>((set, get) => ({
     const { error: updateError } = await supabase.from("asset_units").update({ status: "BAIXADO" }).eq("id", id);
     if (updateError) return updateError.message;
 
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return "Não foi possível identificar a empresa";
     const { error: movementError } = await supabase.from("asset_movements").insert({
+      company_id: companyId,
       asset_unit_id: id,
       type: "BAIXA",
       notes: reason,
@@ -144,7 +163,10 @@ export const usePatrimonioStore = create<PatrimonioState>((set, get) => ({
     const { error: updateError } = await supabase.from("asset_units").update({ current_responsible_id: newResponsibleId }).eq("id", id);
     if (updateError) return updateError.message;
 
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return "Não foi possível identificar a empresa";
     const { error: movementError } = await supabase.from("asset_movements").insert({
+      company_id: companyId,
       asset_unit_id: id,
       type: "TRANSFERENCIA_RESPONSAVEL",
       notes: reason,

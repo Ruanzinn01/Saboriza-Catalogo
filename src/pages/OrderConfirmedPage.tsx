@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { CheckCircle2, Download, MessageCircle } from "lucide-react";
 import { TopBar } from "@/components/layout/TopBar";
@@ -10,21 +9,16 @@ import { formatCurrency } from "@/lib/currency";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { formatOrderWhatsAppMessage } from "@/lib/order-message";
 import { downloadOrderPdf } from "@/lib/order-actions";
-import { CONTACT } from "@/config/contact";
 import type { Order } from "@/types/order";
 
 export function OrderConfirmedPage() {
-  const { orderId } = useParams();
+  const { orderId, companySlug } = useParams();
   const location = useLocation();
   const orderFromState = (location.state as { order?: Order } | null)?.order;
   const orderFromStore = useOrdersStore((state) => state.orders.find((order) => order.id === orderId));
   const order = orderFromState ?? orderFromStore;
   const settings = useSettingsStore((state) => state.settings);
-  const fetchSettings = useSettingsStore((state) => state.fetchSettings);
-
-  useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+  const catalogPath = companySlug ? `/${companySlug}` : "/";
 
   if (!order) {
     return (
@@ -35,7 +29,7 @@ export function OrderConfirmedPage() {
         </div>
         <div className="relative mx-auto flex max-w-md flex-col items-center gap-3 px-4 py-24 text-center">
           <p className="text-lg font-bold text-ink-900">Pedido não encontrado</p>
-          <Link to="/" className="text-sm font-semibold text-forest-800 underline">
+          <Link to={catalogPath} className="text-sm font-semibold text-forest-800 underline">
             Voltar ao catálogo
           </Link>
         </div>
@@ -74,11 +68,21 @@ export function OrderConfirmedPage() {
         >
           <Download size={18} /> Baixar comanda PDF
         </Button>
-        <a href={buildWhatsAppLink(CONTACT.whatsappNumber, formatOrderWhatsAppMessage(order))} target="_blank" rel="noreferrer" className="w-full">
-          <Button className="w-full" size="lg">
-            <MessageCircle size={18} /> Enviar comanda pelo WhatsApp
-          </Button>
-        </a>
+        {settings?.whatsappNumber && (
+          <a
+            href={buildWhatsAppLink(
+              settings.whatsappNumber,
+              formatOrderWhatsAppMessage(order, settings.fantasyName || settings.factoryName || "Empresa")
+            )}
+            target="_blank"
+            rel="noreferrer"
+            className="w-full"
+          >
+            <Button className="w-full" size="lg">
+              <MessageCircle size={18} /> Enviar comanda pelo WhatsApp
+            </Button>
+          </a>
+        )}
         <Link to="/" className="w-full">
           <Button className="w-full" size="lg" variant="secondary">
             Voltar ao catálogo

@@ -29,12 +29,19 @@ function StatCard({ icon: Icon, label, value }: { icon: typeof Building2; label:
   );
 }
 
+const SEGMENT_OPTIONS = [
+  { value: "INDUSTRY", label: "Indústria" },
+  { value: "COMMERCE", label: "Comércio" },
+  { value: "REPRESENTATION", label: "Representação" },
+  { value: "DELIVERY", label: "Delivery" },
+];
+
 function NewCompanyForm({ onDone }: { onDone: () => void }) {
   const createCompany = usePlatformStore((s) => s.createCompany);
   const [displayName, setDisplayName] = useState("");
   const [legalName, setLegalName] = useState("");
   const [document, setDocument] = useState("");
-  const [segment, setSegment] = useState("");
+  const [segment, setSegment] = useState(SEGMENT_OPTIONS[0].value);
   const [saving, setSaving] = useState(false);
 
   async function submit() {
@@ -53,7 +60,7 @@ function NewCompanyForm({ onDone }: { onDone: () => void }) {
     setDisplayName("");
     setLegalName("");
     setDocument("");
-    setSegment("");
+    setSegment(SEGMENT_OPTIONS[0].value);
     onDone();
   }
 
@@ -86,12 +93,17 @@ function NewCompanyForm({ onDone }: { onDone: () => void }) {
         </label>
         <label className="flex flex-col gap-1 text-sm text-cream-50/80">
           Segmento
-          <input
+          <select
             value={segment}
             onChange={(e) => setSegment(e.target.value)}
-            placeholder="Ex: Alimentação"
             className="h-11 rounded-xl border border-cream-50/15 bg-transparent px-3 text-sm text-cream-50 outline-none focus:border-gold-400"
-          />
+          >
+            {SEGMENT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value} className="bg-forest-900">
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
       <Button onClick={() => void submit()} disabled={saving} className="self-start">

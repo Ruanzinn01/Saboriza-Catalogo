@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import type { ProductionPlan, ProductionRoute, ProductionRouteStage } from "@/types/production-floor";
 
 function routeFromRow(row: { id: string; product_id: string; version: number; status: string; created_at: string }): ProductionRoute {
@@ -53,7 +54,9 @@ export const useProductionRoutesStore = create<ProductionRoutesState>()((set, ge
   plans: [],
 
   fetchRoutes: async () => {
-    const { data: routes } = await supabase.from("production_routes").select("*").order("version", { ascending: false });
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return;
+    const { data: routes } = await supabase.from("production_routes").select("*").eq("company_id", companyId).order("version", { ascending: false });
     if (routes) set({ routes: routes.map(routeFromRow) });
     const routeIds = (routes ?? []).map((r) => r.id);
     if (routeIds.length === 0) {
@@ -69,7 +72,9 @@ export const useProductionRoutesStore = create<ProductionRoutesState>()((set, ge
   },
 
   fetchPlans: async () => {
-    const { data } = await supabase.from("production_plans").select("*").order("planned_date", { ascending: true });
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return;
+    const { data } = await supabase.from("production_plans").select("*").eq("company_id", companyId).order("planned_date", { ascending: true });
     if (data) set({ plans: data.map(planFromRow) });
   },
 
@@ -94,9 +99,14 @@ export const useProductionRoutesStore = create<ProductionRoutesState>()((set, ge
       toast.error("Informe uma quantidade válida");
       return false;
     }
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      toast.error("Não foi possível identificar a empresa");
+      return false;
+    }
     const { error } = await supabase
       .from("production_plans")
-      .insert({ product_id: productId, planned_date: plannedDate, planned_packs: plannedPacks });
+      .insert({ product_id: productId, planned_date: plannedDate, planned_packs: plannedPacks, company_id: companyId });
     if (error) {
       toast.error("Não foi possível criar o plano");
       return false;

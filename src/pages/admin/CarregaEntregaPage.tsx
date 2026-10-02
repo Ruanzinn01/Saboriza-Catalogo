@@ -94,7 +94,7 @@ export function CarregaEntregaPage() {
           <h2 className="text-lg font-extrabold text-forest-950">Carrega Entrega</h2>
           <p className="font-mono text-xs text-ink-muted">v{packageJson.version}</p>
           <p className="max-w-sm text-sm text-ink-700/80">
-            Ferramenta de carregamento e confirmação de entrega dos pedidos já faturados, integrada ao Saboriza.
+            Ferramenta de carregamento e confirmação de entrega dos pedidos já faturados, integrada ao Óris360.
           </p>
           <p className="text-xs font-semibold text-ink-muted">Logado como {session?.user.user_metadata?.name || session?.user.email}</p>
         </div>

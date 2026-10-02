@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { couponFromRow, couponToRow } from "@/lib/mappers/coupon-mapper";
 import type { Coupon } from "@/types/coupon";
 
@@ -19,7 +20,12 @@ export const useCouponsStore = create<CouponsState>()((set, get) => ({
 
   fetchCoupons: async () => {
     set({ status: "loading" });
-    const { data, error } = await supabase.from("coupons").select("*").order("created_at", { ascending: false });
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ status: "error" });
+      return;
+    }
+    const { data, error } = await supabase.from("coupons").select("*").eq("company_id", companyId).order("created_at", { ascending: false });
 
     if (error) {
       toast.error("Não foi possível carregar os cupons");
@@ -32,19 +38,26 @@ export const useCouponsStore = create<CouponsState>()((set, get) => ({
 
   addCoupon: (coupon) => {
     set((state) => ({ coupons: [coupon, ...state.coupons] }));
-    supabase
-      .from("coupons")
-      .insert(couponToRow(coupon))
-      .then(({ error }) => {
-        if (error) {
-          toast.error(
-            error.code === "23505" ? "Já existe um cupom com esse código" : "Não foi possível salvar o cupom"
-          );
-          set((state) => ({ coupons: state.coupons.filter((item) => item.id !== coupon.id) }));
-        } else {
-          toast.success("Cupom criado com sucesso");
-        }
-      });
+    void resolveCurrentCompanyId().then((companyId) => {
+      if (!companyId) {
+        toast.error("Não foi possível identificar a empresa");
+        set((state) => ({ coupons: state.coupons.filter((item) => item.id !== coupon.id) }));
+        return;
+      }
+      supabase
+        .from("coupons")
+        .insert({ ...couponToRow(coupon), company_id: companyId })
+        .then(({ error }) => {
+          if (error) {
+            toast.error(
+              error.code === "23505" ? "Já existe um cupom com esse código" : "Não foi possível salvar o cupom"
+            );
+            set((state) => ({ coupons: state.coupons.filter((item) => item.id !== coupon.id) }));
+          } else {
+            toast.success("Cupom criado com sucesso");
+          }
+        });
+    });
   },
 
   updateCoupon: (id, patch) => {

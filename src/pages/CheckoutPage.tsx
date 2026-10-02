@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TopBar } from "@/components/layout/TopBar";
@@ -8,10 +8,11 @@ import { CouponField } from "@/components/checkout/CouponField";
 import { CustomerForm } from "@/components/checkout/CustomerForm";
 import { useCartStore } from "@/store/cart-store";
 import { useOrdersStore } from "@/store/orders-store";
+import { usePublicCompanyStore } from "@/store/public-company-store";
 import { submitOrder } from "@/lib/orders-api";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { formatOrderWhatsAppMessage } from "@/lib/order-message";
-import { CONTACT } from "@/config/contact";
+import { useSettingsStore } from "@/store/settings-store";
 import type { OrderCustomer } from "@/types/order";
 import type { Coupon } from "@/types/coupon";
 
@@ -19,7 +20,10 @@ export function CheckoutPage() {
   const items = useCartStore((state) => state.items);
   const clearCart = useCartStore((state) => state.clearCart);
   const createOrder = useOrdersStore((state) => state.createOrder);
+  const company = usePublicCompanyStore((state) => state.company);
+  const whatsappNumber = useSettingsStore((state) => state.settings?.whatsappNumber);
   const navigate = useNavigate();
+  const { companySlug } = useParams();
   const [submitting, setSubmitting] = useState(false);
   const [coupon, setCoupon] = useState<Coupon | null>(null);
 
@@ -39,14 +43,21 @@ export function CheckoutPage() {
   }
 
   async function handleSubmit(customer: OrderCustomer) {
+    if (!company) {
+      toast.error("Não foi possível identificar a empresa");
+      return;
+    }
     setSubmitting(true);
     try {
-      const order = await submitOrder(customer, items, coupon?.code);
+      const order = await submitOrder(company.id, customer, items, coupon?.code);
       createOrder(order);
       clearCart();
 
-      navigate(`/pedido-confirmado/${order.id}`, { state: { order } });
-      window.location.href = buildWhatsAppLink(CONTACT.whatsappNumber, formatOrderWhatsAppMessage(order));
+      const prefix = companySlug ? `/${companySlug}` : "";
+      navigate(`${prefix}/pedido-confirmado/${order.id}`, { state: { order } });
+      if (whatsappNumber) {
+        window.location.href = buildWhatsAppLink(whatsappNumber, formatOrderWhatsAppMessage(order, company.displayName));
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível criar o pedido");
       setSubmitting(false);

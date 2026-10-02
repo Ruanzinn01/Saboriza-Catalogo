@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useEmployeesStore } from "@/store/employees-store";
 import { useFloorStore } from "@/store/floor-store";
+import { useAdminCompanyStore } from "@/store/admin-company-store";
 import type { FloorExecution } from "@/types/production-floor";
 
 // Paleta consistente com o Produziu Registra (PRODUZIU_REGISTRA_REFERENCIA_VISUAL_V4_R2.html)
@@ -27,6 +28,7 @@ function Card({ children }: { children: ReactNode }) {
 }
 
 export function ChaoDeFabricaPage() {
+  const companyName = useAdminCompanyStore((s) => s.company?.display_name) || "Empresa";
   const products = useCatalogStore((s) => s.products);
   const fetchCatalog = useCatalogStore((s) => s.fetchCatalog);
   const employees = useEmployeesStore((s) => s.employees);
@@ -166,7 +168,7 @@ export function ChaoDeFabricaPage() {
         <div className="border-l pl-4 font-bold" style={{ borderColor: c.line }}>
           Chão de Fábrica
           <small className="block font-normal text-xs" style={{ color: c.muted }}>
-            Saboriza · Execução (MVP)
+            {companyName} · Execução (MVP)
           </small>
         </div>
         <div className="flex-1" />

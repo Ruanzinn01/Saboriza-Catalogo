@@ -1,14 +1,19 @@
 import { supabaseUntyped } from "@/lib/supabase-untyped";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 
 let installed = false;
 
 function logError(message: string, stack: string | null, severity: "ERROR" | "WARNING" = "ERROR") {
-  void supabaseUntyped.from("client_errors").insert({
-    message: message.slice(0, 2000),
-    stack: stack?.slice(0, 8000) ?? null,
-    url: window.location.href,
-    user_agent: navigator.userAgent,
-    severity,
+  void resolveCurrentCompanyId().then((companyId) => {
+    if (!companyId) return;
+    void supabaseUntyped.from("client_errors").insert({
+      company_id: companyId,
+      message: message.slice(0, 2000),
+      stack: stack?.slice(0, 8000) ?? null,
+      url: window.location.href,
+      user_agent: navigator.userAgent,
+      severity,
+    });
   });
 }
 

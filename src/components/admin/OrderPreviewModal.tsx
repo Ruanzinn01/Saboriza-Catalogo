@@ -105,7 +105,7 @@ export function OrderPreviewModal({ order, open, onClose }: OrderPreviewModalPro
           >
             <Download size={16} /> Baixar PDF
           </Button>
-          <Button type="button" size="sm" onClick={() => sendOrderWhatsApp(order, order.customer.phone)}>
+          <Button type="button" size="sm" onClick={() => settings && sendOrderWhatsApp(order, order.customer.phone, settings)}>
             <MessageCircle size={16} /> Enviar por WhatsApp
           </Button>
         </div>

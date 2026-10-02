@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { stockMovementFromRow } from "@/lib/mappers/stock-mapper";
 import { rawMaterialEntryFromRow } from "@/lib/mappers/raw-material-entry-mapper";
 import type { StockMovement } from "@/types/stock";
@@ -29,12 +30,19 @@ export const useStockInsightsStore = create<StockInsightsState>()((set) => ({
   fetchInsights: async () => {
     set({ status: "loading" });
 
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ status: "error" });
+      return;
+    }
+
     const [movementsRes, entriesRes, consumptionsRes] = await Promise.all([
-      supabase.from("stock_movements").select("*"),
-      supabase.from("raw_material_entries").select("*").eq("status", "confirmed"),
+      supabase.from("stock_movements").select("*").eq("company_id", companyId),
+      supabase.from("raw_material_entries").select("*").eq("company_id", companyId).eq("status", "confirmed"),
       supabase
         .from("production_consumptions")
-        .select("raw_material_id, consumed_quantity, production_records!inner(confirmed_at)"),
+        .select("raw_material_id, consumed_quantity, production_records!inner(confirmed_at)")
+        .eq("company_id", companyId),
     ]);
 
     if (movementsRes.error || entriesRes.error || consumptionsRes.error) {

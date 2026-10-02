@@ -1,8 +1,9 @@
 import { Instagram, MessageCircle, Package, Store } from "lucide-react";
 import { BrandEmblem } from "./BrandEmblem";
-import { CONTACT } from "@/config/contact";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { getTodayMessage } from "@/data/weekday-messages";
+import { useSettingsStore } from "@/store/settings-store";
+import { usePublicCompanyStore } from "@/store/public-company-store";
 import type { Category } from "@/types/category";
 
 interface FooterProps {
@@ -11,14 +12,20 @@ interface FooterProps {
 }
 
 export function Footer({ categories, onSelectCategory }: FooterProps) {
-  const whatsappLink = buildWhatsAppLink(CONTACT.whatsappNumber, "Olá! Quero fazer um pedido no catálogo Saboriza.");
+  const settings = useSettingsStore((state) => state.settings);
+  const company = usePublicCompanyStore((state) => state.company);
+  const displayName = company?.displayName ?? "";
+  const whatsappNumber = settings?.whatsappNumber || "";
+  const whatsappLink = whatsappNumber
+    ? buildWhatsAppLink(whatsappNumber, `Olá! Quero fazer um pedido no catálogo ${displayName}.`)
+    : "";
 
   return (
     <footer className="mt-12 rounded-t-[3rem] bg-linear-to-b from-forest-900 to-forest-950 px-4 pb-8 pt-14 sm:px-6">
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="flex flex-col gap-4">
-            <BrandEmblem size="sm" />
+            <BrandEmblem size="sm" logoUrl={settings?.logoUrl} displayName={displayName} />
             <p className="max-w-xs text-sm text-cream-100/60">
               Fábrica de temperos para mercados, restaurantes, padarias e pizzarias. Venda por atacado, em packs
               fechados.
@@ -46,14 +53,20 @@ export function Footer({ categories, onSelectCategory }: FooterProps) {
 
           <div className="flex flex-col gap-3">
             <h3 className="w-fit bg-linear-to-r from-gold-400 to-gold-600 bg-clip-text text-sm font-bold uppercase tracking-wide text-transparent">Atendimento</h3>
-            <a
-              href={whatsappLink}
-              target="_blank"
-              rel="noreferrer"
-              className="flex min-h-11 items-center gap-2 text-sm text-cream-100/60 transition-colors hover:text-cream-50"
-            >
-              <MessageCircle size={15} /> {CONTACT.whatsappDisplay}
-            </a>
+            {whatsappNumber ? (
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noreferrer"
+                className="flex min-h-11 items-center gap-2 text-sm text-cream-100/60 transition-colors hover:text-cream-50"
+              >
+                <MessageCircle size={15} /> {settings?.whatsappDisplay || whatsappNumber}
+              </a>
+            ) : (
+              <span className="flex min-h-11 cursor-not-allowed items-center gap-2 text-sm text-cream-100/30">
+                <MessageCircle size={15} /> Em breve
+              </span>
+            )}
             <span className="flex min-h-11 cursor-not-allowed items-center gap-2 text-sm text-cream-100/30">
               <Instagram size={15} /> Em breve
             </span>
@@ -72,7 +85,7 @@ export function Footer({ categories, onSelectCategory }: FooterProps) {
         </div>
 
         <div className="mt-12 flex flex-col gap-2 border-t border-cream-50/10 pt-6 text-xs text-cream-100/40 sm:flex-row sm:items-center sm:justify-between">
-          <span>© {new Date().getFullYear()} Saboriza · O gostinho do Brasil</span>
+          <span>© {new Date().getFullYear()} {displayName}</span>
           <span className="font-mono">Catálogo digital por RE Digital</span>
         </div>
       </div>

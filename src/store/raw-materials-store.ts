@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { rawMaterialFromRow } from "@/lib/mappers/raw-material-mapper";
 import type { RawMaterial, RawMaterialInput } from "@/types/raw-material";
 
@@ -40,7 +41,12 @@ export const useRawMaterialsStore = create<RawMaterialsState>()((set) => ({
 
   fetchMaterials: async () => {
     set({ status: "loading" });
-    const { data, error } = await supabase.from("raw_materials").select("*").order("name", { ascending: true });
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ status: "error" });
+      return;
+    }
+    const { data, error } = await supabase.from("raw_materials").select("*").eq("company_id", companyId).order("name", { ascending: true });
 
     if (error) {
       toast.error("Não foi possível carregar os insumos");
@@ -52,7 +58,16 @@ export const useRawMaterialsStore = create<RawMaterialsState>()((set) => ({
   },
 
   createMaterial: async (input) => {
-    const { data, error } = await supabase.from("raw_materials").insert(toRow(input)).select("*").single();
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      toast.error("Não foi possível identificar a empresa");
+      return null;
+    }
+    const { data, error } = await supabase
+      .from("raw_materials")
+      .insert({ ...toRow(input), company_id: companyId })
+      .select("*")
+      .single();
 
     if (error || !data) {
       toast.error("Não foi possível cadastrar o insumo");

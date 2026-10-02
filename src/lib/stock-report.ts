@@ -81,7 +81,7 @@ export function generateStockPdf(rows: StockReportRow[], settings: Settings, fil
   let y = margin;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
-  doc.text(settings.factoryName || "Saboriza", contentX, y + 5);
+  doc.text(settings.factoryName || "Empresa", contentX, y + 5);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.text(`Relatório de estoque — emitido em ${new Date().toLocaleString("pt-BR")}`, contentX, y + 11);

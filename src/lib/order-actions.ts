@@ -5,13 +5,15 @@ import { generateOrderPdf } from "@/lib/order-pdf";
 import type { Order } from "@/types/order";
 import type { Settings } from "@/types/settings";
 
-export function copyOrderText(order: Order) {
-  navigator.clipboard.writeText(formatOrderWhatsAppMessage(order));
+export function copyOrderText(order: Order, settings: Settings) {
+  const companyName = settings.fantasyName || settings.factoryName || "Empresa";
+  navigator.clipboard.writeText(formatOrderWhatsAppMessage(order, companyName));
   toast.success("Comanda copiada");
 }
 
-export function sendOrderWhatsApp(order: Order, phone: string) {
-  window.open(buildWhatsAppLink(phone, formatOrderWhatsAppMessage(order)), "_blank");
+export function sendOrderWhatsApp(order: Order, phone: string, settings: Settings) {
+  const companyName = settings.fantasyName || settings.factoryName || "Empresa";
+  window.open(buildWhatsAppLink(phone, formatOrderWhatsAppMessage(order, companyName)), "_blank");
 }
 
 export async function downloadOrderPdf(order: Order, settings: Settings) {

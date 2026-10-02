@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { categoryKey, findCategoryName, normalizeCategoryName } from "@/lib/raw-material-categories";
 import { useRawMaterialsStore } from "@/store/raw-materials-store";
 
@@ -36,7 +37,16 @@ export const useRawMaterialCategoriesStore = create<RawMaterialCategoriesState>(
 
   fetchCategories: async () => {
     set({ status: "loading" });
-    const { data, error } = await supabase.from("raw_material_categories").select("id, name").order("name", { ascending: true });
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ status: "error" });
+      return;
+    }
+    const { data, error } = await supabase
+      .from("raw_material_categories")
+      .select("id, name")
+      .eq("company_id", companyId)
+      .order("name", { ascending: true });
 
     if (error) {
       toast.error("Não foi possível carregar as categorias de insumo");
@@ -54,7 +64,14 @@ export const useRawMaterialCategoriesStore = create<RawMaterialCategoriesState>(
     const existing = findCategoryName(get().names, name);
     if (existing) return existing;
 
-    const { data, error } = await supabase.from("raw_material_categories").insert({ name }).select("id, name").single();
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return null;
+
+    const { data, error } = await supabase
+      .from("raw_material_categories")
+      .insert({ name, company_id: companyId })
+      .select("id, name")
+      .single();
 
     if (error?.code === "23505") {
       await get().fetchCategories();

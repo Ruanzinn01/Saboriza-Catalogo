@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { productRecipeLineFromRow } from "@/lib/mappers/production-mapper";
 import type { ProductRecipeLine } from "@/types/production";
 
@@ -49,9 +50,14 @@ export const useProductRecipeStore = create<ProductRecipeState>()((set) => ({
   },
 
   addLine: async (productId, rawMaterialId, quantityPerUnit) => {
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      toast.error("Não foi possível identificar a empresa");
+      return false;
+    }
     const { data, error } = await supabase
       .from("product_recipe")
-      .insert({ product_id: productId, raw_material_id: rawMaterialId, quantity_per_unit: quantityPerUnit })
+      .insert({ product_id: productId, raw_material_id: rawMaterialId, quantity_per_unit: quantityPerUnit, company_id: companyId })
       .select("*")
       .single();
 

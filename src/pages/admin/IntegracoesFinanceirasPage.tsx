@@ -204,7 +204,7 @@ export function IntegracoesFinanceirasPage() {
       <div>
         <h1 className="text-2xl font-extrabold text-forest-950">Integrações Financeiras</h1>
         <p className="text-sm text-ink-muted">
-          Cada empresa cadastra a própria conta — a Saboriza e cada franquia futura usam credenciais separadas. A chave fica
+          Cada empresa cadastra a própria conta — cada tenant usa credenciais separadas. A chave fica
           criptografada no Supabase Vault, nunca em texto puro. O Asaas já está ligado de verdade: o Faturar gera a cobrança
           real por aqui, e o webhook mantém o status sincronizado automaticamente. Emissão fiscal ainda é só cadastro de
           credencial — a chamada real ao emissor é a próxima etapa.

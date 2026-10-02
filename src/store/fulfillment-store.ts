@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
 import type { AdjustmentRequest } from "@/types/separation";
 import { generateDeliveryReceiptPdf } from "@/lib/delivery-receipt-pdf";
@@ -229,9 +230,12 @@ export const useFulfillmentStore = create<FulfillmentState>()((set, get) => ({
   fetchLoadingQueue: async () => {
     set({ loadingQueueStatus: "loading" });
     try {
+      const companyId = await resolveCurrentCompanyId();
+      if (!companyId) throw new Error("Empresa não identificada");
       const { data: orderRows, error } = await supabase
         .from("orders")
         .select("*")
+        .eq("company_id", companyId)
         .eq("status", "COMPLETED")
         .is("loading_finished_at", null)
         .order("loading_queued_at", { ascending: true });
@@ -248,9 +252,12 @@ export const useFulfillmentStore = create<FulfillmentState>()((set, get) => ({
   fetchDeliveryQueue: async () => {
     set({ deliveryQueueStatus: "loading" });
     try {
+      const companyId = await resolveCurrentCompanyId();
+      if (!companyId) throw new Error("Empresa não identificada");
       const { data: orderRows, error } = await supabase
         .from("orders")
         .select("*")
+        .eq("company_id", companyId)
         .eq("status", "COMPLETED")
         .not("loading_finished_at", "is", null)
         .is("delivery_confirmed_at", null)

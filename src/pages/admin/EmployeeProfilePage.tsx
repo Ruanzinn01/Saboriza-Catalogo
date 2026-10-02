@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Copy } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useEmployeesStore } from "@/store/employees-store";
+import { useAdminCompanyStore } from "@/store/admin-company-store";
 import {
   EMPLOYEE_TOOLS,
   EMPLOYEE_TOOL_LABELS,
@@ -364,6 +365,7 @@ export function EmployeeProfilePage() {
   const { employeeId } = useParams();
   const isEditing = employeeId !== undefined;
   const navigate = useNavigate();
+  const companyName = useAdminCompanyStore((s) => s.company?.display_name) || "Empresa";
   const employees = useEmployeesStore((s) => s.employees);
   const fetchEmployees = useEmployeesStore((s) => s.fetchEmployees);
   const createEmployee = useEmployeesStore((s) => s.createEmployee);
@@ -586,7 +588,7 @@ export function EmployeeProfilePage() {
               Identidade única conectando Ponto, Meu 360, Missões, Produção, Vendas, Entrega e demais ferramentas.
             </p>
             <div className={`mt-3 ${c.notice}`}>
-              <b>Empresa ativa: Saboriza.</b> Este cadastro pertence a uma única empresa (tenant). Pessoas podem ter vínculos em
+              <b>Empresa ativa: {companyName}.</b> Este cadastro pertence a uma única empresa (tenant). Pessoas podem ter vínculos em
               mais de uma empresa quando aplicável; cada empresa mantém seu próprio histórico e isolamento.
             </div>
             <div className={`mt-2.5 ${c.okbox}`}>

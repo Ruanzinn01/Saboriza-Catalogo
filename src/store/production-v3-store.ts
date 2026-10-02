@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import type {
   DiaryEvaluation,
   DiaryOccurrence,
@@ -65,7 +66,9 @@ export const useProductionV3Store = create<ProductionV3State>()((set, get) => ({
   activities: [],
 
   fetchUrgentDemands: async () => {
-    const { data, error } = await supabase.from("urgent_demands").select("*").order("created_at", { ascending: false });
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return;
+    const { data, error } = await supabase.from("urgent_demands").select("*").eq("company_id", companyId).order("created_at", { ascending: false });
     if (error || !data) return;
     set({ urgentDemands: data.map(urgentFromRow) });
   },
@@ -75,9 +78,14 @@ export const useProductionV3Store = create<ProductionV3State>()((set, get) => ({
       toast.error("Informe nome e quantidade válida");
       return false;
     }
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      toast.error("Não foi possível identificar a empresa");
+      return false;
+    }
     const { data, error } = await supabase
       .from("urgent_demands")
-      .insert({ product_id: productId, name: name.trim(), total_quantity: totalQuantity })
+      .insert({ product_id: productId, name: name.trim(), total_quantity: totalQuantity, company_id: companyId })
       .select("*")
       .single();
     if (error || !data) {
@@ -94,7 +102,15 @@ export const useProductionV3Store = create<ProductionV3State>()((set, get) => ({
     const existing = get().diary;
     if (existing?.localDate === today) return existing;
 
-    const { data: found } = await supabase.from("production_diaries").select("*").eq("local_date", today).maybeSingle();
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return null;
+
+    const { data: found } = await supabase
+      .from("production_diaries")
+      .select("*")
+      .eq("company_id", companyId)
+      .eq("local_date", today)
+      .maybeSingle();
     if (found) {
       const diary = diaryFromRow(found);
       set({ diary });
@@ -102,7 +118,11 @@ export const useProductionV3Store = create<ProductionV3State>()((set, get) => ({
       return diary;
     }
 
-    const { data: created, error } = await supabase.from("production_diaries").insert({ local_date: today }).select("*").single();
+    const { data: created, error } = await supabase
+      .from("production_diaries")
+      .insert({ local_date: today, company_id: companyId })
+      .select("*")
+      .single();
     if (error || !created) return null;
     const diary = diaryFromRow(created);
     set({ diary, evaluations: [], occurrences: [], activities: [] });
@@ -147,10 +167,20 @@ export const useProductionV3Store = create<ProductionV3State>()((set, get) => ({
   saveEvaluation: async (employeeId, pace, quality, commitment, note) => {
     const diary = get().diary ?? (await get().ensureTodayDiary());
     if (!diary) return;
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return;
     const { data, error } = await supabase
       .from("diary_evaluations")
       .upsert(
-        { diary_id: diary.id, employee_id: employeeId, pace_grade: pace, quality_grade: quality, commitment_grade: commitment, note: note || null },
+        {
+          diary_id: diary.id,
+          employee_id: employeeId,
+          pace_grade: pace,
+          quality_grade: quality,
+          commitment_grade: commitment,
+          note: note || null,
+          company_id: companyId,
+        },
         { onConflict: "diary_id,employee_id" }
       )
       .select("*")
@@ -170,9 +200,11 @@ export const useProductionV3Store = create<ProductionV3State>()((set, get) => ({
   addOccurrence: async (employeeId, type, description) => {
     const diary = get().diary ?? (await get().ensureTodayDiary());
     if (!diary || !description.trim()) return;
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return;
     const { data, error } = await supabase
       .from("diary_occurrences")
-      .insert({ diary_id: diary.id, employee_id: employeeId, occurrence_type: type, description: description.trim() })
+      .insert({ diary_id: diary.id, employee_id: employeeId, occurrence_type: type, description: description.trim(), company_id: companyId })
       .select("*")
       .single();
     if (error || !data) {
@@ -191,9 +223,11 @@ export const useProductionV3Store = create<ProductionV3State>()((set, get) => ({
   addOtherActivity: async (employeeId, activity, period) => {
     const diary = get().diary ?? (await get().ensureTodayDiary());
     if (!diary || !activity.trim()) return;
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return;
     const { data, error } = await supabase
       .from("diary_other_activities")
-      .insert({ diary_id: diary.id, employee_id: employeeId, activity: activity.trim(), period: period || null })
+      .insert({ diary_id: diary.id, employee_id: employeeId, activity: activity.trim(), period: period || null, company_id: companyId })
       .select("*")
       .single();
     if (error || !data) return;

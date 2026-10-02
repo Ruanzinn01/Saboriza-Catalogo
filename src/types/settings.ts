@@ -8,6 +8,7 @@ export interface Settings {
   cnpj: string;
   ie: string;
   heroImageUrl: string;
+  logoUrl: string | null;
   fantasyName: string;
   cnaeCode: string;
   cnaeDescription: string;

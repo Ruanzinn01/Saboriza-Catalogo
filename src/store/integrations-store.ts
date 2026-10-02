@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import type { IntegrationCredential, IntegrationEnvironment, IntegrationProvider } from "@/types/integrations";
 
 function fromRow(row: {
@@ -54,7 +55,12 @@ export const useIntegrationsStore = create<IntegrationsState>()((set, get) => ({
 
   fetchAll: async () => {
     set({ status: "loading" });
-    const { data, error } = await supabase.from("company_integration_credentials").select("*");
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ status: "error" });
+      return;
+    }
+    const { data, error } = await supabase.from("company_integration_credentials").select("*").eq("company_id", companyId);
     if (error) {
       set({ status: "error" });
       return;

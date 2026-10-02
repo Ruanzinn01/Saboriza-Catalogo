@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { orderFromRow } from "@/lib/mappers/order-mapper";
 import type { Order } from "@/types/order";
 import type { Database } from "@/types/supabase";
@@ -143,9 +144,15 @@ export const useFaturarStore = create<FaturarState>((set, get) => ({
 
   fetchEligibleOrders: async () => {
     set({ listStatus: "loading" });
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ listStatus: "error" });
+      return;
+    }
     const { data: orderRows, error } = await supabase
       .from("orders")
       .select("*")
+      .eq("company_id", companyId)
       .eq("status", "CONFIRMED")
       .not("separation_finished_at", "is", null);
 

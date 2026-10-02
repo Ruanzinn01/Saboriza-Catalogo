@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 
 export interface DreMonthLine {
   month: string;
@@ -28,13 +29,13 @@ export const useDreStore = create<DreState>((set) => ({
   fetchAll: async () => {
     set({ status: "loading" });
 
-    const { data: company } = await supabase.from("companies").select("id").limit(1).maybeSingle();
-    if (!company) {
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
       set({ status: "error" });
       return;
     }
 
-    const { data, error } = await supabase.rpc("get_dre_monthly", { p_company_id: company.id });
+    const { data, error } = await supabase.rpc("get_dre_monthly", { p_company_id: companyId });
 
     if (error) {
       set({ status: "error" });

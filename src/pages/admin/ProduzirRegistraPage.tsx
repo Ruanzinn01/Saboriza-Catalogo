@@ -9,6 +9,7 @@ import { useProductionStore } from "@/store/production-store";
 import { useProductionV3Store } from "@/store/production-v3-store";
 import { useRawMaterialsStore } from "@/store/raw-materials-store";
 import { useProductionRoutesStore } from "@/store/production-routes-store";
+import { useAdminCompanyStore } from "@/store/admin-company-store";
 import { DIARY_GRADES, OCCURRENCE_TYPES, type OccurrenceType } from "@/types/production-v3";
 import type { Product } from "@/types/product";
 
@@ -50,6 +51,7 @@ const fmt = (n: number) => Math.round(n).toLocaleString("pt-BR");
 type Page = "home" | "liberar" | "confirmar" | "urgent" | "diary" | "produced" | "results";
 
 export function ProduzirRegistraPage() {
+  const companyName = useAdminCompanyStore((s) => s.company?.display_name) || "Empresa";
   const products = useCatalogStore((s) => s.products);
   const fetchCatalog = useCatalogStore((s) => s.fetchCatalog);
   const materials = useRawMaterialsStore((s) => s.materials);
@@ -191,7 +193,7 @@ export function ProduzirRegistraPage() {
         <div className="border-l pl-4 font-bold" style={{ borderColor: c.line }}>
           Produziu Registra
           <small className="block font-normal text-xs" style={{ color: c.muted }}>
-            Saboriza · Fábrica
+            {companyName} · Fábrica
           </small>
         </div>
         <div className="flex-1" />

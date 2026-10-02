@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { categoryFromRow, categoryToRow } from "@/lib/mappers/category-mapper";
 import { productFromRow, productToRow } from "@/lib/mappers/product-mapper";
 import type { Product } from "@/types/product";
@@ -14,7 +15,7 @@ interface CatalogState {
   products: Product[];
   categories: Category[];
   status: "idle" | "loading" | "ready" | "error";
-  fetchCatalog: () => Promise<void>;
+  fetchCatalog: (companyId?: string) => Promise<void>;
   refreshProducts: (productIds: string[]) => Promise<void>;
   addProduct: (product: Product) => void;
   updateProduct: (id: string, patch: Partial<Product>) => void;
@@ -31,11 +32,18 @@ export const useCatalogStore = create<CatalogState>()((set, get) => ({
   categories: [],
   status: "idle",
 
-  fetchCatalog: async () => {
+  fetchCatalog: async (companyId) => {
     set({ status: "loading" });
+    const resolvedId = companyId ?? (await resolveCurrentCompanyId());
+    if (!resolvedId) {
+      toast.error("Não foi possível identificar a empresa");
+      set({ status: "error" });
+      return;
+    }
+
     const [{ data: categoryRows, error: categoryError }, { data: productRows, error: productError }] = await Promise.all([
-      supabase.from("categories").select("*"),
-      supabase.from("products").select("*"),
+      supabase.from("categories").select("*").eq("company_id", resolvedId),
+      supabase.from("products").select("*").eq("company_id", resolvedId),
     ]);
 
     if (categoryError || productError) {
@@ -64,22 +72,29 @@ export const useCatalogStore = create<CatalogState>()((set, get) => ({
 
   addProduct: (product) => {
     set((state) => ({ products: sortByName([...state.products, product]) }));
-    supabase
-      .from("products")
-      .insert(productToRow(product))
-      .select("code")
-      .single()
-      .then(({ data, error }) => {
-        if (error) {
-          toast.error("Não foi possível salvar o produto");
-          set((state) => ({ products: state.products.filter((item) => item.id !== product.id) }));
-        } else {
-          set((state) => ({
-            products: state.products.map((item) => (item.id === product.id ? { ...item, code: data.code ?? "" } : item)),
-          }));
-          toast.success("Produto salvo com sucesso");
-        }
-      });
+    void resolveCurrentCompanyId().then((companyId) => {
+      if (!companyId) {
+        toast.error("Não foi possível identificar a empresa");
+        set((state) => ({ products: state.products.filter((item) => item.id !== product.id) }));
+        return;
+      }
+      supabase
+        .from("products")
+        .insert({ ...productToRow(product), company_id: companyId })
+        .select("code")
+        .single()
+        .then(({ data, error }) => {
+          if (error) {
+            toast.error("Não foi possível salvar o produto");
+            set((state) => ({ products: state.products.filter((item) => item.id !== product.id) }));
+          } else {
+            set((state) => ({
+              products: state.products.map((item) => (item.id === product.id ? { ...item, code: data.code ?? "" } : item)),
+            }));
+            toast.success("Produto salvo com sucesso");
+          }
+        });
+    });
   },
 
   updateProduct: (id, patch) => {
@@ -143,17 +158,24 @@ export const useCatalogStore = create<CatalogState>()((set, get) => ({
 
   addCategory: (category) => {
     set((state) => ({ categories: [...state.categories, category] }));
-    supabase
-      .from("categories")
-      .insert(categoryToRow(category))
-      .then(({ error }) => {
-        if (error) {
-          toast.error("Não foi possível salvar a categoria");
-          set((state) => ({ categories: state.categories.filter((item) => item.id !== category.id) }));
-        } else {
-          toast.success("Categoria salva com sucesso");
-        }
-      });
+    void resolveCurrentCompanyId().then((companyId) => {
+      if (!companyId) {
+        toast.error("Não foi possível identificar a empresa");
+        set((state) => ({ categories: state.categories.filter((item) => item.id !== category.id) }));
+        return;
+      }
+      supabase
+        .from("categories")
+        .insert({ ...categoryToRow(category), company_id: companyId })
+        .then(({ error }) => {
+          if (error) {
+            toast.error("Não foi possível salvar a categoria");
+            set((state) => ({ categories: state.categories.filter((item) => item.id !== category.id) }));
+          } else {
+            toast.success("Categoria salva com sucesso");
+          }
+        });
+    });
   },
 
   updateCategory: (id, patch) => {

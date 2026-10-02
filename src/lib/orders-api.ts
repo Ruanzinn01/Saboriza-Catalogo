@@ -9,12 +9,14 @@ type OrderItemRow = Database["public"]["Tables"]["order_items"]["Row"];
 type CreateOrderResult = OrderRow & { items: OrderItemRow[] };
 
 export async function submitOrder(
+  companyId: string,
   customer: OrderCustomer,
   items: CartItem[],
   couponCode?: string,
   customerId?: string
 ): Promise<Order> {
   const { data, error } = await supabase.rpc("create_order", {
+    p_company_id: companyId,
     p_customer_name: customer.name,
     p_company_name: customer.company,
     p_phone: customer.phone,

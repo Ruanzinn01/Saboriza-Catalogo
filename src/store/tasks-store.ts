@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 
 export type TaskStatus = "PENDENTE" | "EM_ANDAMENTO" | "CONCLUIDA" | "CANCELADA";
 
@@ -37,9 +38,15 @@ export const useTasksStore = create<TasksState>()((set, get) => ({
 
   fetchTasks: async () => {
     set({ status: "loading" });
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ status: "error" });
+      return;
+    }
     const { data, error } = await supabase
       .from("employee_tasks")
       .select("id, employee_id, title, description, due_date, status, completed_at, created_at, employees(name)")
+      .eq("company_id", companyId)
       .order("due_date", { ascending: true, nullsFirst: false });
 
     if (error || !data) {
@@ -64,10 +71,13 @@ export const useTasksStore = create<TasksState>()((set, get) => ({
   },
 
   createTask: async (input) => {
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return "Não foi possível identificar a empresa";
     const {
       data: { user },
     } = await supabase.auth.getUser();
     const { error } = await supabase.from("employee_tasks").insert({
+      company_id: companyId,
       employee_id: input.employeeId,
       title: input.title,
       description: input.description || null,

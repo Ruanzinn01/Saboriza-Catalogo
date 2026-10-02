@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, LayoutGrid, PauseCircle, PlayCircle } from "lucide-react";
+import { ArrowLeft, KeyRound, LayoutGrid, PauseCircle, PlayCircle } from "lucide-react";
 import { PLATFORM_CAPABILITIES, usePlatformStore } from "@/store/platform-store";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
+import { setSelectedCompanyId } from "@/lib/current-company";
 import { AdminState } from "@/components/admin/AdminState";
 import { Button } from "@/components/ui/Button";
 
@@ -25,8 +26,10 @@ export function PlatformCompanyDetailPage() {
   const entitlements = usePlatformStore((s) => s.entitlements);
   const fetchEntitlements = usePlatformStore((s) => s.fetchEntitlements);
   const setEntitlement = usePlatformStore((s) => s.setEntitlement);
+  const bootstrapOwner = usePlatformStore((s) => s.bootstrapOwner);
   const myEmail = useAdminAuthStore((s) => s.session?.user.email ?? "");
   const [togglingStatus, setTogglingStatus] = useState(false);
+  const [bootstrapping, setBootstrapping] = useState(false);
 
   useEffect(() => {
     if (companyId) {
@@ -39,6 +42,16 @@ export function PlatformCompanyDetailPage() {
     if (!companyId) return;
     const err = await setEntitlement(companyId, capabilityKey, nextEnabled);
     if (err) toast.error(err);
+  }
+
+  async function handleBootstrapOwner() {
+    if (!companyId) return;
+    if (!confirm("Adicionar você mesmo como Proprietário desta empresa? Isso cria seu vínculo de acesso ao painel dela.")) return;
+    setBootstrapping(true);
+    const err = await bootstrapOwner(companyId);
+    setBootstrapping(false);
+    if (err) toast.error(err);
+    else toast.success("Você agora é Proprietário desta empresa");
   }
 
   async function handleToggleStatus() {
@@ -75,12 +88,26 @@ export function PlatformCompanyDetailPage() {
           <p className="text-sm text-cream-50/60">{detail.legalName ?? "Razão social não informada"}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {isMemberHere && (
-            <Link to="/admin">
-              <Button variant="outline" className="border-cream-50/20 text-cream-50 hover:bg-cream-50/10">
-                <LayoutGrid size={16} /> Entrar no painel desta empresa
-              </Button>
-            </Link>
+          {isMemberHere ? (
+            <Button
+              variant="outline"
+              className="border-cream-50/20 text-cream-50 hover:bg-cream-50/10"
+              onClick={() => {
+                if (companyId) setSelectedCompanyId(companyId);
+                window.location.href = "/admin";
+              }}
+            >
+              <LayoutGrid size={16} /> Entrar no painel desta empresa
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              className="border-cream-50/20 text-cream-50 hover:bg-cream-50/10"
+              disabled={bootstrapping}
+              onClick={() => void handleBootstrapOwner()}
+            >
+              <KeyRound size={16} /> {bootstrapping ? "Adicionando..." : "Virar Proprietário desta empresa"}
+            </Button>
           )}
           <Button
             variant={detail.status === "ACTIVE" ? "outline" : "primary"}
@@ -95,7 +122,7 @@ export function PlatformCompanyDetailPage() {
       </div>
       {!isMemberHere && (
         <p className="text-xs text-cream-50/40">
-          Você não é membro desta empresa, então não dá pra abrir o painel dela ainda — isso depende de um seletor de tenant que não existe hoje.
+          Você não é membro desta empresa ainda. Clique em "Virar Proprietário desta empresa" para criar seu vínculo de acesso.
         </p>
       )}
 

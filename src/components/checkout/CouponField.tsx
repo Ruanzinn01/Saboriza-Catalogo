@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { supabase } from "@/lib/supabase";
 import { normalizeCouponCode } from "@/lib/coupon";
 import { couponFromRow } from "@/lib/mappers/coupon-mapper";
+import { usePublicCompanyStore } from "@/store/public-company-store";
 import type { Coupon } from "@/types/coupon";
 
 interface CouponFieldProps {
@@ -17,16 +18,18 @@ export function CouponField({ appliedCoupon, onApply, onRemove }: CouponFieldPro
   const [code, setCode] = useState("");
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
+  const company = usePublicCompanyStore((state) => state.company);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!code.trim()) return;
+    if (!code.trim() || !company) return;
     setChecking(true);
     setError("");
 
     const { data, error: queryError } = await supabase
       .from("coupons")
       .select("*")
+      .eq("company_id", company.id)
       .eq("code", normalizeCouponCode(code))
       .eq("is_active", true)
       .maybeSingle();

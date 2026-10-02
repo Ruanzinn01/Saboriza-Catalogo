@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 
 export type ContributionStatus = "PLANEJADO" | "A_CONFIRMAR" | "REALIZADO" | "CANCELADO" | "ESTORNADO";
 export type ContributionOrigin = "TRANSFERENCIA" | "PIX" | "DEPOSITO" | "DINHEIRO" | "PAGAMENTO_DIRETO_DESPESA" | "OUTRO";
@@ -57,11 +58,17 @@ export const useAportesStore = create<AportesState>((set, get) => ({
 
   fetchAll: async () => {
     set({ status: "loading" });
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ status: "error" });
+      return;
+    }
     const [{ data: partnerRows, error: partnerError }, { data: contributionRows, error: contributionError }] = await Promise.all([
-      supabase.from("company_partners").select("id, name, document, status").order("name"),
+      supabase.from("company_partners").select("id, name, document, status").eq("company_id", companyId).order("name"),
       supabase
         .from("partner_contributions")
         .select("id, partner_id, amount, status, origin, planned_date, realized_date, notes, expense_id, reversed_contribution_id, created_at, company_partners(name)")
+        .eq("company_id", companyId)
         .order("created_at", { ascending: false }),
     ]);
 
@@ -91,14 +98,23 @@ export const useAportesStore = create<AportesState>((set, get) => ({
   },
 
   createPartner: async (name, document) => {
-    const { data, error } = await supabase.from("company_partners").insert({ name, document: document || null }).select("id").single();
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return "Não foi possível identificar a empresa";
+    const { data, error } = await supabase
+      .from("company_partners")
+      .insert({ name, document: document || null, company_id: companyId })
+      .select("id")
+      .single();
     if (error || !data) return error?.message ?? "Não foi possível cadastrar o sócio";
     await get().fetchAll();
     return null;
   },
 
   createContribution: async (input) => {
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return "Não foi possível identificar a empresa";
     const { error } = await supabase.from("partner_contributions").insert({
+      company_id: companyId,
       partner_id: input.partnerId,
       amount: input.amount,
       status: input.status,
@@ -148,7 +164,11 @@ export const useAportesStore = create<AportesState>((set, get) => ({
       .maybeSingle();
     if (fetchError || !original) return fetchError?.message ?? "Aporte original não encontrado";
 
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return "Não foi possível identificar a empresa";
+
     const { error } = await supabase.from("partner_contributions").insert({
+      company_id: companyId,
       partner_id: original.partner_id,
       amount: original.amount,
       origin: original.origin,

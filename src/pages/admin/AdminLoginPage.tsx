@@ -32,14 +32,14 @@ export function AdminLoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-forest-950 px-4">
       <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-3xl bg-cream-50 p-8 shadow-xl">
         <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-forest-700">Painel administrativo</span>
-        <h1 className="mb-6 text-2xl font-extrabold text-forest-950">Saboriza</h1>
+        <h1 className="mb-6 text-2xl font-extrabold text-forest-950">Óris360</h1>
         <div className="flex flex-col gap-4">
           <Input
             label="E-mail"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="admin@saboriza.com.br"
+            placeholder="seu@email.com"
           />
           <Input
             label="Senha"

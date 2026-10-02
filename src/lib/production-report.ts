@@ -85,7 +85,7 @@ export function generateProductionPdf(rows: ProductionReportRow[], settings: Set
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
-  doc.text(settings.factoryName || "Saboriza", contentX, y + 5);
+  doc.text(settings.factoryName || "Empresa", contentX, y + 5);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.text("Relatório de produção", contentX, y + 11);

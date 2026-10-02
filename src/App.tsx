@@ -1,13 +1,12 @@
 import { lazy, Suspense, useEffect } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
-import { useCatalogStore } from "@/store/catalog-store";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
-import { useSettingsStore } from "@/store/settings-store";
 import { CatalogPage } from "@/pages/CatalogPage";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 import { WhatsAppFloatingButton } from "@/components/layout/WhatsAppFloatingButton";
+import { PublicCompanyGate } from "@/components/layout/PublicCompanyGate";
 import { ProtectedPlatformRoute } from "@/components/platform/ProtectedPlatformRoute";
 import { PlatformLayout } from "@/components/platform/PlatformLayout";
 import { AdminState } from "@/components/admin/AdminState";
@@ -81,9 +80,7 @@ export function App() {
   const isCustomerFacing = !pathname.startsWith("/admin") && !pathname.startsWith("/platform");
 
   useEffect(() => {
-    useCatalogStore.getState().fetchCatalog();
     useAdminAuthStore.getState().init();
-    useSettingsStore.getState().fetchSettings();
   }, []);
 
   return (
@@ -92,9 +89,15 @@ export function App() {
       {isCustomerFacing && <WhatsAppFloatingButton />}
       <Suspense fallback={<RouteFallback />}>
         <Routes>
-          <Route path="/" element={<CatalogPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/pedido-confirmado/:orderId" element={<OrderConfirmedPage />} />
+          <Route element={<PublicCompanyGate />}>
+            <Route path="/" element={<CatalogPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/pedido-confirmado/:orderId" element={<OrderConfirmedPage />} />
+
+            <Route path="/:companySlug" element={<CatalogPage />} />
+            <Route path="/:companySlug/checkout" element={<CheckoutPage />} />
+            <Route path="/:companySlug/pedido-confirmado/:orderId" element={<OrderConfirmedPage />} />
+          </Route>
 
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route element={<ProtectedRoute />}>

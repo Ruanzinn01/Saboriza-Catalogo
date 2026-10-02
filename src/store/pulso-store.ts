@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 
 export interface PulsoEvent {
   occurredAt: string;
@@ -31,13 +32,13 @@ export const usePulsoStore = create<PulsoState>((set) => ({
   fetchSummary: async () => {
     set({ status: "loading" });
 
-    const { data: company } = await supabase.from("companies").select("id").limit(1).maybeSingle();
-    if (!company) {
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
       set({ status: "error" });
       return;
     }
 
-    const { data, error } = await supabase.rpc("get_pulso_today", { p_company_id: company.id });
+    const { data, error } = await supabase.rpc("get_pulso_today", { p_company_id: companyId });
 
     if (error || !data) {
       set({ status: "error" });

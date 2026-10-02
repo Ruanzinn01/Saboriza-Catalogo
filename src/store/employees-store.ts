@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { employeeDocumentFromRow, employeeFromRow } from "@/lib/mappers/employee-mapper";
 import { normalizeCpfDigits } from "@/types/employee";
 import type { Employee, EmployeeDocument, EmployeeDocumentInput, EmployeeInput } from "@/types/employee";
@@ -136,7 +137,12 @@ export const useEmployeesStore = create<EmployeesState>()((set, get) => ({
 
   fetchEmployees: async () => {
     set({ status: "loading" });
-    const { data, error } = await supabase.from("employees").select("*").order("name", { ascending: true });
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ status: "error" });
+      return;
+    }
+    const { data, error } = await supabase.from("employees").select("*").eq("company_id", companyId).order("name", { ascending: true });
 
     if (error) {
       toast.error("Não foi possível carregar os colaboradores");
@@ -148,7 +154,16 @@ export const useEmployeesStore = create<EmployeesState>()((set, get) => ({
   },
 
   createEmployee: async (input) => {
-    const { data, error } = await supabase.from("employees").insert(toRow(input)).select("*").single();
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      toast.error("Não foi possível identificar a empresa");
+      return null;
+    }
+    const { data, error } = await supabase
+      .from("employees")
+      .insert({ ...toRow(input), company_id: companyId })
+      .select("*")
+      .single();
 
     if (error || !data) {
       toast.error(error?.code === "23505" ? "Já existe colaborador com esse CPF" : "Não foi possível cadastrar o colaborador");
@@ -157,7 +172,7 @@ export const useEmployeesStore = create<EmployeesState>()((set, get) => ({
 
     const employee = employeeFromRow(data);
     set((state) => ({ employees: [...state.employees, employee].sort((a, b) => a.name.localeCompare(b.name)) }));
-    await logAudit(employee.id, employee.id, "Admissão", `Cadastro criado — ${employee.role || "sem cargo"} • ${employee.department || "sem departamento"}`);
+    await logAudit(companyId, employee.id, "Admissão", `Cadastro criado — ${employee.role || "sem cargo"} • ${employee.department || "sem departamento"}`);
     toast.success("Colaborador cadastrado");
     return employee;
   },
@@ -174,7 +189,10 @@ export const useEmployeesStore = create<EmployeesState>()((set, get) => ({
     set((state) => ({
       employees: state.employees.map((item) => (item.id === id ? employee : item)).sort((a, b) => a.name.localeCompare(b.name)),
     }));
-    if (changeSummary) await logAudit(employee.id, id, "Alteração cadastral", changeSummary);
+    if (changeSummary) {
+      const companyId = await resolveCurrentCompanyId();
+      if (companyId) await logAudit(companyId, id, "Alteração cadastral", changeSummary);
+    }
     toast.success("Colaborador atualizado");
     return true;
   },
@@ -190,9 +208,15 @@ export const useEmployeesStore = create<EmployeesState>()((set, get) => ({
   },
 
   addDocument: async (employeeId, input) => {
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      toast.error("Não foi possível identificar a empresa");
+      return false;
+    }
     const { data, error } = await supabase
       .from("employee_documents")
       .insert({
+        company_id: companyId,
         employee_id: employeeId,
         doc_type: input.docType,
         reference: input.reference,

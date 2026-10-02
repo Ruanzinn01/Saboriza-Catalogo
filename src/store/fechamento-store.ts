@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 
 export type MonthlyCloseStatus =
   | "EM_ANDAMENTO"
@@ -37,15 +38,15 @@ export const useFechamentoStore = create<FechamentoState>((set, get) => ({
   fetchAll: async () => {
     set({ status: "loading" });
 
-    const { data: company } = await supabase.from("companies").select("id").limit(1).maybeSingle();
-    if (!company) {
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
       set({ status: "error" });
       return;
     }
 
     const [{ data: closes, error: closesError }, { data: settings }] = await Promise.all([
-      supabase.from("monthly_closes").select("*").eq("company_id", company.id).order("competence", { ascending: false }),
-      supabase.from("company_closing_settings").select("automation_enabled").eq("company_id", company.id).maybeSingle(),
+      supabase.from("monthly_closes").select("*").eq("company_id", companyId).order("competence", { ascending: false }),
+      supabase.from("company_closing_settings").select("automation_enabled").eq("company_id", companyId).maybeSingle(),
     ]);
 
     if (closesError) {
@@ -54,7 +55,7 @@ export const useFechamentoStore = create<FechamentoState>((set, get) => ({
     }
 
     set({
-      companyId: company.id,
+      companyId,
       automationEnabled: settings?.automation_enabled ?? false,
       closes: (closes ?? []).map((c) => ({
         id: c.id,

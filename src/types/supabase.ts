@@ -672,8 +672,10 @@ export type Database = {
           document: string | null
           environment_status: string
           id: string
+          is_default: boolean
           legal_name: string | null
           segment: string
+          slug: string
           status: string
           updated_at: string
           version: number
@@ -685,8 +687,10 @@ export type Database = {
           document?: string | null
           environment_status?: string
           id?: string
+          is_default?: boolean
           legal_name?: string | null
           segment: string
+          slug: string
           status?: string
           updated_at?: string
           version?: number
@@ -698,8 +702,10 @@ export type Database = {
           document?: string | null
           environment_status?: string
           id?: string
+          is_default?: boolean
           legal_name?: string | null
           segment?: string
+          slug?: string
           status?: string
           updated_at?: string
           version?: number
@@ -3227,6 +3233,30 @@ export type Database = {
         }
         Relationships: []
       }
+      pin_attempts: {
+        Row: {
+          created_at: string
+          device_id: string
+          employee_id: string | null
+          id: string
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          employee_id?: string | null
+          id?: string
+          success: boolean
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          employee_id?: string | null
+          id?: string
+          success?: boolean
+        }
+        Relationships: []
+      }
       plan_versions: {
         Row: {
           created_at: string
@@ -4848,6 +4878,7 @@ export type Database = {
           id: string
           ie: string
           legal_name: string
+          logo_url: string | null
           municipal_registration: string
           neighborhood: string
           number: string
@@ -4882,6 +4913,7 @@ export type Database = {
           id?: string
           ie?: string
           legal_name?: string
+          logo_url?: string | null
           municipal_registration?: string
           neighborhood?: string
           number?: string
@@ -4916,6 +4948,7 @@ export type Database = {
           id?: string
           ie?: string
           legal_name?: string
+          logo_url?: string | null
           municipal_registration?: string
           neighborhood?: string
           number?: string
@@ -5681,6 +5714,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      check_pin_rate_limit: { Args: { p_device_id: string }; Returns: boolean }
       confirm_production_release:
         | {
             Args: {
@@ -5786,6 +5820,7 @@ export type Database = {
       }
       create_order: {
         Args: {
+          p_company_id: string
           p_company_name: string
           p_coupon_code?: string
           p_customer_address?: string
@@ -6246,6 +6281,10 @@ export type Database = {
         }
       }
       read_vault_secret: { Args: { p_secret_id: string }; Returns: string }
+      record_pin_attempt: {
+        Args: { p_device_id: string; p_employee_id: string; p_success: boolean }
+        Returns: undefined
+      }
       remove_integration_credential: {
         Args: { p_environment: string; p_provider: string }
         Returns: undefined

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 
 export type ExpenseNature = "OPERACIONAL" | "INVESTIMENTO" | "SALARIO" | "OUTRO";
 export type ExpenseStatus = "ABERTO" | "AGENDADO" | "PAGO" | "ATRASADO";
@@ -74,10 +75,20 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
   fetchAll: async () => {
     set({ status: "loading" });
 
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ status: "error" });
+      return;
+    }
+
     const [{ data: expenseRows, error: expenseError }, { data: obligationRows, error: obligationError }, { data: advanceRows }] = await Promise.all([
-      supabase.from("expenses").select("*").order("created_at", { ascending: false }),
-      supabase.from("salary_obligations").select("id, employee_id, competence, base_salary, status, employees(name)").order("competence", { ascending: false }),
-      supabase.from("salary_advances").select("id, salary_obligation_id, amount, status, requested_at, paid_at, reversed_advance_id"),
+      supabase.from("expenses").select("*").eq("company_id", companyId).order("created_at", { ascending: false }),
+      supabase
+        .from("salary_obligations")
+        .select("id, employee_id, competence, base_salary, status, employees(name)")
+        .eq("company_id", companyId)
+        .order("competence", { ascending: false }),
+      supabase.from("salary_advances").select("id, salary_obligation_id, amount, status, requested_at, paid_at, reversed_advance_id").eq("company_id", companyId),
     ]);
 
     if (expenseError || obligationError) {
@@ -135,7 +146,10 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
   },
 
   createExpense: async (input) => {
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return "Não foi possível identificar a empresa";
     const { error } = await supabase.from("expenses").insert({
+      company_id: companyId,
       description: input.description,
       category: input.category,
       nature: input.nature,
@@ -169,14 +183,22 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
   },
 
   generateObligation: async (employeeId, _employeeName, competence, baseSalary) => {
-    const { error } = await supabase.from("salary_obligations").insert({ employee_id: employeeId, competence, base_salary: baseSalary });
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return "Não foi possível identificar a empresa";
+    const { error } = await supabase
+      .from("salary_obligations")
+      .insert({ employee_id: employeeId, competence, base_salary: baseSalary, company_id: companyId });
     if (error) return error.code === "23505" ? "Já existe obrigação salarial para este colaborador nesta competência" : error.message;
     await get().fetchAll();
     return null;
   },
 
   createAdvance: async (obligationId, amount) => {
-    const { error } = await supabase.from("salary_advances").insert({ salary_obligation_id: obligationId, amount, status: "SOLICITADO" });
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return "Não foi possível identificar a empresa";
+    const { error } = await supabase
+      .from("salary_advances")
+      .insert({ salary_obligation_id: obligationId, amount, status: "SOLICITADO", company_id: companyId });
     if (error) return error.message;
     await get().fetchAll();
     return null;
@@ -197,7 +219,11 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
       .maybeSingle();
     if (fetchError || !original) return fetchError?.message ?? "Vale original não encontrado";
 
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return "Não foi possível identificar a empresa";
+
     const { error } = await supabase.from("salary_advances").insert({
+      company_id: companyId,
       salary_obligation_id: original.salary_obligation_id,
       amount: original.amount,
       status: "ESTORNADO",

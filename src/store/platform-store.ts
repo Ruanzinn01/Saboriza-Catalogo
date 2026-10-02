@@ -60,6 +60,7 @@ interface PlatformState {
   setCompanyStatus: (companyId: string, status: "ACTIVE" | "SUSPENSA") => Promise<string | null>;
   fetchEntitlements: (companyId: string) => Promise<void>;
   setEntitlement: (companyId: string, capabilityKey: string, enabled: boolean) => Promise<string | null>;
+  bootstrapOwner: (companyId: string) => Promise<string | null>;
 }
 
 export const usePlatformStore = create<PlatformState>((set, get) => ({
@@ -187,6 +188,13 @@ export const usePlatformStore = create<PlatformState>((set, get) => ({
     });
     if (error) return error.message;
     await get().fetchEntitlements(companyId);
+    return null;
+  },
+
+  bootstrapOwner: async (companyId) => {
+    const { error } = await supabase.rpc("platform_bootstrap_company_owner", { p_company_id: companyId });
+    if (error) return error.message;
+    await get().fetchCompanyDetail(companyId);
     return null;
   },
 }));

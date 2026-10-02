@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
 import type { AdjustmentRequest, SeparationItem, SeparationOrder } from "@/types/separation";
 
@@ -111,7 +112,15 @@ function buildOrders(orderRows: OrderRow[], itemRows: ItemRow[], productRows: Pr
 }
 
 async function loadOrdersWithDetails(statuses: OrderRow["status"][], options?: { limit?: number; onlyUnfinishedSeparation?: boolean }) {
-  let query = supabase.from("orders").select("*").in("status", statuses).order("created_at", { ascending: statuses.includes("CONFIRMED") });
+  const companyId = await resolveCurrentCompanyId();
+  if (!companyId) throw new Error("Empresa não identificada");
+
+  let query = supabase
+    .from("orders")
+    .select("*")
+    .eq("company_id", companyId)
+    .in("status", statuses)
+    .order("created_at", { ascending: statuses.includes("CONFIRMED") });
   if (options?.onlyUnfinishedSeparation) query = query.is("separation_finished_at", null);
   if (options?.limit) query = query.limit(options.limit);
   const { data: orderRows, error: orderError } = await query;

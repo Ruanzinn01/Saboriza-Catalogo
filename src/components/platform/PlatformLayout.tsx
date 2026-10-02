@@ -20,7 +20,7 @@ export function PlatformLayout() {
         </Link>
         <div className="flex items-center gap-4">
           <Link to="/admin" className="flex items-center gap-1.5 text-sm text-cream-50/70 hover:text-cream-50">
-            <LayoutGrid size={16} /> Painel Saboriza
+            <LayoutGrid size={16} /> Painel admin
           </Link>
           <button onClick={() => void handleLogout()} className="flex items-center gap-1.5 text-sm text-cream-50/70 hover:text-cream-50">
             <LogOut size={16} /> Sair

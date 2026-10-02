@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import type { FloorExecution, ProductionRelease } from "@/types/production-floor";
 
 function releaseFromRow(row: {
@@ -93,9 +94,11 @@ export const useFloorStore = create<FloorState>()((set, get) => ({
   realtimeChannel: null,
 
   fetchAll: async () => {
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return;
     const [releasesRes, executionsRes] = await Promise.all([
-      supabase.from("production_releases").select("*").order("created_at", { ascending: false }),
-      supabase.from("floor_executions").select("*").order("created_at", { ascending: false }),
+      supabase.from("production_releases").select("*").eq("company_id", companyId).order("created_at", { ascending: false }),
+      supabase.from("floor_executions").select("*").eq("company_id", companyId).order("created_at", { ascending: false }),
     ]);
     if (!releasesRes.error && releasesRes.data) set({ releases: releasesRes.data.map(releaseFromRow) });
     if (!executionsRes.error && executionsRes.data) set({ executions: executionsRes.data.map(executionFromRow) });

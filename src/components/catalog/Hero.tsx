@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { BrandEmblem } from "@/components/layout/BrandEmblem";
 import { getTodayMessage } from "@/data/weekday-messages";
 import { useSettingsStore } from "@/store/settings-store";
+import { usePublicCompanyStore } from "@/store/public-company-store";
 
 interface HeroProps {
   previewImageUrl?: string;
@@ -11,6 +12,8 @@ interface HeroProps {
 
 export function Hero({ previewImageUrl }: HeroProps = {}) {
   const settingsImageUrl = useSettingsStore((state) => state.settings?.heroImageUrl);
+  const logoUrl = useSettingsStore((state) => state.settings?.logoUrl);
+  const company = usePublicCompanyStore((state) => state.company);
   const heroImageUrl = previewImageUrl !== undefined ? previewImageUrl : settingsImageUrl;
   const [imageFailed, setImageFailed] = useState(false);
   const showCustomImage = Boolean(heroImageUrl) && !imageFailed;
@@ -57,13 +60,13 @@ export function Hero({ previewImageUrl }: HeroProps = {}) {
               <div className="relative w-full max-w-sm shrink-0 overflow-hidden rounded-[2rem] shadow-2xl">
                 <img
                   src={heroImageUrl}
-                  alt="Saboriza"
+                  alt={company?.displayName ?? ""}
                   className="h-auto w-full object-contain"
                   onError={() => setImageFailed(true)}
                 />
               </div>
             ) : (
-              <BrandEmblem className="relative" />
+              <BrandEmblem className="relative" logoUrl={logoUrl} displayName={company?.displayName} />
             )}
           </div>
         </div>

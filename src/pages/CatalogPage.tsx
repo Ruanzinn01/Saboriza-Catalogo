@@ -11,6 +11,7 @@ import { FloatingOrderBar } from "@/components/catalog/FloatingOrderBar";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useCartStore } from "@/store/cart-store";
+import { usePublicCompanyStore } from "@/store/public-company-store";
 import type { Product } from "@/types/product";
 
 export function CatalogPage() {
@@ -19,6 +20,7 @@ export function CatalogPage() {
   );
   const products = useCatalogStore((state) => state.products.filter((product) => product.active));
   const addPack = useCartStore((state) => state.addPack);
+  const displayName = usePublicCompanyStore((state) => state.company?.displayName) ?? "";
 
   const [activeCategoryId, setActiveCategoryId] = useState(categories[0]?.id ?? "");
   const [cartOpen, setCartOpen] = useState(false);
@@ -92,7 +94,7 @@ export function CatalogPage() {
           <section id="destaques" className="py-8">
             <div className="mb-4">
               <h2 className="w-fit bg-linear-to-r from-forest-950 to-forest-700 bg-clip-text text-xl font-extrabold text-transparent">
-                Os queridinhos da Saboriza
+                Os queridinhos da {displayName}
               </h2>
               <p className="text-sm text-ink-muted">Os temperos que conquistam seus clientes.</p>
             </div>

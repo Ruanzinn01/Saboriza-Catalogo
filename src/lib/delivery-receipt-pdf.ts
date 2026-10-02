@@ -87,7 +87,7 @@ export async function generateDeliveryReceiptPdf(input: ReceiptInput): Promise<B
     y += lines.length * 4.2 + 0.8;
   }
 
-  const issuer = settings?.legalName || settings?.factoryName || "Saboriza";
+  const issuer = settings?.legalName || settings?.factoryName || "Empresa";
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   doc.text(issuer, margin, y + 5);

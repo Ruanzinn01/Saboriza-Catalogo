@@ -31,6 +31,7 @@ import { useCustomersStore } from "@/store/customers-store";
 import { useSettingsStore } from "@/store/settings-store";
 import { useVendasStore } from "@/store/vendas-store";
 import { submitOrder, updateOrderItems } from "@/lib/orders-api";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { copyOrderText, downloadOrderPdf, sendOrderWhatsApp } from "@/lib/order-actions";
 import { ORDER_STATUS_OPTIONS, ORDER_STATUS_TRANSITIONS, operationalSubstatus } from "@/lib/order-status";
 import { getCustomerDisplayName, getCustomerSecondaryLine } from "@/lib/customer-display";
@@ -190,7 +191,9 @@ export function OrderEditorPage() {
 
     setSubmitting(true);
     try {
-      const created = await submitOrder(customerToOrderCustomer(selectedCustomer), items, coupon?.code, selectedCustomer.id);
+      const companyId = await resolveCurrentCompanyId();
+      if (!companyId) throw new Error("Empresa não identificada");
+      const created = await submitOrder(companyId, customerToOrderCustomer(selectedCustomer), items, coupon?.code, selectedCustomer.id);
       createOrder(created);
       toast.success(`Pedido ${created.number} criado`);
       navigate("/admin/pedidos");
@@ -284,7 +287,9 @@ export function OrderEditorPage() {
     if (!order) return;
     setDuplicating(true);
     try {
-      const duplicated = await submitOrder(order.customer, order.items, order.couponCode || undefined, order.customerId ?? undefined);
+      const companyId = await resolveCurrentCompanyId();
+      if (!companyId) throw new Error("Empresa não identificada");
+      const duplicated = await submitOrder(companyId, order.customer, order.items, order.couponCode || undefined, order.customerId ?? undefined);
       createOrder(duplicated);
       toast.success(`Pedido ${duplicated.number} criado a partir do ${order.number}`);
       navigate(`/admin/pedidos/${duplicated.id}`);
@@ -374,10 +379,15 @@ export function OrderEditorPage() {
           >
             <Download size={16} /> Baixar PDF
           </Button>
-          <Button type="button" size="sm" variant="outline" onClick={() => sendOrderWhatsApp(order, order.customer.phone)}>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => settings && sendOrderWhatsApp(order, order.customer.phone, settings)}
+          >
             <MessageCircle size={16} /> Enviar por WhatsApp
           </Button>
-          <Button type="button" size="sm" variant="outline" onClick={() => copyOrderText(order)}>
+          <Button type="button" size="sm" variant="outline" onClick={() => settings && copyOrderText(order, settings)}>
             <Copy size={16} /> Copiar comanda
           </Button>
           <Button

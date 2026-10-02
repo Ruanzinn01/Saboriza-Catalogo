@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { productionRecordFromRow } from "@/lib/mappers/production-mapper";
 import { useRawMaterialsStore } from "@/store/raw-materials-store";
 import { useCatalogStore } from "@/store/catalog-store";
@@ -29,7 +30,12 @@ export const useProductionStore = create<ProductionState>()((set) => ({
 
   fetchRecords: async () => {
     set({ status: "loading" });
-    const { data, error } = await supabase.from("production_records").select("*").order("created_at", { ascending: false });
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ status: "error" });
+      return;
+    }
+    const { data, error } = await supabase.from("production_records").select("*").eq("company_id", companyId).order("created_at", { ascending: false });
 
     if (error) {
       toast.error("Não foi possível carregar os registros de produção");

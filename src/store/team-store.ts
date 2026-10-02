@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 
 export interface TeamMember {
   membershipId: string;
@@ -48,15 +49,15 @@ export const useTeamStore = create<TeamState>((set, get) => ({
   fetchTeam: async () => {
     set({ status: "loading" });
 
-    const { data: company } = await supabase.from("companies").select("id").limit(1).maybeSingle();
-    if (!company) {
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
       set({ status: "error" });
       return;
     }
 
     const [{ data: members, error: membersError }, { data: roles }] = await Promise.all([
-      supabase.rpc("oris360_list_company_members", { p_company_id: company.id }),
-      supabase.rpc("oris360_list_roles", { p_company_id: company.id }),
+      supabase.rpc("oris360_list_company_members", { p_company_id: companyId }),
+      supabase.rpc("oris360_list_roles", { p_company_id: companyId }),
     ]);
 
     if (membersError) {
@@ -65,7 +66,7 @@ export const useTeamStore = create<TeamState>((set, get) => ({
     }
 
     set({
-      companyId: company.id,
+      companyId,
       members: (members ?? []).map((m) => ({
         membershipId: m.membership_id,
         userId: m.user_id,

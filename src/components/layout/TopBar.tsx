@@ -1,6 +1,8 @@
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Search, Settings, ShoppingBag } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
+import { useSettingsStore } from "@/store/settings-store";
+import { usePublicCompanyStore } from "@/store/public-company-store";
 import { calculateItemCount } from "@/lib/pricing";
 import { cn } from "@/lib/cn";
 import { getCategoryIcon } from "@/lib/category-icons";
@@ -29,17 +31,20 @@ export function TopBar({
   onSelectCategory,
 }: TopBarProps) {
   const itemCount = useCartStore((state) => calculateItemCount(state.items));
+  const logoUrl = useSettingsStore((state) => state.settings?.logoUrl);
+  const company = usePublicCompanyStore((state) => state.company);
+  const { companySlug } = useParams();
 
   return (
     <div className="relative mx-auto flex max-w-6xl items-center gap-4 px-4 py-2 sm:px-6">
       <Link
-        to="/"
+        to={companySlug ? `/${companySlug}` : "/"}
         className={cn(
           "flex shrink-0 items-center leading-none",
           centerLogo && "absolute left-1/2 -translate-x-1/2"
         )}
       >
-        <BrandEmblem size="sm" />
+        <BrandEmblem size="sm" logoUrl={logoUrl} displayName={company?.displayName} />
       </Link>
 
       <div className="ml-auto flex items-center gap-4">
