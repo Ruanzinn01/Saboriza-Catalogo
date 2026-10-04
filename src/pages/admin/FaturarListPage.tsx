@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { subscribeToTables } from "@/lib/realtime";
 import { Receipt } from "lucide-react";
 import { useFaturarStore } from "@/store/faturar-store";
 import { AdminState } from "@/components/admin/AdminState";
@@ -13,6 +14,7 @@ export function FaturarListPage() {
 
   useEffect(() => {
     fetchEligibleOrders();
+    return subscribeToTables("faturar-lista", ["orders", "order_items", "billings", "fiscal_documents", "charges"], () => fetchEligibleOrders());
   }, [fetchEligibleOrders]);
 
   return (

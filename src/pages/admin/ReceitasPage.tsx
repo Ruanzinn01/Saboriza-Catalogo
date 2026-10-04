@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { subscribeToTables } from "@/lib/realtime";
 import { Plus, CheckCircle2, RotateCcw } from "lucide-react";
 import { useReceitasStore, type RevenueOrigin } from "@/store/receitas-store";
 import { useCustomersStore } from "@/store/customers-store";
@@ -190,6 +191,7 @@ export function ReceitasPage() {
 
   useEffect(() => {
     fetchAll();
+    return subscribeToTables("receitas", ["revenues", "revenue_receipts", "revenue_receivables", "receivables"], () => fetchAll());
   }, [fetchAll]);
 
   const openTotal = useMemo(() => revenues.filter((r) => r.status === "ABERTO" || r.status === "VENCIDO").reduce((s, r) => s + r.openBalance, 0), [revenues]);

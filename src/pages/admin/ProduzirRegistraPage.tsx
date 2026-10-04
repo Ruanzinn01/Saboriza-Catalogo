@@ -10,6 +10,7 @@ import { useProductionV3Store } from "@/store/production-v3-store";
 import { useRawMaterialsStore } from "@/store/raw-materials-store";
 import { useProductionRoutesStore } from "@/store/production-routes-store";
 import { useAdminCompanyStore } from "@/store/admin-company-store";
+import { subscribeToTables } from "@/lib/realtime";
 import { DIARY_GRADES, OCCURRENCE_TYPES, type OccurrenceType } from "@/types/production-v3";
 import type { Product } from "@/types/product";
 
@@ -105,6 +106,7 @@ export function ProduzirRegistraPage() {
     fetchFloorAll();
     fetchProductionPlans();
     ensureTodayDiary();
+    return subscribeToTables("produzir-registra", ["production_records", "stock_movements"], fetchRecords);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

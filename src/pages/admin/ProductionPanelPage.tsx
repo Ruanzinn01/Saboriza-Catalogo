@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatNumber } from "@/lib/number";
+import { subscribeToTables } from "@/lib/realtime";
 import { Download, FileSpreadsheet, Printer, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useCatalogStore } from "@/store/catalog-store";
@@ -65,6 +66,7 @@ export function ProductionPanelPage() {
     if (products.length === 0) fetchCatalog();
     if (!settings) fetchSettings();
     fetchRecords();
+    return subscribeToTables("painel-producao", ["production_records"], () => fetchRecords());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

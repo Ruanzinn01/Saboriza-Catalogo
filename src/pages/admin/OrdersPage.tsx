@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Building2, PackageSearch, Plus, Search, Tag } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
+import { subscribeToTables } from "@/lib/realtime";
 import { OPERATIONAL_SUBSTATUS_LABELS, ORDER_STATUS_OPTIONS, groupOrdersByDay, operationalSubstatus } from "@/lib/order-status";
 import { useOrdersStore } from "@/store/orders-store";
 import { AdminState } from "@/components/admin/AdminState";
@@ -80,6 +81,7 @@ export function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
+    return subscribeToTables("pedidos-lista", ["orders", "order_items"], fetchOrders);
   }, [fetchOrders]);
 
   const filtered = useMemo(() => {

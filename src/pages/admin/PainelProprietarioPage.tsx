@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { usePainelProprietarioStore } from "@/store/painel-proprietario-store";
+import { subscribeToTables } from "@/lib/realtime";
 import { AdminState } from "@/components/admin/AdminState";
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -37,6 +38,11 @@ export function PainelProprietarioPage() {
 
   useEffect(() => {
     fetchSummary();
+    return subscribeToTables(
+      "painel-proprietario",
+      ["receivables", "revenues", "revenue_receipts", "expenses", "expense_launches", "salary_obligations", "salary_advances", "partner_contributions", "investment_formation_ledger", "charges", "billings", "orders", "production_records"],
+      () => fetchSummary(),
+    );
   }, [fetchSummary]);
 
   if (status === "loading" && !summary) return <AdminState variant="loading" message="Carregando painel do proprietário..." />;

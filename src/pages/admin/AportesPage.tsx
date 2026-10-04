@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { subscribeToTables } from "@/lib/realtime";
 import { Plus, RotateCcw, XCircle, CheckCircle2 } from "lucide-react";
 import { useAportesStore, type ContributionOrigin } from "@/store/aportes-store";
 import { useDespesasStore } from "@/store/despesas-store";
@@ -158,6 +159,7 @@ export function AportesPage() {
 
   useEffect(() => {
     fetchAll();
+    return subscribeToTables("aportes", ["partner_contributions", "investment_formation_ledger", "expenses"], () => fetchAll());
   }, [fetchAll]);
 
   const metrics = useMemo(() => {
