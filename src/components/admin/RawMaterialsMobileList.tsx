@@ -49,7 +49,7 @@ export function RawMaterialsMobileList({ rows }: { rows: RawMaterialRow[] }) {
                 <Link to={`/admin/materias-primas/${material.id}/editar`} aria-label={`Editar ${material.name}`} className={iconLink}>
                   <Pencil size={18} />
                 </Link>
-                <Link to={`/admin/materias-primas/entrada?insumo=${material.id}`} aria-label={`Nova entrada de ${material.name}`} className={iconLink}>
+                <Link to={`/admin/despesas/nova?insumo=${material.id}`} aria-label={`Nova entrada de ${material.name}`} className={iconLink}>
                   <PackagePlus size={18} />
                 </Link>
               </div>

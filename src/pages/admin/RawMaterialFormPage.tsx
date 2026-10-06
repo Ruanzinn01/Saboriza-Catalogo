@@ -166,7 +166,7 @@ export function RawMaterialFormPage() {
           <ArrowLeft size={16} /> Voltar
         </Button>
         {isEditing && existingMaterial && (
-          <Link to={`/admin/materias-primas/entrada?insumo=${existingMaterial.id}`}>
+          <Link to={`/admin/despesas/nova?insumo=${existingMaterial.id}`}>
             <Button type="button" variant="outline">
               <PackagePlus size={16} /> Nova entrada
             </Button>

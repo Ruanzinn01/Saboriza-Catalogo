@@ -55,6 +55,25 @@ const DEFAULT_CHARGE_SETTINGS: ChargeSettings = {
 
 const ASAAS_TYPES: PaymentType[] = ["BOLETO", "PIX"];
 
+export type FiscalStatus = "NAO_EMITIDO" | "PROCESSANDO" | "AUTORIZADA" | "REJEITADA" | "CANCELADA";
+
+export interface ChargeStatus {
+  id: string;
+  type: PaymentType;
+  technicalState: string;
+  invoiceUrl: string | null;
+  bankSlipUrl: string | null;
+  needsReconciliation: boolean;
+}
+
+export interface FiscalDocumentStatus {
+  id: string;
+  status: FiscalStatus;
+  number: string | null;
+  pdfRef: string | null;
+  xmlRef: string | null;
+}
+
 export interface CreditSnapshot {
   credit_limit: number;
   open_receivables: number;
@@ -133,6 +152,12 @@ interface FaturarState {
   isConfirming: boolean;
   confirmBilling: () => Promise<{ billingId: string | null; error: string | null }>;
 
+  billingId: string | null;
+  charges: ChargeStatus[];
+  fiscalDocument: FiscalDocumentStatus | null;
+  fetchBillingStatus: (billingId: string) => Promise<void>;
+  emitInvoice: (billingId: string) => Promise<string | null>;
+
   reset: () => void;
 }
 
@@ -193,7 +218,12 @@ export const useFaturarStore = create<FaturarState>((set, get) => ({
 
   fetchOrder: async (orderId) => {
     set({ orderStatus: "loading", currentOrder: null, creditSnapshot: null, creditReleased: false, releaseReason: "" });
-    const { data: row, error } = await supabase.from("orders").select("*").eq("id", orderId).maybeSingle();
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ orderStatus: "error" });
+      return;
+    }
+    const { data: row, error } = await supabase.from("orders").select("*").eq("id", orderId).eq("company_id", companyId).maybeSingle();
     if (error || !row) {
       set({ orderStatus: "error" });
       return;
@@ -355,7 +385,73 @@ export const useFaturarStore = create<FaturarState>((set, get) => ({
       }
     }
 
+    // Emissão da nota fiscal é automática aqui, no mesmo espírito self-service da cobrança Asaas —
+    // o admin não precisa de um segundo clique separado para o caminho feliz.
+    if (fiscalChoice === "EMITIR_NFE") {
+      await supabase.functions.invoke("asaas-emit-invoice", { body: { billing_id: billingId } });
+    }
+
+    set({ billingId });
+    await get().fetchBillingStatus(billingId);
+
     return { billingId, error: null };
+  },
+
+  billingId: null,
+  charges: [],
+  fiscalDocument: null,
+
+  fetchBillingStatus: async (billingId) => {
+    const { data: pmRows } = await supabase.from("payment_methods").select("id, type").eq("billing_id", billingId);
+    const pmIds = (pmRows ?? []).map((r) => r.id);
+    const pmTypeById = new Map((pmRows ?? []).map((r) => [r.id, r.type as PaymentType]));
+
+    let charges: ChargeStatus[] = [];
+    if (pmIds.length > 0) {
+      const { data: instRows } = await supabase.from("installments").select("id, payment_method_id").in("payment_method_id", pmIds);
+      const instPmById = new Map((instRows ?? []).map((r) => [r.id, r.payment_method_id]));
+      const instIds = (instRows ?? []).map((r) => r.id);
+      if (instIds.length > 0) {
+        const { data: chargeRows } = await supabase
+          .from("charges")
+          .select("id, installment_id, technical_state, invoice_url, bank_slip_url")
+          .in("installment_id", instIds);
+        charges = (chargeRows ?? []).map((c) => {
+          const pmId = instPmById.get(c.installment_id);
+          return {
+            id: c.id,
+            type: pmTypeById.get(pmId ?? "") ?? "BOLETO",
+            technicalState: c.technical_state,
+            invoiceUrl: c.invoice_url,
+            bankSlipUrl: c.bank_slip_url,
+            needsReconciliation: c.technical_state === "RECONCILIAR",
+          };
+        });
+      }
+    }
+
+    const { data: fiscalRow } = await supabase
+      .from("fiscal_documents")
+      .select("id, status, number, pdf_ref, xml_ref")
+      .eq("billing_id", billingId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    set({
+      charges,
+      fiscalDocument: fiscalRow
+        ? { id: fiscalRow.id, status: fiscalRow.status as FiscalStatus, number: fiscalRow.number, pdfRef: fiscalRow.pdf_ref, xmlRef: fiscalRow.xml_ref }
+        : null,
+    });
+  },
+
+  emitInvoice: async (billingId) => {
+    const { data, error } = await supabase.functions.invoke("asaas-emit-invoice", { body: { billing_id: billingId } });
+    await get().fetchBillingStatus(billingId);
+    if (error) return error.message;
+    if (data?.error) return data.error as string;
+    return null;
   },
 
   reset: () =>
@@ -369,6 +465,9 @@ export const useFaturarStore = create<FaturarState>((set, get) => ({
       fiscalChoice: "EMITIR_NFE",
       noFiscalReason: "",
       chargeSettings: { ...DEFAULT_CHARGE_SETTINGS },
+      billingId: null,
+      charges: [],
+      fiscalDocument: null,
     }),
 }));
 

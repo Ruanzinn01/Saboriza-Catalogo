@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Copy } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { useEmployeesStore } from "@/store/employees-store";
 import { useAdminCompanyStore } from "@/store/admin-company-store";
 import {
@@ -389,10 +390,14 @@ export function EmployeeProfilePage() {
 
   useEffect(() => {
     fetchEmployees();
-    supabase
-      .from("units")
-      .select("id, name")
-      .then(({ data }) => data && setUnits(data));
+    resolveCurrentCompanyId().then((companyId) => {
+      if (!companyId) return;
+      supabase
+        .from("units")
+        .select("id, name")
+        .eq("company_id", companyId)
+        .then(({ data }) => data && setUnits(data));
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -37,21 +37,65 @@ export interface NewAssetInput {
   quantity?: number;
 }
 
+export interface FormationCategory {
+  categoryId: string;
+  balance: number;
+}
+
+const FORMATION_CATEGORIES = ["Expositores", "Máquinas", "Equipamentos", "Móveis", "Instalações", "Reforma/Benfeitoria", "Veículos em preparação"];
+
 interface PatrimonioState {
   assets: AssetUnit[];
   movements: AssetMovement[];
+  formationBalances: FormationCategory[];
   status: "idle" | "loading" | "ready" | "error";
 
   fetchAll: () => Promise<void>;
+  fetchFormationBalances: () => Promise<void>;
   createAsset: (input: NewAssetInput) => Promise<string | null>;
   writeOffAsset: (id: string, reason: string) => Promise<string | null>;
   transferResponsible: (id: string, newResponsibleId: string, reason: string) => Promise<string | null>;
+  appropriateFromFormation: (input: {
+    categoryId: string;
+    modelName: string;
+    amount: number;
+    quantity?: number;
+    responsibleId?: string;
+    acquisitionDate?: string;
+  }) => Promise<string | null>;
 }
 
 export const usePatrimonioStore = create<PatrimonioState>((set, get) => ({
   assets: [],
   movements: [],
+  formationBalances: [],
   status: "idle",
+
+  fetchFormationBalances: async () => {
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) return;
+    const results = await Promise.all(
+      FORMATION_CATEGORIES.map(async (categoryId) => {
+        const { data } = await supabase.rpc("get_formation_balance", { p_company_id: companyId, p_category_id: categoryId });
+        return { categoryId, balance: typeof data === "number" ? data : 0 };
+      })
+    );
+    set({ formationBalances: results.filter((r) => r.balance > 0) });
+  },
+
+  appropriateFromFormation: async (input) => {
+    const { error } = await supabase.rpc("appropriate_asset_from_formation", {
+      p_category_id: input.categoryId,
+      p_model_name: input.modelName,
+      p_amount: input.amount,
+      p_quantity: input.quantity ?? 1,
+      p_responsible_id: input.responsibleId ?? undefined,
+      p_acquisition_date: input.acquisitionDate ?? undefined,
+    });
+    if (error) return error.message;
+    await Promise.all([get().fetchAll(), get().fetchFormationBalances()]);
+    return null;
+  },
 
   fetchAll: async () => {
     set({ status: "loading" });

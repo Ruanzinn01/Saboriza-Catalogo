@@ -93,7 +93,7 @@ export function RawMaterialsTable({ rows, sort, onSort }: RawMaterialsTableProps
                       <Pencil size={16} />
                     </Link>
                     <Link
-                      to={`/admin/materias-primas/entrada?insumo=${material.id}`}
+                      to={`/admin/despesas/nova?insumo=${material.id}`}
                       aria-label={`Nova entrada de ${material.name}`}
                       title="Nova entrada"
                       className={iconLink}

@@ -216,7 +216,12 @@ export const useSeparationStore = create<SeparationState>()((set, get) => ({
 
   fetchOrder: async (orderId) => {
     set({ currentOrderStatus: "loading" });
-    const { data: orderRow, error: orderError } = await supabase.from("orders").select("*").eq("id", orderId).maybeSingle();
+    const companyId = await resolveCurrentCompanyId();
+    if (!companyId) {
+      set({ currentOrder: null, currentOrderStatus: "error" });
+      return;
+    }
+    const { data: orderRow, error: orderError } = await supabase.from("orders").select("*").eq("id", orderId).eq("company_id", companyId).maybeSingle();
     if (orderError || !orderRow) {
       set({ currentOrder: null, currentOrderStatus: "error" });
       return;

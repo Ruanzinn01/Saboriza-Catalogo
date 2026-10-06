@@ -95,7 +95,7 @@ export function RawMaterialDetailPage() {
           <p className="font-mono text-xs text-ink-muted">{material.code}</p>
         </div>
         <div className="flex gap-2">
-          <Link to={`/admin/materias-primas/entrada?insumo=${material.id}`}>
+          <Link to={`/admin/despesas/nova?insumo=${material.id}`}>
             <Button variant="secondary">
               <Plus size={16} /> Nova entrada
             </Button>

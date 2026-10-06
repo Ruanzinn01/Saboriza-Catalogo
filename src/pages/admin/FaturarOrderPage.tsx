@@ -54,6 +54,10 @@ export function FaturarOrderPage() {
   const isConfirming = useFaturarStore((s) => s.isConfirming);
   const confirmBilling = useFaturarStore((s) => s.confirmBilling);
   const reset = useFaturarStore((s) => s.reset);
+  const billingId = useFaturarStore((s) => s.billingId);
+  const charges = useFaturarStore((s) => s.charges);
+  const fiscalDocument = useFaturarStore((s) => s.fiscalDocument);
+  const emitInvoice = useFaturarStore((s) => s.emitInvoice);
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [showRelease, setShowRelease] = useState(false);
@@ -171,6 +175,16 @@ export function FaturarOrderPage() {
 
   if (billingDone) {
     const boletoCount = paymentMethods.filter((p) => p.type === "BOLETO").reduce((n, p) => n + p.installments.length, 0);
+    const fiscalLabel: Record<string, { text: string; tone: string }> = {
+      NAO_EMITIDO: { text: "Sem NF-e nesta operação ✓", tone: "bg-emerald-100 text-emerald-800" },
+      PROCESSANDO: { text: "NF-e em processamento ⏳", tone: "bg-amber-100 text-amber-800" },
+      AUTORIZADA: { text: "NF-e autorizada ✓", tone: "bg-emerald-100 text-emerald-800" },
+      REJEITADA: { text: "NF-e com falha — ver detalhe", tone: "bg-red-100 text-red-700" },
+      CANCELADA: { text: "NF-e cancelada", tone: "bg-ink-900/10 text-ink-muted" },
+    };
+    const fiscalTag = fiscalChoice === "EMITIR_NFE" ? fiscalLabel[fiscalDocument?.status ?? "PROCESSANDO"] : fiscalLabel.NAO_EMITIDO;
+    const reconciliationNeeded = charges.filter((c) => c.needsReconciliation);
+
     return (
       <div className="flex flex-col items-center gap-4 rounded-3xl border border-forest-950/10 bg-white p-10 text-center">
         <CheckCircle2 className="text-emerald-600" size={56} />
@@ -178,11 +192,60 @@ export function FaturarOrderPage() {
         <p className="text-ink-700/70">Pedido #{order.number} — {brl(total)}</p>
         <div className="flex flex-wrap justify-center gap-2 text-xs font-semibold">
           <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-800">Financeiro criado ✓</span>
-          <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-800">
-            {fiscalChoice === "EMITIR_NFE" ? "NF-e em processamento ✓" : "Sem NF-e nesta operação ✓"}
-          </span>
+          <span className={`rounded-full px-3 py-1 ${fiscalTag.tone}`}>{fiscalTag.text}</span>
           <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-800">Liberado para Entrega Registra ✓</span>
         </div>
+
+        {fiscalChoice === "EMITIR_NFE" && fiscalDocument?.status === "REJEITADA" && (
+          <div className="w-full max-w-lg rounded-2xl border border-red-200 bg-red-50 p-4 text-left text-sm text-red-800">
+            <p className="font-bold">Falha ao emitir a nota fiscal</p>
+            <p className="mt-1 text-xs">Verifique a credencial Asaas e o cadastro de serviço municipal em Integrações Financeiras, depois tente novamente.</p>
+            <button
+              onClick={() => billingId && emitInvoice(billingId)}
+              className="mt-2 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold hover:bg-red-100"
+            >
+              Tentar emitir novamente
+            </button>
+          </div>
+        )}
+
+        {fiscalChoice === "EMITIR_NFE" && fiscalDocument?.status === "AUTORIZADA" && (fiscalDocument.pdfRef || fiscalDocument.xmlRef) && (
+          <div className="flex w-full max-w-lg items-center justify-between gap-3 rounded-2xl border border-forest-950/10 p-4 text-left">
+            <div>
+              <p className="font-bold text-forest-950">Nota fiscal {fiscalDocument.number ? `#${fiscalDocument.number}` : ""}</p>
+              <p className="text-xs text-ink-muted">Documento autorizado pelo Asaas</p>
+            </div>
+            <div className="flex gap-2">
+              {fiscalDocument.pdfRef && <a href={fiscalDocument.pdfRef} target="_blank" rel="noreferrer" className="rounded-lg border border-ink-900/15 px-3 py-1.5 text-xs font-semibold hover:bg-forest-950/5">PDF</a>}
+              {fiscalDocument.xmlRef && <a href={fiscalDocument.xmlRef} target="_blank" rel="noreferrer" className="rounded-lg border border-ink-900/15 px-3 py-1.5 text-xs font-semibold hover:bg-forest-950/5">XML</a>}
+            </div>
+          </div>
+        )}
+
+        {charges.length > 0 && (
+          <div className="w-full max-w-lg text-left">
+            <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-ink-muted">Cobranças Asaas</h2>
+            <div className="flex flex-col gap-2">
+              {charges.map((c) => (
+                <div key={c.id} className="flex items-center justify-between rounded-xl border border-forest-950/10 p-3 text-sm">
+                  <span className="font-semibold text-ink-900">{c.type === "PIX" ? "Pix" : "Boleto"}</span>
+                  {(c.invoiceUrl || c.bankSlipUrl) ? (
+                    <a href={c.invoiceUrl ?? c.bankSlipUrl ?? "#"} target="_blank" rel="noreferrer" className="text-xs font-semibold text-forest-800 hover:underline">
+                      Ver cobrança ↗
+                    </a>
+                  ) : (
+                    <span className="text-xs text-ink-muted">Gerando link...</span>
+                  )}
+                </div>
+              ))}
+            </div>
+            {reconciliationNeeded.length > 0 && (
+              <p className="mt-2 rounded-xl bg-amber-50 p-3 text-xs text-amber-800">
+                {reconciliationNeeded.length} cobrança(s) com estorno/cancelamento reportado pelo Asaas — requer conciliação manual no financeiro.
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="mt-2 w-full max-w-lg text-left">
           <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-ink-muted">Documentos para entrega</h2>

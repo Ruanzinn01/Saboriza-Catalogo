@@ -114,6 +114,103 @@ function NewAssetForm({ onDone }: { onDone: () => void }) {
   );
 }
 
+function AppropriateFromFormationCard() {
+  const formationBalances = usePatrimonioStore((s) => s.formationBalances);
+  const fetchFormationBalances = usePatrimonioStore((s) => s.fetchFormationBalances);
+  const appropriateFromFormation = usePatrimonioStore((s) => s.appropriateFromFormation);
+  const employees = useEmployeesStore((s) => s.employees);
+  const [open, setOpen] = useState(false);
+  const [categoryId, setCategoryId] = useState("");
+  const [modelName, setModelName] = useState("");
+  const [amount, setAmount] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [responsibleId, setResponsibleId] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchFormationBalances();
+  }, [fetchFormationBalances]);
+
+  async function submit() {
+    if (!categoryId || !modelName || !amount) {
+      toast.error("Preencha categoria, nome do bem e valor a apropriar");
+      return;
+    }
+    setSaving(true);
+    const err = await appropriateFromFormation({
+      categoryId,
+      modelName,
+      amount: Number(amount),
+      quantity: Number(quantity) || 1,
+      responsibleId: responsibleId || undefined,
+    });
+    setSaving(false);
+    if (err) {
+      toast.error(err);
+      return;
+    }
+    toast.success("Bem apropriado do saldo em formação — nenhuma nova saída foi criada");
+    setModelName("");
+    setAmount("");
+    setQuantity("1");
+    setOpen(false);
+  }
+
+  if (formationBalances.length === 0) return null;
+
+  return (
+    <div className="rounded-3xl border border-blue-200 bg-blue-50/40 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <p className="text-sm font-bold text-forest-950">Saldo em formação (vindo de Despesas)</p>
+          <p className="text-xs text-ink-muted">Investimentos lançados em Despesas acumulam aqui até você apropriar o bem pronto. Apropriar não cria nova saída.</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={() => setOpen((v) => !v)}>Apropriar bem</Button>
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {formationBalances.map((f) => (
+          <div key={f.categoryId} className="rounded-xl bg-white p-3">
+            <p className="text-xs text-ink-muted">{f.categoryId}</p>
+            <p className="font-bold text-forest-950">{brl(f.balance)}</p>
+          </div>
+        ))}
+      </div>
+
+      {open && (
+        <div className="mt-4 grid grid-cols-1 gap-3 rounded-2xl bg-white p-4 sm:grid-cols-2">
+          <label className="flex flex-col gap-1 text-sm text-ink-900">
+            Categoria
+            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="h-11 rounded-xl border border-ink-900/15 px-3 text-sm">
+              <option value="">Selecione</option>
+              {formationBalances.map((f) => <option key={f.categoryId} value={f.categoryId}>{f.categoryId} (saldo {brl(f.balance)})</option>)}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-ink-900">
+            Nome do bem
+            <input value={modelName} onChange={(e) => setModelName(e.target.value)} className="h-11 rounded-xl border border-ink-900/15 px-3 text-sm" />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-ink-900">
+            Valor a apropriar
+            <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="h-11 rounded-xl border border-ink-900/15 px-3 text-sm" />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-ink-900">
+            Quantidade
+            <input type="number" min={1} value={quantity} onChange={(e) => setQuantity(e.target.value)} className="h-11 rounded-xl border border-ink-900/15 px-3 text-sm" />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-ink-900">
+            Responsável (opcional)
+            <select value={responsibleId} onChange={(e) => setResponsibleId(e.target.value)} className="h-11 rounded-xl border border-ink-900/15 px-3 text-sm">
+              <option value="">-----</option>
+              {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+            </select>
+          </label>
+          <Button onClick={() => void submit()} disabled={saving} className="self-end">{saving ? "Salvando..." : "Confirmar apropriação"}</Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function VisaoGeralTab() {
   const assets = usePatrimonioStore((s) => s.assets);
 
@@ -139,6 +236,8 @@ function VisaoGeralTab() {
         <div className="rounded-2xl border border-forest-950/10 bg-white p-4"><p className="text-xs text-ink-muted">Valor de aquisição (ativos)</p><p className="text-lg font-extrabold text-forest-950">{brl(metrics.valorAquisicao)}</p></div>
         <div className="rounded-2xl border border-forest-950/10 bg-white p-4"><p className="text-xs text-ink-muted">Valor estimado atual</p><p className="text-lg font-extrabold text-forest-950">{brl(metrics.valorAtual)}</p></div>
       </div>
+
+      <AppropriateFromFormationCard />
 
       <div className="rounded-3xl border border-forest-950/10 bg-white p-4">
         <p className="mb-3 text-sm font-bold text-forest-950">Por categoria</p>

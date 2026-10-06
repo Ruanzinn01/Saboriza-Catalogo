@@ -91,7 +91,7 @@ export function RawMaterialsPage() {
             </Button>
           </Link>
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">
-            <Link to="/admin/materias-primas/entrada" className="flex-1">
+            <Link to="/admin/despesas/nova" className="flex-1">
               <Button size="lg" variant="secondary" className="w-full">
                 <PackagePlus size={18} /> Nova entrada
               </Button>
