@@ -34,7 +34,6 @@ const SupplierDetailPage = lazy(() => import("@/pages/admin/SupplierDetailPage")
 const RawMaterialsPage = lazy(() => import("@/pages/admin/RawMaterialsPage").then((m) => ({ default: m.RawMaterialsPage })));
 const RawMaterialFormPage = lazy(() => import("@/pages/admin/RawMaterialFormPage").then((m) => ({ default: m.RawMaterialFormPage })));
 const RawMaterialDetailPage = lazy(() => import("@/pages/admin/RawMaterialDetailPage").then((m) => ({ default: m.RawMaterialDetailPage })));
-const RawMaterialEntryPage = lazy(() => import("@/pages/admin/RawMaterialEntryPage").then((m) => ({ default: m.RawMaterialEntryPage })));
 const ProduzirRegistraPage = lazy(() => import("@/pages/admin/ProduzirRegistraPage").then((m) => ({ default: m.ProduzirRegistraPage })));
 const ChaoDeFabricaPage = lazy(() => import("@/pages/admin/ChaoDeFabricaPage").then((m) => ({ default: m.ChaoDeFabricaPage })));
 const RotasProducaoPage = lazy(() => import("@/pages/admin/RotasProducaoPage").then((m) => ({ default: m.RotasProducaoPage })));
@@ -52,6 +51,12 @@ const FaturarListPage = lazy(() => import("@/pages/admin/FaturarListPage").then(
 const FaturarOrderPage = lazy(() => import("@/pages/admin/FaturarOrderPage").then((m) => ({ default: m.FaturarOrderPage })));
 const AportesPage = lazy(() => import("@/pages/admin/AportesPage").then((m) => ({ default: m.AportesPage })));
 const DespesasPage = lazy(() => import("@/pages/admin/DespesasPage").then((m) => ({ default: m.DespesasPage })));
+const NovaDespesaPage = lazy(() => import("@/pages/admin/NovaDespesaPage").then((m) => ({ default: m.NovaDespesaPage })));
+const DespesasOrigemPage = lazy(() => import("@/pages/admin/despesas/DespesasOrigemPage").then((m) => ({ default: m.DespesasOrigemPage })));
+const DespesasPessoalPage = lazy(() => import("@/pages/admin/despesas/DespesasPessoalPage").then((m) => ({ default: m.DespesasPessoalPage })));
+const DespesasColaboradorPage = lazy(() => import("@/pages/admin/despesas/DespesasColaboradorPage").then((m) => ({ default: m.DespesasColaboradorPage })));
+const DespesasComissoesPage = lazy(() => import("@/pages/admin/despesas/DespesasComissoesPage").then((m) => ({ default: m.DespesasComissoesPage })));
+const DespesasVencimentosPage = lazy(() => import("@/pages/admin/despesas/DespesasVencimentosPage").then((m) => ({ default: m.DespesasVencimentosPage })));
 const ReceitasPage = lazy(() => import("@/pages/admin/ReceitasPage").then((m) => ({ default: m.ReceitasPage })));
 const PatrimonioPage = lazy(() => import("@/pages/admin/PatrimonioPage").then((m) => ({ default: m.PatrimonioPage })));
 const DREPage = lazy(() => import("@/pages/admin/DREPage").then((m) => ({ default: m.DREPage })));
@@ -113,7 +118,6 @@ export function App() {
               <Route path="materias-primas" element={<RawMaterialsPage />} />
               <Route path="materias-primas/novo" element={<RawMaterialFormPage />} />
               <Route path="materias-primas/categorias" element={<RawMaterialCategoriesPage />} />
-              <Route path="materias-primas/entrada" element={<RawMaterialEntryPage />} />
               <Route path="materias-primas/:rawMaterialId" element={<RawMaterialDetailPage />} />
               <Route path="materias-primas/:rawMaterialId/editar" element={<RawMaterialFormPage />} />
               <Route path="produzir" element={<ProduzirRegistraPage />} />
@@ -149,6 +153,13 @@ export function App() {
               <Route path="meu360" element={<Meu360Page />} />
               <Route path="aportes" element={<AportesPage />} />
               <Route path="despesas" element={<DespesasPage />} />
+              <Route path="despesas/nova" element={<NovaDespesaPage />} />
+              <Route path="despesas/pessoal" element={<DespesasPessoalPage />} />
+              <Route path="despesas/pessoal/:employeeId" element={<DespesasColaboradorPage />} />
+              <Route path="despesas/comissoes" element={<DespesasComissoesPage />} />
+              <Route path="despesas/vencimentos" element={<DespesasVencimentosPage />} />
+              <Route path="despesas/origem/:origin" element={<DespesasOrigemPage />} />
+              <Route path="despesas/:expenseId" element={<DespesasPage />} />
               <Route path="receitas" element={<ReceitasPage />} />
               <Route path="patrimonio" element={<PatrimonioPage />} />
               <Route path="dre" element={<DREPage />} />
