@@ -577,12 +577,14 @@ export type Database = {
       }
       charges: {
         Row: {
+          bank_slip_url: string | null
           company_id: string | null
           created_at: string
           external_id: string | null
           id: string
           idempotency_key: string
           installment_id: string
+          invoice_url: string | null
           last_error: string | null
           provider: string
           status: string
@@ -590,12 +592,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bank_slip_url?: string | null
           company_id?: string | null
           created_at?: string
           external_id?: string | null
           id?: string
           idempotency_key: string
           installment_id: string
+          invoice_url?: string | null
           last_error?: string | null
           provider?: string
           status?: string
@@ -603,12 +607,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bank_slip_url?: string | null
           company_id?: string | null
           created_at?: string
           external_id?: string | null
           id?: string
           idempotency_key?: string
           installment_id?: string
+          invoice_url?: string | null
           last_error?: string | null
           provider?: string
           status?: string
@@ -743,12 +749,14 @@ export type Database = {
       }
       company_integration_credentials: {
         Row: {
+          activated_at: string | null
           company_id: string
           created_at: string
           created_by_user_id: string | null
           environment: string
           fiscal_provider_name: string | null
           id: string
+          is_active: boolean
           key_last4: string | null
           last_error: string | null
           last_validated_at: string | null
@@ -760,12 +768,14 @@ export type Database = {
           webhook_token: string | null
         }
         Insert: {
+          activated_at?: string | null
           company_id?: string
           created_at?: string
           created_by_user_id?: string | null
           environment?: string
           fiscal_provider_name?: string | null
           id?: string
+          is_active?: boolean
           key_last4?: string | null
           last_error?: string | null
           last_validated_at?: string | null
@@ -777,12 +787,14 @@ export type Database = {
           webhook_token?: string | null
         }
         Update: {
+          activated_at?: string | null
           company_id?: string
           created_at?: string
           created_by_user_id?: string | null
           environment?: string
           fiscal_provider_name?: string | null
           id?: string
+          is_active?: boolean
           key_last4?: string | null
           last_error?: string | null
           last_validated_at?: string | null
@@ -1770,55 +1782,617 @@ export type Database = {
           },
         ]
       }
-      expenses: {
+      expense_catalog_items: {
+        Row: {
+          category_id: string | null
+          code: string
+          company_id: string
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          suggest_recurring: boolean
+          suggested_price: number
+          unit: string
+        }
+        Insert: {
+          category_id?: string | null
+          code: string
+          company_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          name: string
+          suggest_recurring?: boolean
+          suggested_price?: number
+          unit?: string
+        }
+        Update: {
+          category_id?: string | null
+          code?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          suggest_recurring?: boolean
+          suggested_price?: number
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_catalog_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_catalog_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_categories: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          rateable: boolean
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          name: string
+          rateable?: boolean
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          rateable?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_launch_installments: {
         Row: {
           amount: number
+          boleto_code: string | null
+          created_at: string
+          due_date: string
+          expense_id: string | null
+          id: string
+          launch_id: string
+          number: number
+          scheduled_payment_at: string | null
+        }
+        Insert: {
+          amount: number
+          boleto_code?: string | null
+          created_at?: string
+          due_date: string
+          expense_id?: string | null
+          id?: string
+          launch_id: string
+          number: number
+          scheduled_payment_at?: string | null
+        }
+        Update: {
+          amount?: number
+          boleto_code?: string | null
+          created_at?: string
+          due_date?: string
+          expense_id?: string | null
+          id?: string
+          launch_id?: string
+          number?: number
+          scheduled_payment_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_launch_installments_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_launch_installments_launch_id_fkey"
+            columns: ["launch_id"]
+            isOneToOne: false
+            referencedRelation: "expense_launches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_launch_items: {
+        Row: {
+          amount: number
+          catalog_item_id: string | null
+          category_id: string | null
+          contract_label: string | null
+          created_at: string
+          employee_id: string | null
+          expense_id: string | null
+          id: string
+          kind: string
+          launch_id: string
+          name_snapshot: string
+          payroll_type: string | null
+          quantity: number
+          rateable: boolean
+          raw_material_id: string | null
+          recurrence_id: string | null
+          reference_expense_id: string | null
+          unit: string
+          unit_price: number
+        }
+        Insert: {
+          amount?: number
+          catalog_item_id?: string | null
+          category_id?: string | null
+          contract_label?: string | null
+          created_at?: string
+          employee_id?: string | null
+          expense_id?: string | null
+          id?: string
+          kind: string
+          launch_id: string
+          name_snapshot: string
+          payroll_type?: string | null
+          quantity?: number
+          rateable?: boolean
+          raw_material_id?: string | null
+          recurrence_id?: string | null
+          reference_expense_id?: string | null
+          unit?: string
+          unit_price?: number
+        }
+        Update: {
+          amount?: number
+          catalog_item_id?: string | null
+          category_id?: string | null
+          contract_label?: string | null
+          created_at?: string
+          employee_id?: string | null
+          expense_id?: string | null
+          id?: string
+          kind?: string
+          launch_id?: string
+          name_snapshot?: string
+          payroll_type?: string | null
+          quantity?: number
+          rateable?: boolean
+          raw_material_id?: string | null
+          recurrence_id?: string | null
+          reference_expense_id?: string | null
+          unit?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_launch_items_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "expense_catalog_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_launch_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_launch_items_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_launch_items_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_launch_items_launch_id_fkey"
+            columns: ["launch_id"]
+            isOneToOne: false
+            referencedRelation: "expense_launches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_launch_items_raw_material_id_fkey"
+            columns: ["raw_material_id"]
+            isOneToOne: false
+            referencedRelation: "raw_materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_launch_items_recurrence_id_fkey"
+            columns: ["recurrence_id"]
+            isOneToOne: false
+            referencedRelation: "expense_recurrences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_launch_items_reference_expense_id_fkey"
+            columns: ["reference_expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_launches: {
+        Row: {
+          batch: string | null
+          company_id: string
+          competence: string
+          created_at: string
+          created_by: string | null
+          discount: number
+          document_access_key: string | null
+          document_issue_date: string | null
+          document_ref: string | null
+          document_series: string | null
+          duplicate_reason: string | null
+          expiry_date: string | null
+          freight: number
+          id: string
+          idempotency_key: string | null
+          kind: string
+          observations: string | null
+          partner_id: string | null
+          party_name: string
+          party_type: string
+          payment_condition: string | null
+          payment_method: string | null
+          received: boolean
+          recipient_holder: string | null
+          recipient_key: string | null
+          scheduled: boolean
+          status: string
+          supplier_id: string | null
+          total_amount: number
+        }
+        Insert: {
+          batch?: string | null
+          company_id: string
+          competence: string
+          created_at?: string
+          created_by?: string | null
+          discount?: number
+          document_access_key?: string | null
+          document_issue_date?: string | null
+          document_ref?: string | null
+          document_series?: string | null
+          duplicate_reason?: string | null
+          expiry_date?: string | null
+          freight?: number
+          id?: string
+          idempotency_key?: string | null
+          kind: string
+          observations?: string | null
+          partner_id?: string | null
+          party_name: string
+          party_type: string
+          payment_condition?: string | null
+          payment_method?: string | null
+          received?: boolean
+          recipient_holder?: string | null
+          recipient_key?: string | null
+          scheduled?: boolean
+          status?: string
+          supplier_id?: string | null
+          total_amount?: number
+        }
+        Update: {
+          batch?: string | null
+          company_id?: string
+          competence?: string
+          created_at?: string
+          created_by?: string | null
+          discount?: number
+          document_access_key?: string | null
+          document_issue_date?: string | null
+          document_ref?: string | null
+          document_series?: string | null
+          duplicate_reason?: string | null
+          expiry_date?: string | null
+          freight?: number
+          id?: string
+          idempotency_key?: string | null
+          kind?: string
+          observations?: string | null
+          partner_id?: string | null
+          party_name?: string
+          party_type?: string
+          payment_condition?: string | null
+          payment_method?: string | null
+          received?: boolean
+          recipient_holder?: string | null
+          recipient_key?: string | null
+          scheduled?: boolean
+          status?: string
+          supplier_id?: string | null
+          total_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_launches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_launches_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "company_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_launches_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_recurrences: {
+        Row: {
+          amount: number
+          catalog_item_id: string | null
+          company_id: string
+          contract_label: string
+          created_at: string
+          created_by: string | null
+          day_of_month: number | null
+          end_date: string | null
+          end_mode: string
+          first_launch_id: string | null
+          frequency: string
+          id: string
+          interval_days: number | null
+          kind: string
+          occurrences: number | null
+          partner_id: string | null
+          party_name: string
+          party_type: string
+          rateable: boolean
+          raw_material_id: string | null
+          reference_expense_id: string | null
+          start_date: string
+          status: string
+          supplier_id: string | null
+          variable_amount: boolean
+        }
+        Insert: {
+          amount?: number
+          catalog_item_id?: string | null
+          company_id: string
+          contract_label: string
+          created_at?: string
+          created_by?: string | null
+          day_of_month?: number | null
+          end_date?: string | null
+          end_mode?: string
+          first_launch_id?: string | null
+          frequency: string
+          id?: string
+          interval_days?: number | null
+          kind: string
+          occurrences?: number | null
+          partner_id?: string | null
+          party_name: string
+          party_type: string
+          rateable?: boolean
+          raw_material_id?: string | null
+          reference_expense_id?: string | null
+          start_date: string
+          status?: string
+          supplier_id?: string | null
+          variable_amount?: boolean
+        }
+        Update: {
+          amount?: number
+          catalog_item_id?: string | null
+          company_id?: string
+          contract_label?: string
+          created_at?: string
+          created_by?: string | null
+          day_of_month?: number | null
+          end_date?: string | null
+          end_mode?: string
+          first_launch_id?: string | null
+          frequency?: string
+          id?: string
+          interval_days?: number | null
+          kind?: string
+          occurrences?: number | null
+          partner_id?: string | null
+          party_name?: string
+          party_type?: string
+          rateable?: boolean
+          raw_material_id?: string | null
+          reference_expense_id?: string | null
+          start_date?: string
+          status?: string
+          supplier_id?: string | null
+          variable_amount?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_recurrences_catalog_item_id_fkey"
+            columns: ["catalog_item_id"]
+            isOneToOne: false
+            referencedRelation: "expense_catalog_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_recurrences_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_recurrences_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "company_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_recurrences_raw_material_id_fkey"
+            columns: ["raw_material_id"]
+            isOneToOne: false
+            referencedRelation: "raw_materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_recurrences_reference_expense_id_fkey"
+            columns: ["reference_expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_recurrences_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          adjustment_reason: string | null
+          amount: number
+          block_reason: string | null
+          block_type: string | null
+          blocked_at: string | null
+          blocked_by: string | null
           category: string
           company_id: string
           competence: string | null
+          correlation_id: string | null
           created_at: string
           created_by: string
           description: string
+          document_ref: string | null
           due_date: string | null
           employee_id: string | null
           id: string
+          idempotency_key: string | null
+          launch_id: string | null
           nature: string
+          origin: string
+          original_expense_id: string | null
           paid_amount: number | null
           paid_at: string | null
+          partner_id: string | null
+          party_name: string | null
+          pattern: string
+          scheduled_payment_at: string | null
+          settled_at: string | null
+          source_entity_id: string | null
+          source_module: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          adjustment_reason?: string | null
           amount: number
+          block_reason?: string | null
+          block_type?: string | null
+          blocked_at?: string | null
+          blocked_by?: string | null
           category?: string
           company_id?: string
           competence?: string | null
+          correlation_id?: string | null
           created_at?: string
           created_by?: string
           description: string
+          document_ref?: string | null
           due_date?: string | null
           employee_id?: string | null
           id?: string
+          idempotency_key?: string | null
+          launch_id?: string | null
           nature?: string
+          origin?: string
+          original_expense_id?: string | null
           paid_amount?: number | null
           paid_at?: string | null
+          partner_id?: string | null
+          party_name?: string | null
+          pattern?: string
+          scheduled_payment_at?: string | null
+          settled_at?: string | null
+          source_entity_id?: string | null
+          source_module?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
+          adjustment_reason?: string | null
           amount?: number
+          block_reason?: string | null
+          block_type?: string | null
+          blocked_at?: string | null
+          blocked_by?: string | null
           category?: string
           company_id?: string
           competence?: string | null
+          correlation_id?: string | null
           created_at?: string
           created_by?: string
           description?: string
+          document_ref?: string | null
           due_date?: string | null
           employee_id?: string | null
           id?: string
+          idempotency_key?: string | null
+          launch_id?: string | null
           nature?: string
+          origin?: string
+          original_expense_id?: string | null
           paid_amount?: number | null
           paid_at?: string | null
+          partner_id?: string | null
+          party_name?: string | null
+          pattern?: string
+          scheduled_payment_at?: string | null
+          settled_at?: string | null
+          source_entity_id?: string | null
+          source_module?: string | null
           status?: string
           updated_at?: string
         }
@@ -1828,6 +2402,27 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_launch_id_fkey"
+            columns: ["launch_id"]
+            isOneToOne: false
+            referencedRelation: "expense_launches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_original_expense_id_fkey"
+            columns: ["original_expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "company_partners"
             referencedColumns: ["id"]
           },
         ]
@@ -2021,6 +2616,66 @@ export type Database = {
             columns: ["route_id"]
             isOneToOne: false
             referencedRelation: "production_routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generated_report: {
+        Row: {
+          checksum: string | null
+          company_id: string
+          filters_json: Json
+          generated_at: string
+          generated_by: string
+          id: string
+          module: string
+          period_from: string | null
+          period_to: string | null
+          report_type: string
+          storage_ref: string | null
+          unit_id: string | null
+        }
+        Insert: {
+          checksum?: string | null
+          company_id: string
+          filters_json?: Json
+          generated_at?: string
+          generated_by?: string
+          id?: string
+          module: string
+          period_from?: string | null
+          period_to?: string | null
+          report_type: string
+          storage_ref?: string | null
+          unit_id?: string | null
+        }
+        Update: {
+          checksum?: string | null
+          company_id?: string
+          filters_json?: Json
+          generated_at?: string
+          generated_by?: string
+          id?: string
+          module?: string
+          period_from?: string | null
+          period_to?: string | null
+          report_type?: string
+          storage_ref?: string | null
+          unit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_report_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_report_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
             referencedColumns: ["id"]
           },
         ]
@@ -2306,6 +2961,76 @@ export type Database = {
             columns: ["payment_method_id"]
             isOneToOne: false
             referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investment_formation_ledger: {
+        Row: {
+          actor_id: string | null
+          amount: number
+          category_id: string
+          company_id: string
+          competence: string
+          correlation_id: string | null
+          created_at: string
+          direction: string
+          id: string
+          idempotency_key: string | null
+          occurred_at: string
+          source_asset_model_id: string | null
+          source_expense_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          amount: number
+          category_id: string
+          company_id: string
+          competence: string
+          correlation_id?: string | null
+          created_at?: string
+          direction: string
+          id?: string
+          idempotency_key?: string | null
+          occurred_at?: string
+          source_asset_model_id?: string | null
+          source_expense_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          amount?: number
+          category_id?: string
+          company_id?: string
+          competence?: string
+          correlation_id?: string | null
+          created_at?: string
+          direction?: string
+          id?: string
+          idempotency_key?: string | null
+          occurred_at?: string
+          source_asset_model_id?: string | null
+          source_expense_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_formation_ledger_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investment_formation_ledger_source_asset_model_id_fkey"
+            columns: ["source_asset_model_id"]
+            isOneToOne: false
+            referencedRelation: "asset_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investment_formation_ledger_source_expense_id_fkey"
+            columns: ["source_expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
             referencedColumns: ["id"]
           },
         ]
@@ -4659,34 +5384,88 @@ export type Database = {
           },
         ]
       }
+      salary_history: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          employee_id: string
+          id: string
+          salary_base: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          effective_date: string
+          employee_id: string
+          id?: string
+          salary_base: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          employee_id?: string
+          id?: string
+          salary_base?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_history_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       salary_obligations: {
         Row: {
+          additions: number
           base_salary: number
           company_id: string | null
           competence: string
           created_at: string
+          deductions: number
           employee_id: string
           id: string
+          net_amount: number
           status: string
           updated_at: string
         }
         Insert: {
+          additions?: number
           base_salary: number
           company_id?: string | null
           competence: string
           created_at?: string
+          deductions?: number
           employee_id: string
           id?: string
+          net_amount: number
           status?: string
           updated_at?: string
         }
         Update: {
+          additions?: number
           base_salary?: number
           company_id?: string | null
           competence?: string
           created_at?: string
+          deductions?: number
           employee_id?: string
           id?: string
+          net_amount?: number
           status?: string
           updated_at?: string
         }
@@ -5714,6 +6493,21 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      appropriate_asset_from_formation: {
+        Args: {
+          p_acquisition_date?: string
+          p_amount: number
+          p_category_id: string
+          p_model_name: string
+          p_quantity?: number
+          p_responsible_id?: string
+        }
+        Returns: string
+      }
+      block_expense: {
+        Args: { p_block_type: string; p_expense_id: string; p_reason: string }
+        Returns: undefined
+      }
       check_pin_rate_limit: { Args: { p_device_id: string }; Returns: boolean }
       confirm_production_release:
         | {
@@ -5818,6 +6612,29 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_asset_investment: {
+        Args: {
+          p_amount: number
+          p_category_id: string
+          p_competence: string
+          p_description: string
+          p_due_date?: string
+          p_idempotency_key?: string
+          p_pattern?: string
+        }
+        Returns: string
+      }
+      create_expense_adjustment: {
+        Args: {
+          p_new_amount?: number
+          p_new_category?: string
+          p_new_description?: string
+          p_original_expense_id: string
+          p_reason: string
+        }
+        Returns: string
+      }
+      create_expense_launch: { Args: { p_payload: Json }; Returns: string }
       create_order: {
         Args: {
           p_company_id: string
@@ -6137,8 +6954,12 @@ export type Database = {
         }[]
       }
       get_financeiro_geral_summary: {
-        Args: { p_company_id: string }
+        Args: { p_company_id: string; p_period?: string }
         Returns: Json
+      }
+      get_formation_balance: {
+        Args: { p_category_id: string; p_company_id: string }
+        Returns: number
       }
       get_owner_panel_summary: { Args: { p_company_id: string }; Returns: Json }
       get_platform_companies: {
@@ -6286,7 +7107,7 @@ export type Database = {
         Returns: undefined
       }
       remove_integration_credential: {
-        Args: { p_environment: string; p_provider: string }
+        Args: { p_company_id: string; p_environment: string; p_provider: string }
         Returns: undefined
       }
       rename_raw_material_category: {
@@ -6299,6 +7120,10 @@ export type Database = {
           er_code: string
           reserved_at: string
         }[]
+      }
+      resolve_salary_base: {
+        Args: { p_competence: string; p_employee_id: string }
+        Returns: number
       }
       reverse_production: {
         Args: { p_production_id: string; p_reason: string }
@@ -6363,37 +7188,37 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      run_monthly_close_rollover: { Args: never; Returns: undefined }
       save_integration_credential: {
         Args: {
           p_api_key: string
+          p_company_id: string
           p_environment: string
           p_fiscal_provider_name?: string
           p_provider: string
           p_wallet_id?: string
         }
-        Returns: {
-          company_id: string
-          created_at: string
-          created_by_user_id: string | null
-          environment: string
-          fiscal_provider_name: string | null
-          id: string
-          key_last4: string | null
-          last_error: string | null
-          last_validated_at: string | null
-          provider: string
-          status: string
-          updated_at: string
-          vault_secret_id: string | null
-          wallet_id: string | null
-          webhook_token: string | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "company_integration_credentials"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        Returns: Json
+      }
+      list_integration_credentials: {
+        Args: { p_company_id: string }
+        Returns: Json
+      }
+      list_integration_events: {
+        Args: { p_company_id: string; p_limit?: number }
+        Returns: Json
+      }
+      set_active_integration_credential: {
+        Args: { p_company_id: string; p_environment: string | null; p_provider: string }
+        Returns: Json
+      }
+      get_integration_webhook_token: {
+        Args: { p_company_id: string; p_environment: string; p_provider: string }
+        Returns: string
+      }
+      rotate_integration_webhook_token: {
+        Args: { p_company_id: string; p_environment: string; p_provider: string }
+        Returns: string
       }
       set_monthly_close_automation: {
         Args: { p_company_id: string; p_enabled: boolean }
@@ -6409,6 +7234,14 @@ export type Database = {
       }
       set_platform_company_status: {
         Args: { p_company_id: string; p_status: string }
+        Returns: undefined
+      }
+      update_employee_salary: {
+        Args: {
+          p_effective_date: string
+          p_employee_id: string
+          p_salary_base: number
+        }
         Returns: undefined
       }
       update_order_items: {

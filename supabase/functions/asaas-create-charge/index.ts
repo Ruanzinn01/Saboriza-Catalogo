@@ -24,8 +24,10 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 function asaasBaseUrl(environment: string) {
-  return environment === "PRODUCAO" ? "https://api.asaas.com/v3" : "https://sandbox.asaas.com/api/v3";
+  return environment === "PRODUCAO" ? "https://api.asaas.com/v3" : "https://api-sandbox.asaas.com/v3";
 }
+
+const BILLING_TYPE_BY_METHOD: Record<string, "PIX" | "BOLETO"> = { PIX: "PIX", BOLETO: "BOLETO" };
 
 async function markFailure(chargeId: string, technicalState: string, message: string) {
   await serviceClient.from("charges").update({ technical_state: technicalState, last_error: message.slice(0, 300) }).eq("id", chargeId);
@@ -54,7 +56,6 @@ Deno.serve(async (req) => {
     .eq("id", chargeId)
     .maybeSingle();
   if (!charge) return jsonResponse({ error: "cobranca nao encontrada" }, 404);
-  if (charge.external_id) return jsonResponse({ ok: true, external_id: charge.external_id, technical_state: charge.technical_state });
 
   const { data: installment } = await serviceClient
     .from("installments")
@@ -82,6 +83,10 @@ Deno.serve(async (req) => {
     p_permission_key: "billing.invoice_order",
   });
   if (!hasPermission) return jsonResponse({ error: "sem permissao para gerar cobranca" }, 403);
+  if (charge.external_id) return jsonResponse({ ok: true, external_id: charge.external_id, technical_state: charge.technical_state });
+
+  const billingType = BILLING_TYPE_BY_METHOD[paymentMethod.type as string];
+  if (!billingType) return jsonResponse({ error: `forma de pagamento ${paymentMethod.type} nao suportada pela integracao Asaas` }, 400);
 
   const { data: customer } = await serviceClient
     .from("customers")
@@ -95,14 +100,13 @@ Deno.serve(async (req) => {
     .select("id, environment, vault_secret_id, status")
     .eq("company_id", order.company_id)
     .eq("provider", "ASAAS")
-    .eq("status", "CONFIGURADO")
-    .order("updated_at", { ascending: false })
-    .limit(1)
+    .eq("is_active", true)
+    .eq("status", "VALIDADO")
     .maybeSingle();
 
   if (!credential) {
-    await markFailure(chargeId, "FALHA_DEFINITIVA", "Nenhuma credencial Asaas configurada para esta empresa");
-    return jsonResponse({ error: "integracao Asaas nao configurada" }, 400);
+    await markFailure(chargeId, "FALHA_DEFINITIVA", "Nenhum ambiente Asaas ativo e validado para esta empresa");
+    return jsonResponse({ error: "integracao Asaas nao ativa — ative um ambiente validado na Central de Integrações" }, 400);
   }
 
   const { data: apiKey } = await serviceClient.rpc("read_vault_secret", { p_secret_id: credential.vault_secret_id });
@@ -111,7 +115,15 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "credencial invalida" }, 400);
   }
   const baseUrl = asaasBaseUrl(credential.environment);
-  await serviceClient.from("charges").update({ technical_state: "ENVIANDO" }).eq("id", chargeId);
+  const { data: claimed } = await serviceClient
+    .from("charges")
+    .update({ technical_state: "ENVIANDO" })
+    .eq("id", chargeId)
+    .is("external_id", null)
+    .neq("technical_state", "ENVIANDO")
+    .select("id")
+    .maybeSingle();
+  if (!claimed) return jsonResponse({ error: "cobranca ja esta sendo processada" }, 409);
 
   try {
     let asaasCustomerId = customer.asaas_customer_id;
@@ -137,26 +149,40 @@ Deno.serve(async (req) => {
       await serviceClient.from("customers").update({ asaas_customer_id: asaasCustomerId }).eq("id", customer.id);
     }
 
-    const payRes = await fetch(`${baseUrl}/payments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", access_token: apiKey },
-      body: JSON.stringify({
-        customer: asaasCustomerId,
-        billingType: paymentMethod.type === "PIX" ? "PIX" : "BOLETO",
-        value: installment.amount,
-        dueDate: installment.due_date,
-        externalReference: charge.id,
-      }),
+    const existingRes = await fetch(`${baseUrl}/payments?externalReference=${encodeURIComponent(charge.id)}`, {
+      headers: { access_token: apiKey },
     });
-    const payData = await payRes.json();
-    if (!payRes.ok) {
-      await markFailure(chargeId, payRes.status >= 500 ? "FALHA_TEMPORARIA" : "FALHA_DEFINITIVA", payData?.errors?.[0]?.description ?? "Falha ao criar cobranca no Asaas");
-      return jsonResponse({ error: "falha ao criar cobranca no Asaas" }, 502);
+    const existingData = existingRes.ok ? await existingRes.json() : null;
+    let payData = existingData?.data?.[0];
+
+    if (!payData) {
+      const payRes = await fetch(`${baseUrl}/payments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", access_token: apiKey },
+        body: JSON.stringify({
+          customer: asaasCustomerId,
+          billingType,
+          value: installment.amount,
+          dueDate: installment.due_date,
+          externalReference: charge.id,
+        }),
+      });
+      payData = await payRes.json();
+      if (!payRes.ok) {
+        await markFailure(chargeId, payRes.status >= 500 ? "FALHA_TEMPORARIA" : "FALHA_DEFINITIVA", payData?.errors?.[0]?.description ?? "Falha ao criar cobranca no Asaas");
+        return jsonResponse({ error: "falha ao criar cobranca no Asaas" }, 502);
+      }
     }
 
     await serviceClient
       .from("charges")
-      .update({ external_id: payData.id, technical_state: "AGUARDANDO_EVENTO", last_error: null })
+      .update({
+        external_id: payData.id,
+        technical_state: "AGUARDANDO_EVENTO",
+        last_error: null,
+        invoice_url: payData.invoiceUrl ?? null,
+        bank_slip_url: payData.bankSlipUrl ?? null,
+      })
       .eq("id", chargeId);
 
     return jsonResponse({ ok: true, external_id: payData.id, technical_state: "AGUARDANDO_EVENTO" });

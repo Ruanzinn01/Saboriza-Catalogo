@@ -20,7 +20,7 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 function asaasBaseUrl(environment: string) {
-  return environment === "PRODUCAO" ? "https://api.asaas.com/v3" : "https://sandbox.asaas.com/api/v3";
+  return environment === "PRODUCAO" ? "https://api.asaas.com/v3" : "https://api-sandbox.asaas.com/v3";
 }
 
 Deno.serve(async (req) => {
@@ -57,23 +57,37 @@ Deno.serve(async (req) => {
   const { data: apiKey } = await serviceClient.rpc("read_vault_secret", { p_secret_id: credential.vault_secret_id });
   if (!apiKey) return jsonResponse({ error: "credencial invalida" }, 400);
 
+  const now = new Date().toISOString();
+  const credentialsTable = serviceClient.from("company_integration_credentials");
+
   try {
     const res = await fetch(`${asaasBaseUrl(credential.environment)}/finance/balance`, {
       headers: { access_token: apiKey as string },
+      signal: AbortSignal.timeout(15000),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
 
-    if (!res.ok) {
-      const message = data?.errors?.[0]?.description ?? `Erro HTTP ${res.status}`;
-      await serviceClient.from("company_integration_credentials").update({ status: "ERRO", last_validated_at: new Date().toISOString(), last_error: message.slice(0, 300) }).eq("id", credentialId);
-      return jsonResponse({ ok: false, error: message });
+    if (res.ok) {
+      await credentialsTable.update({ status: "VALIDADO", last_validated_at: now, last_error: null }).eq("id", credentialId);
+      return jsonResponse({ ok: true, balance: data.balance });
     }
 
-    await serviceClient.from("company_integration_credentials").update({ status: "CONFIGURADO", last_validated_at: new Date().toISOString(), last_error: null }).eq("id", credentialId);
-    return jsonResponse({ ok: true, balance: data.balance });
+    const providerMessage = data?.errors?.[0]?.description ?? `Erro HTTP ${res.status}`;
+
+    // 401/403: o Asaas recusou a chave. Ela deixa de valer e o ambiente sai do ar até nova validação.
+    if (res.status === 401 || res.status === 403) {
+      await credentialsTable
+        .update({ status: "ERRO", is_active: false, activated_at: null, last_validated_at: now, last_error: providerMessage.slice(0, 300) })
+        .eq("id", credentialId);
+      return jsonResponse({ ok: false, kind: "CREDENTIAL", error: "A credencial não foi aceita pelo Asaas. Gere uma nova chave e teste novamente." });
+    }
+
+    // Demais erros (5xx, 429...) são instabilidade do provedor: a credencial anterior continua válida.
+    await credentialsTable.update({ last_error: `Instabilidade temporária: ${providerMessage}`.slice(0, 300) }).eq("id", credentialId);
+    return jsonResponse({ ok: false, kind: "CONNECTION", error: "Não foi possível conectar ao Asaas neste momento. Tente novamente em instantes." });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "falha de comunicacao com o Asaas";
-    await serviceClient.from("company_integration_credentials").update({ status: "ERRO", last_validated_at: new Date().toISOString(), last_error: message.slice(0, 300) }).eq("id", credentialId);
-    return jsonResponse({ ok: false, error: message });
+    const detail = err instanceof Error ? err.message : "falha de comunicacao";
+    await credentialsTable.update({ last_error: `Instabilidade temporária: ${detail}`.slice(0, 300) }).eq("id", credentialId);
+    return jsonResponse({ ok: false, kind: "CONNECTION", error: "Não foi possível conectar ao Asaas neste momento. Tente novamente em instantes." });
   }
 });

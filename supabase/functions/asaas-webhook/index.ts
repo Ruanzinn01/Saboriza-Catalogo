@@ -43,6 +43,38 @@ async function applyPaymentEvent(companyId: string, eventType: string, payment: 
   return null;
 }
 
+// Eventos de nota fiscal (NFS-e via Asaas /invoices) chegam pelo MESMO webhook/token da empresa —
+// não é um endpoint separado, é o mesmo cadastro de webhook, só com eventos de invoice habilitados.
+async function applyInvoiceEvent(companyId: string, eventType: string, invoice: Record<string, unknown> | undefined) {
+  if (!invoice?.id) return null;
+
+  const { data: fiscalDoc } = await serviceClient
+    .from("fiscal_documents")
+    .select("id")
+    .eq("external_id", invoice.id as string)
+    .eq("company_id", companyId)
+    .maybeSingle();
+  if (!fiscalDoc) return "nota fiscal nao encontrada para este invoice_id";
+
+  if (eventType === "INVOICE_AUTHORIZED" || eventType === "INVOICE_SYNCHRONIZED") {
+    await serviceClient
+      .from("fiscal_documents")
+      .update({
+        status: "AUTORIZADA",
+        number: (invoice.rpsNumber as string) ?? (invoice.number as string) ?? null,
+        pdf_ref: (invoice.pdfUrl as string) ?? null,
+        xml_ref: (invoice.xmlUrl as string) ?? null,
+      })
+      .eq("id", fiscalDoc.id);
+  } else if (eventType === "INVOICE_ERROR" || eventType === "INVOICE_CANCELED" || eventType === "INVOICE_CANCELLED") {
+    await serviceClient
+      .from("fiscal_documents")
+      .update({ status: eventType === "INVOICE_ERROR" ? "REJEITADA" : "CANCELADA" })
+      .eq("id", fiscalDoc.id);
+  }
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS_HEADERS });
   if (req.method !== "POST") return jsonResponse({ error: "metodo nao suportado" }, 405);
@@ -54,7 +86,7 @@ Deno.serve(async (req) => {
 
   const { data: credential } = await serviceClient
     .from("company_integration_credentials")
-    .select("id")
+    .select("id, environment, is_active")
     .eq("company_id", companyId)
     .eq("provider", "ASAAS")
     .eq("webhook_token", accessToken)
@@ -70,25 +102,43 @@ Deno.serve(async (req) => {
 
   const eventType = (body.event as string) ?? "DESCONHECIDO";
   const payment = body.payment as Record<string, unknown> | undefined;
-  const eventId = (body.id as string) || `${eventType}:${payment?.id ?? "sem_payment"}:${payment?.status ?? ""}:${payment?.dueDate ?? ""}`;
+  const invoice = body.invoice as Record<string, unknown> | undefined;
+  const eventId =
+    (body.id as string) ||
+    (invoice ? `${eventType}:${invoice.id ?? "sem_invoice"}` : `${eventType}:${payment?.id ?? "sem_payment"}:${payment?.status ?? ""}:${payment?.dueDate ?? ""}`);
 
   const { error: insertError } = await serviceClient.from("asaas_webhook_events").insert({
     company_id: companyId,
     event_id: eventId,
     event_type: eventType,
     payload: body,
+    environment: credential.environment,
+    credential_id: credential.id,
   });
 
   if (insertError) {
-    if (insertError.code === "23505") return jsonResponse({ ok: true, duplicate: true });
-    return jsonResponse({ error: "falha ao persistir evento" }, 500);
+    if (insertError.code !== "23505") return jsonResponse({ error: "falha ao persistir evento" }, 500);
+    const { data: existing } = await serviceClient
+      .from("asaas_webhook_events")
+      .select("processed_at")
+      .eq("event_id", eventId)
+      .eq("company_id", companyId)
+      .maybeSingle();
+    if (existing?.processed_at) return jsonResponse({ ok: true, duplicate: true });
   }
 
-  const processError = await applyPaymentEvent(companyId, eventType, payment);
+  // Evento de um ambiente que não é o ativo fica registrado, mas nunca altera cobrança/nota:
+  // impede que um webhook de Sandbox mexa em dados de Produção (e vice-versa).
+  const processError = !credential.is_active
+    ? `IGNORADO: ambiente ${credential.environment} nao esta ativo nesta empresa`
+    : eventType.startsWith("INVOICE_")
+      ? await applyInvoiceEvent(companyId, eventType, invoice)
+      : await applyPaymentEvent(companyId, eventType, payment);
   await serviceClient
     .from("asaas_webhook_events")
     .update({ processed_at: new Date().toISOString(), process_error: processError })
-    .eq("event_id", eventId);
+    .eq("event_id", eventId)
+    .eq("company_id", companyId);
 
   return jsonResponse({ ok: true });
 });

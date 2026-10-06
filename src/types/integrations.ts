@@ -4,15 +4,29 @@ export type IntegrationStatus = "NAO_CONFIGURADO" | "CONFIGURADO" | "VALIDADO" |
 
 export interface IntegrationCredential {
   id: string;
-  companyId: string;
   provider: IntegrationProvider;
   environment: IntegrationEnvironment;
   keyLast4: string | null;
   walletId: string | null;
   fiscalProviderName: string | null;
-  webhookToken: string | null;
   status: IntegrationStatus;
+  isActive: boolean;
+  activatedAt: string | null;
   lastValidatedAt: string | null;
   lastError: string | null;
+  hasWebhookToken: boolean;
   updatedAt: string;
 }
+
+export interface IntegrationEvent {
+  id: string;
+  eventType: string;
+  environment: IntegrationEnvironment | null;
+  receivedAt: string;
+  processedAt: string | null;
+  processError: string | null;
+}
+
+export type ConnectionErrorKind = "CREDENTIAL" | "CONNECTION";
+
+export type EnvironmentState = "NAO_CONFIGURADO" | "CHAVE_SALVA" | "CONEXAO_VALIDA" | "ATIVO" | "ERRO_CREDENCIAL";
