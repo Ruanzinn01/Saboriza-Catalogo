@@ -92,7 +92,6 @@ export function NovaDespesaPage() {
   const [paymentCondition, setPaymentCondition] = useState<"term" | "cash">("term");
   const [installmentCount, setInstallmentCount] = useState(1);
   const [baseDate, setBaseDate] = useState(today());
-  const [scheduled, setScheduled] = useState(false);
   const [recipientKey, setRecipientKey] = useState("");
   const [recipientHolder, setRecipientHolder] = useState("");
   const [observations, setObservations] = useState("");
@@ -295,7 +294,9 @@ export function NovaDespesaPage() {
       number: p.number,
       amount: p.amount,
       dueDate: p.dueDate,
-      scheduledPaymentAt: scheduled ? p.scheduledPaymentAt : undefined,
+      // Agendamento de pagamento pelo Asaas ainda não existe — nenhuma Edge Function agenda nada.
+      // Nunca enviar essa data como se fosse um agendamento real (ver nota na seção de pagamento).
+      scheduledPaymentAt: undefined,
     }));
 
     setSubmitting(true);
@@ -317,7 +318,7 @@ export function NovaDespesaPage() {
       received: isDirect ? false : received,
       paymentMethod,
       paymentCondition: isDirect ? undefined : paymentCondition,
-      scheduled,
+      scheduled: false,
       recipientKey: recipientKey || undefined,
       recipientHolder: recipientHolder || undefined,
       observations: observations || undefined,
@@ -596,10 +597,10 @@ export function NovaDespesaPage() {
             )}
 
             {!isDirect && (
-              <label className="mb-3 flex items-start gap-2 rounded-[10px] p-[13px]" style={{ background: "#f4f7f0" }}>
-                <input type="checkbox" checked={scheduled} onChange={(e) => setScheduled(e.target.checked)} className="mt-0.5" />
-                <span className="text-xs leading-relaxed"><strong style={{ color: C.green }}>Programar pagamento pelo Asaas</strong><br />Agendar não significa pagar. A confirmação de agendamento depende da integração conectada em Integrações Financeiras.</span>
-              </label>
+              <div className="mb-3 flex items-start gap-2 rounded-[10px] p-[13px]" style={{ background: "#f4f7f0" }}>
+                <span className="mt-0.5 text-xs">⚠</span>
+                <span className="text-xs leading-relaxed"><strong style={{ color: C.green }}>Agendamento de pagamento via Asaas — indisponível</strong><br />Esta integração ainda não foi implementada. O vencimento de cada parcela abaixo é só a data de referência da despesa, não um agendamento no Asaas.</span>
+              </div>
             )}
 
             <div className="rounded-[12px] border p-[13px]" style={{ borderColor: C.line }}>
@@ -616,11 +617,6 @@ export function NovaDespesaPage() {
                       <input type="date" value={p.dueDate} onChange={(e) => setParcels((prev) => prev.map((x, i) => (i === idx ? { ...x, dueDate: e.target.value } : x)))} className={fieldCls} style={{ borderColor: C.line }} />
                     </label>
                   </div>
-                  {scheduled && (
-                    <label className="mt-2.5 block text-xs"><span className="mb-1 block font-semibold">Pagar em *</span>
-                      <input type="date" value={p.scheduledPaymentAt} onChange={(e) => setParcels((prev) => prev.map((x, i) => (i === idx ? { ...x, scheduledPaymentAt: e.target.value } : x)))} className={fieldCls} style={{ borderColor: C.line }} />
-                    </label>
-                  )}
                 </div>
               ))}
               <div className="flex items-center justify-between">
