@@ -3,6 +3,7 @@
 // Idempotencia: se o charge ja tem external_id, nao reenvia (patch secao 5).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildAsaasFeeFields, hasValidDocument, type AsaasFeeConfig } from "../_shared/asaas-billing.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -66,7 +67,7 @@ Deno.serve(async (req) => {
 
   const { data: paymentMethod } = await serviceClient
     .from("payment_methods")
-    .select("id, type, billing_id")
+    .select("id, type, billing_id, fees")
     .eq("id", installment.payment_method_id)
     .maybeSingle();
   if (!paymentMethod) return jsonResponse({ error: "forma de pagamento nao encontrada" }, 404);
@@ -88,12 +89,31 @@ Deno.serve(async (req) => {
   const billingType = BILLING_TYPE_BY_METHOD[paymentMethod.type as string];
   if (!billingType) return jsonResponse({ error: `forma de pagamento ${paymentMethod.type} nao suportada pela integracao Asaas` }, 400);
 
+  // Juros/multa/desconto já vêm configurados em payment_methods.fees (Faturar). Mapeia aqui pros
+  // nomes exatos da Asaas (discount/interest/fine) — nenhum fallback silencioso: configuração
+  // fora do esperado derruba a cobrança com erro controlado, antes de qualquer chamada à Asaas.
+  let feeFields: ReturnType<typeof buildAsaasFeeFields>;
+  try {
+    feeFields = buildAsaasFeeFields(paymentMethod.fees as AsaasFeeConfig | null);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "configuracao de juros/multa/desconto invalida";
+    await markFailure(chargeId, "FALHA_DEFINITIVA", `Configuração de cobrança inválida: ${message}`);
+    return jsonResponse({ error: "configuracao de juros/multa/desconto invalida" }, 400);
+  }
+
   const { data: customer } = await serviceClient
     .from("customers")
     .select("id, name, company_name, cnpj, email, phone, address, cep, city, state, asaas_customer_id")
     .eq("id", billing.customer_id)
     .maybeSingle();
   if (!customer) return jsonResponse({ error: "cliente nao encontrado" }, 404);
+
+  // A Asaas exige name + cpfCnpj pra criar cliente (não tem exceção por boleto/Pix). Sem isso,
+  // a chamada falharia lá e o erro só apareceria depois — aqui bloqueia antes, com mensagem clara.
+  if (!customer.asaas_customer_id && !hasValidDocument(customer.cnpj)) {
+    await markFailure(chargeId, "FALHA_DEFINITIVA", "Cliente sem CPF/CNPJ válido cadastrado");
+    return jsonResponse({ error: "O cliente precisa ter CPF/CNPJ válido cadastrado para gerar esta cobrança." }, 400);
+  }
 
   const { data: credential } = await serviceClient
     .from("company_integration_credentials")
@@ -165,6 +185,7 @@ Deno.serve(async (req) => {
           value: installment.amount,
           dueDate: installment.due_date,
           externalReference: charge.id,
+          ...feeFields,
         }),
       });
       payData = await payRes.json();
