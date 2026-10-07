@@ -43,22 +43,31 @@ export function mapFeeType(type: "percent" | "fixed"): "FIXED" | "PERCENTAGE" {
   throw new Error(`tipo de encargo desconhecido: "${type}"`);
 }
 
+function assertNonNegative(label: string, value: number): void {
+  if (value < 0) {
+    throw new Error(`${label} não pode ser negativo: ${value}`);
+  }
+}
+
 // Só inclui as chaves que o usuário realmente configurou. Nenhum fallback silencioso: um
-// discount_deadline ou fine_type/discount_type fora do esperado derruba a cobrança com erro
-// controlado, em vez de mandar uma configuração incorreta pro Asaas.
+// discount_deadline ou fine_type/discount_type fora do esperado, ou um valor negativo, derruba a
+// cobrança com erro controlado, em vez de mandar uma configuração incorreta pro Asaas.
 export function buildAsaasFeeFields(fees: AsaasFeeConfig | null | undefined): AsaasFeeFields {
   const out: AsaasFeeFields = {};
   if (!fees) return out;
 
   if (fees.interest_on && fees.interest_percent) {
+    assertNonNegative("interest_percent", fees.interest_percent);
     out.interest = { value: fees.interest_percent };
   }
 
   if (fees.fine_on && fees.fine) {
+    assertNonNegative("fine", fees.fine);
     out.fine = { value: fees.fine, type: mapFeeType(fees.fine_type ?? "percent") };
   }
 
   if (fees.discount_on && fees.discount) {
+    assertNonNegative("discount", fees.discount);
     if (typeof fees.discount_deadline !== "string") {
       throw new Error("discount_deadline ausente com desconto ativado");
     }

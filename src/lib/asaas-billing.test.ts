@@ -20,12 +20,26 @@ describe("mapDiscountDeadlineToDays", () => {
 describe("mapFeeType", () => {
   it("percent -> PERCENTAGE", () => expect(mapFeeType("percent")).toBe("PERCENTAGE"));
   it("fixed -> FIXED", () => expect(mapFeeType("fixed")).toBe("FIXED"));
+
+  it("lança erro controlado para tipo desconhecido, sem fallback silencioso", () => {
+    expect(() => mapFeeType("porcentagem" as "percent" | "fixed")).toThrow();
+  });
 });
 
 describe("buildAsaasFeeFields", () => {
   it("sem configuração nenhuma, não envia nenhuma chave", () => {
     expect(buildAsaasFeeFields(null)).toEqual({});
     expect(buildAsaasFeeFields(undefined)).toEqual({});
+  });
+
+  it("objeto de fees vazio ({}), não envia nenhuma chave", () => {
+    expect(buildAsaasFeeFields({})).toEqual({});
+  });
+
+  it("campo habilitado sem valor não envia a chave (não é erro, é ausência de encargo)", () => {
+    expect(buildAsaasFeeFields({ fine_on: true })).toEqual({});
+    expect(buildAsaasFeeFields({ interest_on: true })).toEqual({});
+    expect(buildAsaasFeeFields({ discount_on: true })).toEqual({});
   });
 
   it("juros desativado não aparece no payload", () => {
@@ -70,6 +84,20 @@ describe("buildAsaasFeeFields", () => {
 
   it("desconto ativado sem discount_deadline lança erro em vez de assumir um prazo", () => {
     expect(() => buildAsaasFeeFields({ discount_on: true, discount_type: "percent", discount: 10 })).toThrow();
+  });
+
+  it("multa negativa é bloqueada, não é enviada à Asaas", () => {
+    expect(() => buildAsaasFeeFields({ fine_on: true, fine_type: "percent", fine: -2 })).toThrow();
+  });
+
+  it("juros negativo é bloqueado", () => {
+    expect(() => buildAsaasFeeFields({ interest_on: true, interest_percent: -1 })).toThrow();
+  });
+
+  it("desconto negativo é bloqueado", () => {
+    expect(() =>
+      buildAsaasFeeFields({ discount_on: true, discount_type: "percent", discount: -10, discount_deadline: "1 dia antes" })
+    ).toThrow();
   });
 
   it("combina juros, multa e desconto no mesmo payload", () => {
