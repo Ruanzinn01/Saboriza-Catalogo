@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Settings2, Trash2 } from "lucide-react";
 import { useExpenseLaunchStore, type LaunchKind, type LaunchItemInput, type InstallmentInput } from "@/store/expense-launch-store";
 import { useRawMaterialsStore } from "@/store/raw-materials-store";
+import { MaterialThumb } from "@/components/admin/RawMaterialsTable";
 import { useSuppliersStore } from "@/store/suppliers-store";
 import { useEmployeesStore } from "@/store/employees-store";
 import { useAportesStore } from "@/store/aportes-store";
@@ -453,7 +454,7 @@ export function NovaDespesaPage() {
               ) : (
                 (filteredCatalog as typeof materials).map((m) => (
                   <div key={m.id} className="grid grid-cols-[42px_1fr_110px_86px] items-center gap-2.5 border-b p-[15px_20px]" style={{ borderColor: "#eff0eb" }}>
-                    <span className="flex h-[38px] w-[38px] items-center justify-center rounded-xl text-lg" style={{ background: "#f0f3ec", color: "#477b59" }}>◇</span>
+                    <MaterialThumb imageUrl={m.imageUrl} className="h-[38px] w-[38px]" />
                     <div><strong className="block text-[13px]" style={{ color: C.green }}>{m.name}</strong><small style={{ color: C.muted }}>{m.code} · {brl(m.avgCost)} / {m.purchaseUnitLabel || m.controlUnit}</small></div>
                     <span className="text-xs" style={{ color: "#7a8076" }}>{m.category}</span>
                     <button onClick={() => addRawMaterial(m.id)} className="rounded-lg border px-2.5 py-1.5 text-xs font-bold" style={{ borderColor: "#d8dfd7", color: C.green }}>+ Adicionar</button>
