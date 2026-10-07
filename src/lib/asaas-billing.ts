@@ -1,8 +1,8 @@
 // Mapeamento puro Saboriza -> Asaas para cobrança (juros/multa/desconto) e validação de CPF/CNPJ.
 // Fonte canônica, testada em asaas-billing.test.ts. A Edge Function asaas-create-charge roda em
 // Deno e não importa de src/ — existe uma cópia sincronizada em
-// supabase/functions/_shared/asaas-billing.ts, enviada junto no deploy. Se mudar a lógica aqui,
-// replique a mudança lá também.
+// supabase/functions/asaas-create-charge/_shared/asaas-billing.ts, enviada junto no deploy. Se
+// mudar a lógica aqui, replique a mudança lá também.
 //
 // isValidCpf/isValidCnpj abaixo são as mesmas de src/lib/cpf.ts e src/lib/cnpj.ts, reaproveitadas
 // em vez de criar uma terceira validação.

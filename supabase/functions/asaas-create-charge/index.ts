@@ -3,7 +3,7 @@
 // Idempotencia: se o charge ja tem external_id, nao reenvia (patch secao 5).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { buildAsaasFeeFields, hasValidDocument, type AsaasFeeConfig } from "../_shared/asaas-billing.ts";
+import { buildAsaasFeeFields, hasValidDocument, type AsaasFeeConfig } from "./_shared/asaas-billing.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

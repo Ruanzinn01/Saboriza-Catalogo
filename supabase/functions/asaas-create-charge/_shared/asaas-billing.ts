@@ -1,8 +1,9 @@
 // CÓPIA SINCRONIZADA de src/lib/asaas-billing.ts — essa é a fonte canônica e testada
 // (src/lib/asaas-billing.test.ts, roda em npm test). Edge Functions (Deno) não importam de src/,
-// e o deploy só envia os arquivos deste diretório — por isso a duplicação. Qualquer mudança na
-// lógica precisa ser replicada nos dois arquivos, ou os testes passam mas o Asaas em produção
-// continua com o comportamento antigo.
+// e a ferramenta de deploy não resolve import relativo pra fora da pasta da própria função —
+// por isso esta cópia mora dentro de asaas-create-charge/_shared/, não num _shared/ comum a
+// todas as functions. Qualquer mudança na lógica precisa ser replicada nos dois arquivos, ou os
+// testes passam mas o Asaas em produção continua com o comportamento antigo.
 
 export interface AsaasFeeConfig {
   interest_on?: boolean;
