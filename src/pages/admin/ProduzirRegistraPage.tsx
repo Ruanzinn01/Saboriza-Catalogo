@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ImageOff } from "lucide-react";
 import { toast } from "sonner";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useEmployeesStore } from "@/store/employees-store";
@@ -713,10 +713,17 @@ function LiberarProducaoView({
                     key={p.id}
                     type="button"
                     onClick={() => selectSearchedProduct(p.id)}
-                    className="flex w-full items-center justify-between border-b py-3 text-left"
+                    className="flex w-full items-center gap-3 border-b py-3 text-left"
                     style={{ borderColor: c.line }}
                   >
-                    <div>
+                    {p.imageUrl ? (
+                      <img src={p.imageUrl} alt={p.name} className="h-12 w-12 shrink-0 rounded-xl object-cover" />
+                    ) : (
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ background: "#edf1f7", color: c.muted }}>
+                        <ImageOff size={18} />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
                       <h3 className="font-bold">{p.name}</h3>
                       <small style={{ color: c.muted }}>{p.code} · produto</small>
                     </div>
@@ -835,10 +842,17 @@ function ConfirmarProducaoView({
                 key={p.id}
                 type="button"
                 onClick={() => setConfirmProductId(p.id)}
-                className="flex w-full items-center justify-between border-b py-3 text-left"
+                className="flex w-full items-center gap-3 border-b py-3 text-left"
                 style={{ borderColor: c.line }}
               >
-                <div>
+                {p.imageUrl ? (
+                  <img src={p.imageUrl} alt={p.name} className="h-12 w-12 shrink-0 rounded-xl object-cover" />
+                ) : (
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ background: "#edf1f7", color: c.muted }}>
+                    <ImageOff size={18} />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
                   <h3 className="font-bold">{p.name}</h3>
                   <small style={{ color: c.muted }}>{p.code}</small>
                 </div>
