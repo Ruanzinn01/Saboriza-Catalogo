@@ -25,4 +25,5 @@ export interface Product {
   gtin: string;
   brand: string;
   ncm: string;
+  saleUnit: string;
 }

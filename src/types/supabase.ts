@@ -1025,6 +1025,7 @@ export type Database = {
         Row: {
           address: string
           asaas_customer_id: string | null
+          base_customer_id: string | null
           cep: string
           city: string
           cnpj: string
@@ -1044,6 +1045,7 @@ export type Database = {
         Insert: {
           address?: string
           asaas_customer_id?: string | null
+          base_customer_id?: string | null
           cep?: string
           city?: string
           cnpj?: string
@@ -1063,6 +1065,7 @@ export type Database = {
         Update: {
           address?: string
           asaas_customer_id?: string | null
+          base_customer_id?: string | null
           cep?: string
           city?: string
           cnpj?: string
@@ -4622,6 +4625,7 @@ export type Database = {
       products: {
         Row: {
           badge: string | null
+          base_product_id: string | null
           brand: string
           category_id: string
           code: string | null
@@ -4640,6 +4644,7 @@ export type Database = {
           pack_quantity: number
           packaging_type: string
           presentation: string
+          sale_unit: string | null
           supplier_id: string | null
           target_margin_pct: number
           unit_price: number
@@ -4649,6 +4654,7 @@ export type Database = {
         }
         Insert: {
           badge?: string | null
+          base_product_id?: string | null
           brand?: string
           category_id: string
           code?: string | null
@@ -4667,6 +4673,7 @@ export type Database = {
           pack_quantity: number
           packaging_type: string
           presentation: string
+          sale_unit?: string | null
           supplier_id?: string | null
           target_margin_pct?: number
           unit_price: number
@@ -4676,6 +4683,7 @@ export type Database = {
         }
         Update: {
           badge?: string | null
+          base_product_id?: string | null
           brand?: string
           category_id?: string
           code?: string | null
@@ -4694,6 +4702,7 @@ export type Database = {
           pack_quantity?: number
           packaging_type?: string
           presentation?: string
+          sale_unit?: string | null
           supplier_id?: string | null
           target_margin_pct?: number
           unit_price?: number

@@ -27,6 +27,7 @@ export function productFromRow(row: ProductRow): Product {
     gtin: row.gtin,
     brand: row.brand,
     ncm: row.ncm,
+    saleUnit: row.sale_unit ?? "",
   };
 }
 
@@ -52,5 +53,6 @@ export function productToRow(product: Product) {
     gtin: product.gtin,
     brand: product.brand,
     ncm: product.ncm,
+    sale_unit: product.saleUnit || null,
   };
 }

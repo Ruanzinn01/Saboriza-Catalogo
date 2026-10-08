@@ -23,6 +23,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
     badge: "mais-pedido",
   },
   {
@@ -47,6 +48,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
   },
   {
     id: "cominho-po-frasco-60g",
@@ -70,6 +72,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
   },
   {
     id: "tempero-churrasco-sache-500g",
@@ -93,6 +96,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
     badge: "destaque",
   },
   {
@@ -117,6 +121,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
   },
   {
     id: "colorau-pacote-500g",
@@ -140,6 +145,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
   },
   {
     id: "oregano-pote-50g",
@@ -163,6 +169,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
   },
   {
     id: "louro-pacote-30g",
@@ -186,6 +193,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
   },
   {
     id: "manjericao-pote-40g",
@@ -209,6 +217,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
   },
   {
     id: "molho-pimenta-frasco-150ml",
@@ -232,6 +241,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
     badge: "novidade",
   },
   {
@@ -256,6 +266,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
   },
   {
     id: "sal-grosso-temperado-pacote-1kg",
@@ -279,6 +290,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
   },
   {
     id: "sal-churrasco-premium-pacote-1kg",
@@ -302,6 +314,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
     badge: "mais-pedido",
   },
   {
@@ -326,6 +339,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
     badge: "destaque",
   },
   {
@@ -350,6 +364,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
   },
   {
     id: "combo-churrasco-completo-kit",
@@ -373,6 +388,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
   },
   {
     id: "combo-tempero-da-casa-kit",
@@ -396,6 +412,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
   },
   {
     id: "tempero-food-service-balde-5kg",
@@ -419,6 +436,7 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
   },
   {
     id: "caldo-po-profissional-pacote-1kg",
@@ -442,5 +460,6 @@ export const mockProducts: Product[] = [
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
   },
 ];
