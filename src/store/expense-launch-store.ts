@@ -175,6 +175,8 @@ interface ExpenseLaunchState {
 
   fetchAll: () => Promise<void>;
   createCategory: (name: string, kind: LaunchKind, rateable: boolean) => Promise<string | null>;
+  updateCategoryName: (id: string, name: string) => Promise<string | null>;
+  deleteCategory: (id: string) => Promise<string | null>;
   setCategoryRate: (id: string, rateable: boolean) => Promise<string | null>;
   createCatalogItem: (input: { name: string; kind: "asset" | "expense" | "partner"; categoryId: string; unit: string; suggestedPrice: number; suggestRecurring: boolean }) => Promise<string | null>;
   findCommitment: (kind: LaunchKind, partyName: string, contractLabel: string, rawMaterialId?: string, catalogItemId?: string) => ExpenseRecurrence | null;
@@ -196,7 +198,7 @@ export const useExpenseLaunchStore = create<ExpenseLaunchState>((set, get) => ({
     }
 
     const [{ data: catRows }, { data: itemRows }, { data: recRows }] = await Promise.all([
-      supabase.from("expense_categories").select("id, name, kind, rateable").eq("company_id", companyId).order("name"),
+      supabase.from("expense_categories").select("id, name, kind, rateable").eq("company_id", companyId).eq("active", true).order("name"),
       supabase.from("expense_catalog_items").select("id, name, code, category_id, kind, unit, suggested_price, suggest_recurring").eq("company_id", companyId).order("name"),
       supabase.from("expense_recurrences").select("id, kind, party_name, contract_label, amount, frequency, raw_material_id, catalog_item_id, status").eq("company_id", companyId).eq("status", "ATIVA"),
     ]);
@@ -233,6 +235,20 @@ export const useExpenseLaunchStore = create<ExpenseLaunchState>((set, get) => ({
     if (!companyId) return "Não foi possível identificar a empresa";
     const { error } = await supabase.from("expense_categories").insert({ company_id: companyId, name, kind, rateable });
     if (error) return error.code === "23505" ? "Categoria já cadastrada" : error.message;
+    await get().fetchAll();
+    return null;
+  },
+
+  updateCategoryName: async (id, name) => {
+    const { error } = await supabase.from("expense_categories").update({ name }).eq("id", id);
+    if (error) return error.code === "23505" ? "Categoria já cadastrada" : error.message;
+    await get().fetchAll();
+    return null;
+  },
+
+  deleteCategory: async (id) => {
+    const { error } = await supabase.from("expense_categories").update({ active: false }).eq("id", id);
+    if (error) return error.message;
     await get().fetchAll();
     return null;
   },

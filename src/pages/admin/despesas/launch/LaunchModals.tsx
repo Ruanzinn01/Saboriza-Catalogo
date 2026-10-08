@@ -130,9 +130,13 @@ export function ItemConfigModal({ line, onClose, onSave }: { line: CartLine; onC
 export function CategoriesModal({ kind, onClose }: { kind: LaunchKind; onClose: () => void }) {
   const categories = useExpenseLaunchStore((s) => s.categories);
   const createCategory = useExpenseLaunchStore((s) => s.createCategory);
+  const updateCategoryName = useExpenseLaunchStore((s) => s.updateCategoryName);
+  const deleteCategory = useExpenseLaunchStore((s) => s.deleteCategory);
   const setCategoryRate = useExpenseLaunchStore((s) => s.setCategoryRate);
   const [name, setName] = useState("");
   const [catKind, setCatKind] = useState<LaunchKind>(kind === "salary" ? "expense" : kind);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   async function submit() {
     if (!name.trim()) return;
@@ -144,24 +148,64 @@ export function CategoriesModal({ kind, onClose }: { kind: LaunchKind; onClose: 
     }
   }
 
+  async function saveEdit() {
+    if (!editingId || !editingName.trim()) return;
+    const err = await updateCategoryName(editingId, editingName.trim());
+    if (err) toast.error(err);
+    else {
+      toast.success("Categoria atualizada");
+      setEditingId(null);
+    }
+  }
+
+  async function remove(id: string) {
+    if (!window.confirm("Excluir esta categoria? Lançamentos já feitos com ela não são afetados.")) return;
+    const err = await deleteCategory(id);
+    if (err) toast.error(err);
+    else toast.success("Categoria excluída");
+  }
+
   return (
     <ModalShell title="Categorias e padrão de rateio" onClose={onClose}>
       <p className="mb-3 text-xs" style={{ color: C.muted }}>Cada categoria mantém seu destino. A recorrência pertence ao compromisso, não à categoria.</p>
       <div className="mb-4 max-h-64 overflow-auto">
         {categories.map((c) => (
           <div key={c.id} className="flex items-center justify-between gap-2 border-b py-3" style={{ borderColor: C.line }}>
-            <div>
-              <strong className="text-sm" style={{ color: C.green }}>{c.name}</strong>
-              <p className="text-xs" style={{ color: C.muted }}>{c.kind}</p>
-            </div>
-            {c.kind === "expense" ? (
-              <label className="flex items-center gap-1.5 text-xs">
-                <input type="checkbox" checked={c.rateable} onChange={(e) => setCategoryRate(c.id, e.target.checked)} />
-                Rateável
-              </label>
+            {editingId === c.id ? (
+              <input
+                autoFocus
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && void saveEdit()}
+                maxLength={70}
+                className="flex-1 rounded-[10px] border px-3 py-2 text-sm"
+                style={{ borderColor: C.line }}
+              />
             ) : (
-              <span className="rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ background: "#eaf4ec", color: "#28734e" }}>Sem rateio</span>
+              <div>
+                <strong className="text-sm" style={{ color: C.green }}>{c.name}</strong>
+                <p className="text-xs" style={{ color: C.muted }}>{c.kind}</p>
+              </div>
             )}
+            <div className="flex items-center gap-2">
+              {c.kind === "expense" && editingId !== c.id && (
+                <label className="flex items-center gap-1.5 text-xs">
+                  <input type="checkbox" checked={c.rateable} onChange={(e) => setCategoryRate(c.id, e.target.checked)} />
+                  Rateável
+                </label>
+              )}
+              {editingId === c.id ? (
+                <>
+                  <button onClick={() => void saveEdit()} className="rounded-lg border px-2.5 py-1.5 text-xs font-bold" style={{ borderColor: "#d8dfd7", color: C.green }}>Salvar</button>
+                  <button onClick={() => setEditingId(null)} className="px-1.5 text-xs" style={{ color: C.muted }}>Cancelar</button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => { setEditingId(c.id); setEditingName(c.name); }} className="px-1.5 text-xs font-bold" style={{ color: C.green }}>Editar</button>
+                  <button onClick={() => void remove(c.id)} className="px-1.5 text-xs font-bold" style={{ color: "#b3261e" }}>Excluir</button>
+                </>
+              )}
+            </div>
           </div>
         ))}
         {categories.length === 0 && <p className="py-3 text-sm" style={{ color: C.muted }}>Nenhuma categoria cadastrada ainda.</p>}
