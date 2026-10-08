@@ -1,4 +1,4 @@
-import type { IntegrationCredential, IntegrationEvent } from "@/types/integrations";
+import type { IntegrationCredential, IntegrationEvent, IntegrationProvider } from "@/types/integrations";
 
 type Severity = "acao" | "limitacao";
 
@@ -22,109 +22,129 @@ const SEVERITY_TONE: Record<Severity, string> = {
 
 const KNOWN_LIMITATIONS: Pendency[] = [
   {
-    id: "juros-multa",
-    title: "Juros, multa e desconto do boleto não chegam ao Asaas",
-    detail: "O Faturar guarda essas regras, mas a cobrança é criada sem elas. Corrigir antes de emitir boletos reais.",
-    severity: "limitacao",
-    anchor: "#pagamentos",
-  },
-  {
-    id: "cpf-cnpj",
-    title: "CPF/CNPJ do cliente não é validado antes de cobrar",
-    detail: "Se o cliente não tiver documento, o Asaas pode recusar o boleto e a falha só aparece depois.",
-    severity: "limitacao",
-    anchor: "#pagamentos",
-  },
-  {
     id: "agendamento",
-    title: "Programação de pagamento pelo Asaas ainda não agenda nada",
-    detail: "A data é gravada na despesa, mas nenhum agendamento é enviado ao Asaas.",
+    title: "Agendamento de pagamento pelo Asaas ainda não disponível",
+    detail: "O Saboriza não envia agendamentos de pagamentos ao Asaas. A data de vencimento/pagamento registrada nas despesas continua sendo uma informação interna do sistema.",
     severity: "limitacao",
     anchor: "#pagamentos",
   },
   {
-    id: "nfe-produto",
-    title: "NF-e de Produto ainda não tem integração",
-    detail: "Depende de escolher e implementar o provedor (Base by Asaas ainda não pesquisada).",
+    id: "nfe-produto-faturar",
+    title: "NF-e de Produto ainda não tem botão no Faturar",
+    detail: "A conexão com o Base (credencial, emissão, webhook) já funciona. Falta só a opção de escolher \"NF-e de Produto\" na tela de faturar um pedido — hoje isso só é testável diretamente.",
     severity: "limitacao",
     anchor: "#fiscal",
   },
   {
     id: "certificado",
     title: "Certificado digital não é tratado pelo Saboriza",
-    detail: "Se o município exigir certificado para NFS-e, a configuração precisa ser feita no painel do Asaas.",
+    detail: "Depende do tipo de documento fiscal, do município e do provedor utilizado. O Saboriza não armazena nem manipula certificado digital.",
     severity: "limitacao",
     anchor: "#fiscal",
   },
 ];
 
-function buildAccountPendencies(credentials: IntegrationCredential[], events: IntegrationEvent[]): Pendency[] {
-  const asaas = credentials.filter((c) => c.provider === "ASAAS");
-  const active = asaas.find((c) => c.isActive) ?? null;
+interface ProviderPendencyConfig {
+  provider: IntegrationProvider;
+  providerLabel: string;
+  anchor: string;
+  noKeyTitle: string;
+  noKeyDetail: string;
+  noActiveTitle: string;
+  noActiveDetail: string;
+}
+
+const PROVIDER_CONFIGS: ProviderPendencyConfig[] = [
+  {
+    provider: "ASAAS",
+    providerLabel: "Asaas",
+    anchor: "#pagamentos",
+    noKeyTitle: "Cadastrar a chave de API do Asaas",
+    noKeyDetail: "Sem chave cadastrada, o Faturar não cria cobrança nem nota.",
+    noActiveTitle: "Nenhum ambiente Asaas ativo",
+    noActiveDetail: "O Faturar não cria cobranças até um ambiente validado ser ativado.",
+  },
+  {
+    provider: "BASE",
+    providerLabel: "Base",
+    anchor: "#fiscal",
+    noKeyTitle: "Cadastrar a chave de API do Base",
+    noKeyDetail: "Sem chave cadastrada, não é possível emitir NF-e de produto.",
+    noActiveTitle: "Nenhum ambiente Base ativo",
+    noActiveDetail: "A emissão de NF-e de produto não funciona até um ambiente validado ser ativado.",
+  },
+];
+
+function buildProviderPendencies(config: ProviderPendencyConfig, credentials: IntegrationCredential[], events: IntegrationEvent[]): Pendency[] {
+  const rows = credentials.filter((c) => c.provider === config.provider);
+  const active = rows.find((c) => c.isActive) ?? null;
   const pending: Pendency[] = [];
 
-  if (asaas.length === 0) {
-    pending.push({
-      id: "sem-chave",
-      title: "Cadastrar a chave de API do Asaas",
-      detail: "Sem chave cadastrada, o Faturar não cria cobrança nem nota.",
-      severity: "acao",
-      anchor: "#pagamentos",
-    });
+  if (rows.length === 0) {
+    pending.push({ id: `${config.provider}-sem-chave`, title: config.noKeyTitle, detail: config.noKeyDetail, severity: "acao", anchor: config.anchor });
   }
 
-  for (const c of asaas) {
+  for (const c of rows) {
     const env = c.environment === "PRODUCAO" ? "Produção" : "Sandbox";
     if (c.status === "ERRO") {
       pending.push({
-        id: `erro-${c.environment}`,
-        title: `Chave do ${env} recusada pelo Asaas`,
-        detail: "Gere uma nova chave no painel do Asaas e substitua aqui.",
+        id: `${config.provider}-erro-${c.environment}`,
+        title: `Chave do ${env} recusada pelo ${config.providerLabel}`,
+        detail: `Gere uma nova chave no painel do ${config.providerLabel} e substitua aqui.`,
         severity: "acao",
-        anchor: "#pagamentos",
+        anchor: config.anchor,
       });
     } else if (c.status === "CONFIGURADO") {
       pending.push({
-        id: `teste-${c.environment}`,
+        id: `${config.provider}-teste-${c.environment}`,
         title: `Testar a conexão do ${env}`,
-        detail: "A chave foi salva, mas ainda não foi confirmada pelo Asaas.",
+        detail: `A chave foi salva, mas ainda não foi confirmada pelo ${config.providerLabel}.`,
         severity: "acao",
-        anchor: "#pagamentos",
+        anchor: config.anchor,
       });
     }
   }
 
-  if (!active && asaas.length > 0) {
-    pending.push({
-      id: "sem-ativo",
-      title: "Nenhum ambiente Asaas ativo",
-      detail: "O Faturar não cria cobranças até um ambiente validado ser ativado.",
-      severity: "acao",
-      anchor: "#pagamentos",
-    });
+  if (!active && rows.length > 0) {
+    pending.push({ id: `${config.provider}-sem-ativo`, title: config.noActiveTitle, detail: config.noActiveDetail, severity: "acao", anchor: config.anchor });
   }
 
   if (active) {
-    const hasEvents = events.some((e) => e.environment !== null);
+    const hasEvents = events.some((e) => e.provider === config.provider && e.environment !== null);
     if (!hasEvents) {
       pending.push({
-        id: "webhook",
-        title: "Configurar o webhook no Asaas",
-        detail: "Sem o webhook, pagamentos e vencimentos não atualizam sozinhos no Saboriza.",
+        id: `${config.provider}-webhook`,
+        title: `Configurar o webhook no ${config.providerLabel}`,
+        detail: "Sem o webhook, o status não atualiza sozinho no Saboriza.",
         severity: "acao",
         anchor: "#webhooks",
       });
     }
-    pending.push({
-      id: "nfse-config",
-      title: "Confirmar a configuração fiscal da NFS-e no Asaas",
-      detail: "Informações fiscais, inscrição municipal e serviço municipal precisam estar cadastrados no painel do Asaas.",
-      severity: "acao",
-      anchor: "#fiscal",
-    });
+    if (config.provider === "ASAAS") {
+      pending.push({
+        id: "nfse-config",
+        title: "Confirmar a configuração fiscal da NFS-e no Asaas",
+        detail: "Informações fiscais, inscrição municipal e serviço municipal precisam estar cadastrados no painel do Asaas.",
+        severity: "acao",
+        anchor: "#fiscal",
+      });
+    }
+    if (config.provider === "BASE") {
+      pending.push({
+        id: "base-config",
+        title: "Confirmar a configuração fiscal da NF-e no Base",
+        detail: "Certificado digital, regime tributário e impostos precisam estar configurados no painel do Base antes da primeira emissão.",
+        severity: "acao",
+        anchor: "#fiscal",
+      });
+    }
   }
 
   return pending;
+}
+
+function buildAccountPendencies(credentials: IntegrationCredential[], events: IntegrationEvent[]): Pendency[] {
+  return PROVIDER_CONFIGS.flatMap((config) => buildProviderPendencies(config, credentials, events));
 }
 
 interface PendenciasPanelProps {

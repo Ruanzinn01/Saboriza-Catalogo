@@ -58,6 +58,7 @@ function createEmptyForm(categoryId: string): ProductForm {
     gtin: "",
     brand: "",
     ncm: "",
+    saleUnit: "",
   };
 }
 
@@ -281,7 +282,7 @@ export function ProductFormPage() {
           </FormCard>
 
           <FormCard title="Informações fiscais">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
               <Input
                 label="GTIN/EAN Código de Barras"
                 inputMode="numeric"
@@ -297,7 +298,16 @@ export function ProductFormPage() {
                 onChange={(e) => handleChange("ncm", e.target.value.replace(/[^\d.]/g, "").slice(0, 10))}
                 placeholder="2103.90.21"
               />
+              <Input
+                label="Unidade de venda (NF-e)"
+                value={form.saleUnit}
+                onChange={(e) => handleChange("saleUnit", e.target.value.toUpperCase().slice(0, 6))}
+                placeholder="UN, CX, KG..."
+              />
             </div>
+            <p className="mt-2 text-xs text-ink-muted">
+              NCM e unidade de venda são obrigatórios para emitir NF-e de produto via Base. Sem eles, a emissão falha com um erro claro.
+            </p>
           </FormCard>
 
           <ProductStockStatusBar

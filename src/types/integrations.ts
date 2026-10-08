@@ -1,4 +1,4 @@
-export type IntegrationProvider = "ASAAS" | "FISCAL";
+export type IntegrationProvider = "ASAAS" | "FISCAL" | "BASE";
 export type IntegrationEnvironment = "SANDBOX" | "PRODUCAO";
 export type IntegrationStatus = "NAO_CONFIGURADO" | "CONFIGURADO" | "VALIDADO" | "ERRO";
 
@@ -20,6 +20,7 @@ export interface IntegrationCredential {
 
 export interface IntegrationEvent {
   id: string;
+  provider: IntegrationProvider;
   eventType: string;
   environment: IntegrationEnvironment | null;
   receivedAt: string;

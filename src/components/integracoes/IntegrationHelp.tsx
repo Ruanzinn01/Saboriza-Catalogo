@@ -3,9 +3,10 @@ const FAQ: { question: string; answer: React.ReactNode }[] = [
     question: "Como funciona?",
     answer: (
       <ol className="list-decimal flex flex-col gap-1 pl-5">
-        <li>Você cola a chave de API de um ambiente do Asaas e salva.</li>
-        <li>O Saboriza testa a chave com o Asaas. Só uma chave aceita pode ser ativada.</li>
+        <li>A empresa cadastra a chave de API do Asaas.</li>
+        <li>O Saboriza testa a conexão e mantém só o ambiente validado disponível para ativar.</li>
         <li>O ambiente ativo é o que o Faturar usa para criar cobranças e notas. Cobranças já criadas não mudam.</li>
+        <li>O webhook atualiza os pagamentos quando o Asaas envia um evento.</li>
       </ol>
     ),
   },
@@ -13,8 +14,8 @@ const FAQ: { question: string; answer: React.ReactNode }[] = [
     question: "O que é Sandbox e o que é Produção?",
     answer: (
       <p>
-        <strong>Sandbox</strong> é o ambiente de testes do Asaas: nada é cobrado de verdade. <strong>Produção</strong> é o ambiente real: as cobranças vão
-        para seus clientes. Use Sandbox para testar e Produção para operar. Cada ambiente tem sua própria chave, cadastrada separadamente aqui.
+        <strong>Sandbox</strong> é o ambiente de testes: permite validar a integração sem movimentar dinheiro real. <strong>Produção</strong> é o ambiente
+        real: cobranças criadas nele podem afetar clientes e movimentar valores reais. Cada ambiente tem sua própria chave, cadastrada separadamente aqui.
       </p>
     ),
   },
@@ -49,8 +50,8 @@ const FAQ: { question: string; answer: React.ReactNode }[] = [
     question: "Preciso de certificado digital?",
     answer: (
       <p>
-        Esta tela não pede certificado. Se a prefeitura ou o Asaas exigir certificado para a sua emissão, isso é configurado no painel do Asaas. Não existe upload
-        de certificado no Saboriza ainda.
+        Depende do tipo de documento fiscal, do município e do provedor utilizado. O Saboriza não gerencia nem armazena certificado digital. Quando o provedor
+        exigir uma configuração específica, ela é feita conforme o fluxo que esse provedor suportar.
       </p>
     ),
   },
@@ -68,16 +69,22 @@ const FAQ: { question: string; answer: React.ReactNode }[] = [
     answer: (
       <ul className="list-disc flex flex-col gap-1 pl-5">
         <li>
-          <strong>Chave salva, falta testar:</strong> clique em Testar conexão.
+          <strong>Nenhuma credencial cadastrada:</strong> cole a chave de API do ambiente que vai usar.
         </li>
         <li>
-          <strong>Conexão validada, inativo:</strong> ative o ambiente para o Saboriza usá-lo.
+          <strong>Credencial ainda não validada:</strong> clique em Testar conexão.
         </li>
         <li>
-          <strong>Aguardando o primeiro evento:</strong> o webhook ainda não foi configurado no Asaas, ou nenhum pagamento aconteceu desde então.
+          <strong>Nenhum ambiente ativo:</strong> mesmo com a chave validada, é preciso ativar o ambiente pra o Faturar usá-lo.
         </li>
         <li>
           <strong>Chave recusada:</strong> gere uma nova chave no Asaas e substitua aqui.
+        </li>
+        <li>
+          <strong>Integração ainda indisponível:</strong> alguns recursos (NF-e de produto, agendamento pelo Asaas) não existem no Saboriza, independente de credencial.
+        </li>
+        <li>
+          <strong>Depende de configuração externa:</strong> NFS-e exige informações fiscais cadastradas no painel do Asaas.
         </li>
       </ul>
     ),
@@ -106,8 +113,10 @@ export function IntegrationHelp() {
         <ul className="mt-3 list-disc flex flex-col gap-1 pl-5 text-sm text-ink-900">
           <li>Chaves de API são guardadas criptografadas no Supabase Vault e nunca voltam inteiras para o navegador.</li>
           <li>Depois de salva, a chave aparece só com os 4 últimos caracteres.</li>
+          <li>O acesso às credenciais passa só por funções autorizadas (RPCs) — não existe leitura direta da tabela de credenciais pelo navegador.</li>
           <li>Cada empresa tem as próprias credenciais. Uma empresa não enxerga nem altera as de outra.</li>
           <li>Sandbox e Produção ficam separados. Um aviso de um ambiente inativo é registrado, mas não altera cobranças nem notas.</li>
+          <li>As cobranças e notas usam sempre a credencial ativa e validada — nenhuma outra credencial salva entra na jogada.</li>
           <li>O token do webhook só aparece quando alguém com permissão pede para copiá-lo, e cada uso fica registrado na auditoria.</li>
           <li>Chaves, tokens e certificados nunca aparecem em registros de log ou em mensagens de erro.</li>
         </ul>

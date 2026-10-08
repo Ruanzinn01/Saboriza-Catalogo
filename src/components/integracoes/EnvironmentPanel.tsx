@@ -1,37 +1,43 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useIntegrationsStore } from "@/store/integrations-store";
-import type { IntegrationCredential, IntegrationEnvironment } from "@/types/integrations";
+import type { IntegrationCredential, IntegrationEnvironment, IntegrationProvider } from "@/types/integrations";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { deriveEnvironmentState, ENVIRONMENT_STATE_LABEL, ENVIRONMENT_STATE_TONE } from "./status";
 
-const ENVIRONMENT_INFO: Record<IntegrationEnvironment, { title: string; description: string }> = {
-  SANDBOX: {
-    title: "Sandbox",
-    description: "Ambiente de testes do Asaas. As cobranças são simuladas e não movimentam dinheiro real.",
-  },
-  PRODUCAO: {
-    title: "Produção",
-    description: "Ambiente real. As cobranças geradas pelo Faturar são enviadas aos seus clientes.",
-  },
-};
+type Kind = "payment" | "fiscal";
+
+const ENVIRONMENT_TITLE: Record<IntegrationEnvironment, string> = { SANDBOX: "Sandbox", PRODUCAO: "Produção" };
 
 const NEXT_STEP: Record<ReturnType<typeof deriveEnvironmentState>, string> = {
   NAO_CONFIGURADO: "Próximo passo: cole a chave de API deste ambiente e salve.",
-  CHAVE_SALVA: "Próximo passo: clique em Testar conexão para confirmar que o Asaas aceita a chave.",
+  CHAVE_SALVA: "Próximo passo: clique em Testar conexão para confirmar que a chave é aceita.",
   CONEXAO_VALIDA: "Conexão confirmada. Ative este ambiente para o Saboriza passar a usá-lo.",
-  ATIVO: "Em uso: o Faturar cria as cobranças neste ambiente.",
-  ERRO_CREDENCIAL: "O Asaas recusou esta chave. Gere uma nova chave no painel Asaas e substitua aqui.",
+  ATIVO: "Em uso.",
+  ERRO_CREDENCIAL: "A chave foi recusada. Gere uma nova chave no painel e substitua aqui.",
 };
 
 interface EnvironmentPanelProps {
+  provider: IntegrationProvider;
+  providerName: string;
+  kind: Kind;
   environment: IntegrationEnvironment;
   credential: IntegrationCredential | null;
   canManage: boolean;
   otherEnvironmentActive: boolean;
+  showWallet?: boolean;
 }
 
-export function EnvironmentPanel({ environment, credential, canManage, otherEnvironmentActive }: EnvironmentPanelProps) {
+export function EnvironmentPanel({
+  provider,
+  providerName,
+  kind,
+  environment,
+  credential,
+  canManage,
+  otherEnvironmentActive,
+  showWallet = false,
+}: EnvironmentPanelProps) {
   const saveCredential = useIntegrationsStore((s) => s.saveCredential);
   const removeCredential = useIntegrationsStore((s) => s.removeCredential);
   const setActiveEnvironment = useIntegrationsStore((s) => s.setActiveEnvironment);
@@ -44,13 +50,19 @@ export function EnvironmentPanel({ environment, credential, canManage, otherEnvi
   const [confirm, setConfirm] = useState<"activate" | "pause" | "remove" | null>(null);
 
   const state = deriveEnvironmentState(credential);
-  const info = ENVIRONMENT_INFO[environment];
+  const title = ENVIRONMENT_TITLE[environment];
+  const description =
+    environment === "SANDBOX"
+      ? `Ambiente de testes do ${providerName}. ${kind === "payment" ? "As cobranças são simuladas e não movimentam dinheiro real." : "As notas emitidas são simuladas, sem valor fiscal real."}`
+      : `Ambiente real. ${kind === "payment" ? "As cobranças geradas pelo Faturar são enviadas aos seus clientes." : "As notas emitidas aqui têm valor fiscal real."}`;
   const showForm = !credential || replacingKey;
   const isProduction = environment === "PRODUCAO";
+  const actionNoun = kind === "payment" ? "cobrança" : "nota fiscal";
+  const actionNounPlural = kind === "payment" ? "cobranças" : "notas fiscais";
 
   async function handleSave() {
     setBusy("save");
-    const ok = await saveCredential("ASAAS", environment, apiKey, walletId || null);
+    const ok = await saveCredential(provider, environment, apiKey, showWallet ? walletId || null : null);
     setBusy(null);
     if (ok) {
       setApiKey("");
@@ -61,27 +73,27 @@ export function EnvironmentPanel({ environment, credential, canManage, otherEnvi
   async function handleTest() {
     if (!credential) return;
     setBusy("test");
-    await testConnection(credential.id);
+    await testConnection(credential.id, provider);
     setBusy(null);
   }
 
   async function handleActivate() {
     setBusy("activate");
-    const ok = await setActiveEnvironment("ASAAS", environment);
+    const ok = await setActiveEnvironment(provider, environment);
     setBusy(null);
     if (ok) setConfirm(null);
   }
 
   async function handlePause() {
     setBusy("pause");
-    const ok = await setActiveEnvironment("ASAAS", null);
+    const ok = await setActiveEnvironment(provider, null);
     setBusy(null);
     if (ok) setConfirm(null);
   }
 
   async function handleRemove() {
     setBusy("remove");
-    const ok = await removeCredential("ASAAS", environment);
+    const ok = await removeCredential(provider, environment);
     setBusy(null);
     if (ok) setConfirm(null);
   }
@@ -93,16 +105,16 @@ export function EnvironmentPanel({ environment, credential, canManage, otherEnvi
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h4 className="flex items-center gap-2 font-bold text-forest-950">
-            {info.title}
+            {title}
             {credential?.isActive && <span className="rounded-full bg-forest-950 px-2 py-0.5 text-[11px] font-semibold text-cream-50">em uso</span>}
           </h4>
-          <p className="mt-1 text-sm text-ink-muted">{info.description}</p>
+          <p className="mt-1 text-sm text-ink-muted">{description}</p>
         </div>
         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${ENVIRONMENT_STATE_TONE[state]}`}>{ENVIRONMENT_STATE_LABEL[state]}</span>
       </div>
 
       {isProduction && !credential?.isActive && state !== "NAO_CONFIGURADO" && (
-        <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">Atenção: ativar a Produção faz as cobranças reais serem criadas para seus clientes.</p>
+        <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">Atenção: ativar a Produção faz {actionNounPlural} reais serem {kind === "payment" ? "criadas para seus clientes" : "emitidas de verdade"}.</p>
       )}
 
       {credential && !showForm && (
@@ -115,7 +127,7 @@ export function EnvironmentPanel({ environment, credential, canManage, otherEnvi
             <dt className="text-xs text-ink-muted">Última validação</dt>
             <dd>{credential.lastValidatedAt ? new Date(credential.lastValidatedAt).toLocaleString("pt-BR") : "Ainda não testada"}</dd>
           </div>
-          {credential.walletId && (
+          {showWallet && credential.walletId && (
             <div>
               <dt className="text-xs text-ink-muted">Wallet ID</dt>
               <dd className="font-mono">{credential.walletId}</dd>
@@ -134,11 +146,11 @@ export function EnvironmentPanel({ environment, credential, canManage, otherEnvi
       {showForm && (
         <div className="flex flex-col gap-3">
           <div>
-            <label htmlFor={`key-${environment}`} className="mb-1 block text-xs font-bold">
+            <label htmlFor={`key-${provider}-${environment}`} className="mb-1 block text-xs font-bold">
               Chave de API
             </label>
             <input
-              id={`key-${environment}`}
+              id={`key-${provider}-${environment}`}
               type="password"
               autoComplete="off"
               value={apiKey}
@@ -151,20 +163,22 @@ export function EnvironmentPanel({ environment, credential, canManage, otherEnvi
               Fica criptografada no Supabase Vault. Depois de salva, só os 4 últimos caracteres aparecem.
             </p>
           </div>
-          <div>
-            <label htmlFor={`wallet-${environment}`} className="mb-1 block text-xs font-bold">
-              Wallet ID (opcional)
-            </label>
-            <input
-              id={`wallet-${environment}`}
-              value={walletId}
-              onChange={(e) => setWalletId(e.target.value)}
-              disabled={!canManage}
-              placeholder="ID da carteira usada em repasses"
-              className="w-full rounded-lg border border-forest-950/15 px-3 py-2 text-sm"
-            />
-            <p className="mt-1 text-xs text-ink-muted">Hoje é só informativo: nenhum fluxo do Saboriza usa este campo ainda.</p>
-          </div>
+          {showWallet && (
+            <div>
+              <label htmlFor={`wallet-${provider}-${environment}`} className="mb-1 block text-xs font-bold">
+                Wallet ID (opcional)
+              </label>
+              <input
+                id={`wallet-${provider}-${environment}`}
+                value={walletId}
+                onChange={(e) => setWalletId(e.target.value)}
+                disabled={!canManage}
+                placeholder="ID da carteira usada em repasses"
+                className="w-full rounded-lg border border-forest-950/15 px-3 py-2 text-sm"
+              />
+              <p className="mt-1 text-xs text-ink-muted">Hoje é só informativo: nenhum fluxo do Saboriza usa este campo ainda.</p>
+            </div>
+          )}
           <div className="flex gap-2">
             <Button size="sm" disabled={disabled || apiKey.trim().length < 8} onClick={() => void handleSave()}>
               {busy === "save" ? "Salvando..." : "Salvar chave"}
@@ -218,12 +232,12 @@ export function EnvironmentPanel({ environment, credential, canManage, otherEnvi
 
       <ConfirmDialog
         open={confirm === "activate"}
-        title={`Ativar ${info.title}?`}
+        title={`Ativar ${title}?`}
         description={
           <>
             {isProduction
-              ? "As próximas cobranças do Faturar serão criadas como reais, para seus clientes. "
-              : "As próximas cobranças do Faturar serão criadas no Sandbox, sem dinheiro real. "}
+              ? `As próximas ${actionNounPlural} serão ${kind === "payment" ? "criadas como reais, para seus clientes" : "emitidas de verdade"}. `
+              : `As próximas ${actionNounPlural} serão criadas no Sandbox, sem efeito real. `}
             {otherEnvironmentActive && "O outro ambiente deixará de ser usado automaticamente."}
           </>
         }
@@ -235,7 +249,7 @@ export function EnvironmentPanel({ environment, credential, canManage, otherEnvi
       <ConfirmDialog
         open={confirm === "pause"}
         title="Pausar integração?"
-        description="Nenhuma cobrança será criada no Asaas até um ambiente ser ativado de novo. Cobranças já criadas continuam no Asaas e no histórico."
+        description={`Nenhuma ${actionNoun} será criada até um ambiente ser ativado de novo. ${kind === "payment" ? "Cobranças" : "Notas"} já criadas continuam no histórico.`}
         confirmLabel="Pausar"
         busy={busy === "pause"}
         onConfirm={() => void handlePause()}
@@ -243,13 +257,17 @@ export function EnvironmentPanel({ environment, credential, canManage, otherEnvi
       />
       <ConfirmDialog
         open={confirm === "remove"}
-        title={`Remover ${info.title}?`}
+        title={`Remover ${title}?`}
         danger
         description={
           <>
             <p>Apaga a chave e o token de webhook deste ambiente no Saboriza.</p>
-            {credential?.isActive && <p className="mt-2 font-semibold text-red-700">Esta integração está ativa agora. Sem outro ambiente ativo, o Faturar deixa de criar cobranças.</p>}
-            <p className="mt-2">Cobranças, pagamentos e notas já registrados são mantidos.</p>
+            {credential?.isActive && (
+              <p className="mt-2 font-semibold text-red-700">
+                Esta integração está ativa agora. Sem outro ambiente ativo, o {kind === "payment" ? "Faturar deixa de criar cobranças" : "Saboriza deixa de emitir essa nota"}.
+              </p>
+            )}
+            <p className="mt-2">{kind === "payment" ? "Cobranças, pagamentos e notas" : "Notas fiscais"} já registradas são mantidas.</p>
           </>
         }
         confirmLabel="Remover integração"

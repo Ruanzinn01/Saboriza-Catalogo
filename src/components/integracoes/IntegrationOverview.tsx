@@ -1,4 +1,5 @@
 import type { IntegrationCredential, IntegrationEvent } from "@/types/integrations";
+import { deriveEnvironmentState } from "./status";
 
 type Tone = "ok" | "pending" | "error" | "off";
 
@@ -27,32 +28,39 @@ const TONE_LABEL: Record<Tone, string> = {
 function buildItems(credentials: IntegrationCredential[], events: IntegrationEvent[]): OverviewItem[] {
   const asaas = credentials.filter((c) => c.provider === "ASAAS");
   const active = asaas.find((c) => c.isActive) ?? null;
-  const withError = asaas.find((c) => c.status === "ERRO") ?? null;
-  const hasAsaasEvents = events.some((e) => e.environment !== null);
+  const hasAsaasEvents = events.some((e) => e.provider === "ASAAS" && e.environment !== null);
 
-  const payments: OverviewItem = active
-    ? {
-        id: "payments",
-        title: "Pagamentos · Asaas",
-        detail: `${active.environment === "PRODUCAO" ? "Produção" : "Sandbox"} ativo e validado`,
-        tone: "ok",
-        anchor: "#pagamentos",
-      }
-    : withError
-      ? {
-          id: "payments",
-          title: "Pagamentos · Asaas",
-          detail: "Chave recusada pelo Asaas. Substitua a chave.",
-          tone: "error",
-          anchor: "#pagamentos",
-        }
-      : {
-          id: "payments",
-          title: "Pagamentos · Asaas",
-          detail: asaas.length > 0 ? "Nenhum ambiente ativo. O Faturar não cria cobranças." : "Ainda não configurado",
-          tone: "pending",
-          anchor: "#pagamentos",
-        };
+  function describeEnvironmentPair(rows: IntegrationCredential[], providerLabel: string): { detail: string; tone: Tone } {
+    const sandboxState = deriveEnvironmentState(rows.find((c) => c.environment === "SANDBOX") ?? null);
+    const producaoState = deriveEnvironmentState(rows.find((c) => c.environment === "PRODUCAO") ?? null);
+    if (sandboxState === "ATIVO") return { detail: "Sandbox ativo e validado", tone: "ok" };
+    if (producaoState === "ATIVO") return { detail: "Produção ativa e validada", tone: "ok" };
+    if (sandboxState === "ERRO_CREDENCIAL" || producaoState === "ERRO_CREDENCIAL") {
+      return { detail: `Chave recusada pelo ${providerLabel}. Substitua a chave.`, tone: "error" };
+    }
+    const configurados: string[] = [];
+    if (sandboxState === "CONEXAO_VALIDA") configurados.push("Sandbox configurado");
+    if (producaoState === "CONEXAO_VALIDA") configurados.push("Produção configurada");
+    if (configurados.length > 0) return { detail: `${configurados.join(" · ")} — nenhum ambiente ativo`, tone: "pending" };
+    if (sandboxState === "CHAVE_SALVA" || producaoState === "CHAVE_SALVA") {
+      return { detail: "Chave salva, falta testar a conexão", tone: "pending" };
+    }
+    return { detail: "Ainda não configurado", tone: "pending" };
+  }
+
+  const paymentsInfo = describeEnvironmentPair(asaas, "Asaas");
+  const payments: OverviewItem = {
+    id: "payments",
+    title: "Pagamentos · Asaas",
+    detail: paymentsInfo.detail,
+    tone: paymentsInfo.tone,
+    anchor: "#pagamentos",
+  };
+
+  const base = credentials.filter((c) => c.provider === "BASE");
+  const baseInfo = describeEnvironmentPair(base, "Base");
+  const productInvoiceInfo: { detail: string; tone: Tone } =
+    base.some((c) => c.isActive) ? { detail: baseInfo.detail + " — falta ligar ao Faturar", tone: "pending" } : baseInfo;
 
   const serviceInvoice: OverviewItem = active
     ? {
@@ -73,8 +81,8 @@ function buildItems(credentials: IntegrationCredential[], events: IntegrationEve
   const productInvoice: OverviewItem = {
     id: "nfe",
     title: "NF-e de Produto",
-    detail: "Integração ainda não disponível no Saboriza",
-    tone: "off",
+    detail: productInvoiceInfo.detail,
+    tone: productInvoiceInfo.tone,
     anchor: "#fiscal",
   };
 
@@ -104,15 +112,12 @@ interface IntegrationOverviewProps {
 
 export function IntegrationOverview({ credentials, events }: IntegrationOverviewProps) {
   const items = buildItems(credentials, events);
-  const pending = items.filter((i) => i.tone === "pending" || i.tone === "error").length;
 
   return (
     <section className="flex flex-col gap-4 rounded-3xl bg-forest-950 p-5 text-cream-50 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-base font-bold">Visão geral</h2>
-        <p className="text-sm text-cream-50/70">
-          {pending === 0 ? "Nenhuma pendência" : `${pending} ${pending === 1 ? "pendência" : "pendências"} para o faturamento fiscal e de cobrança`}
-        </p>
+        <p className="text-sm text-cream-50/70">Acompanhe o estado das integrações necessárias para cobrança e emissão fiscal.</p>
       </div>
       <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {items.map((item) => (

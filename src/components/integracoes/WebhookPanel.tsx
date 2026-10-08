@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { useIntegrationsStore } from "@/store/integrations-store";
-import type { IntegrationCredential, IntegrationEnvironment, IntegrationEvent } from "@/types/integrations";
+import type { IntegrationCredential, IntegrationEnvironment, IntegrationEvent, IntegrationProvider } from "@/types/integrations";
 import { ConfirmDialog } from "./ConfirmDialog";
 
 const SUPABASE_FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL as string}/functions/v1`;
@@ -30,31 +30,35 @@ async function copyToClipboard(text: string, message: string) {
 
 interface WebhookPanelProps {
   companyId: string;
+  provider: IntegrationProvider;
+  providerName: string;
+  functionSlug: string;
+  description: string;
   credentials: IntegrationCredential[];
   events: IntegrationEvent[];
   canManage: boolean;
 }
 
-export function WebhookPanel({ companyId, credentials, events, canManage }: WebhookPanelProps) {
+export function WebhookPanel({ companyId, provider, providerName, functionSlug, description, credentials, events, canManage }: WebhookPanelProps) {
   const getWebhookToken = useIntegrationsStore((s) => s.getWebhookToken);
   const rotateWebhookToken = useIntegrationsStore((s) => s.rotateWebhookToken);
   const [rotating, setRotating] = useState<IntegrationEnvironment | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const endpoint = `${SUPABASE_FUNCTIONS_URL}/asaas-webhook?company=${companyId}`;
-  const asaasCredentials = credentials.filter((c) => c.provider === "ASAAS");
-  const asaasEvents = events.filter((e) => e.environment !== null);
-  const lastEvent = asaasEvents[0];
+  const endpoint = `${SUPABASE_FUNCTIONS_URL}/${functionSlug}?company=${companyId}`;
+  const providerCredentials = credentials.filter((c) => c.provider === provider);
+  const providerEvents = events.filter((e) => e.provider === provider && e.environment !== null);
+  const lastEvent = providerEvents[0];
 
   async function handleCopyToken(environment: IntegrationEnvironment) {
-    const token = await getWebhookToken("ASAAS", environment);
-    if (token) await copyToClipboard(token, "Token copiado. Cole em 'Token de autenticação' no webhook do Asaas.");
+    const token = await getWebhookToken(provider, environment);
+    if (token) await copyToClipboard(token, `Token copiado. Cole em 'Token de autenticação' no webhook do ${providerName}.`);
   }
 
   async function handleRotate() {
     if (!rotating) return;
     setBusy(true);
-    await rotateWebhookToken("ASAAS", rotating);
+    await rotateWebhookToken(provider, rotating);
     setBusy(false);
     setRotating(null);
   }
@@ -63,10 +67,8 @@ export function WebhookPanel({ companyId, credentials, events, canManage }: Webh
     <div className="flex flex-col gap-5 rounded-2xl border border-forest-950/10 bg-white p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="font-bold text-forest-950">Webhook de pagamentos (Asaas)</h3>
-          <p className="mt-1 text-sm text-ink-muted">
-            É por aqui que o Asaas avisa o Saboriza que uma cobrança foi paga, venceu ou foi estornada.
-          </p>
+          <h3 className="font-bold text-forest-950">Webhook — {providerName}</h3>
+          <p className="mt-1 text-sm text-ink-muted">{description}</p>
         </div>
         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${lastEvent ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
           {lastEvent ? "Recebendo eventos" : "Aguardando o primeiro evento"}
@@ -86,8 +88,8 @@ export function WebhookPanel({ companyId, credentials, events, canManage }: Webh
 
       <div className="flex flex-col gap-2">
         <p className="text-xs font-bold text-ink-900">Token de autenticação, por ambiente</p>
-        {asaasCredentials.length === 0 && <p className="text-xs text-ink-muted">Salve uma chave de API para gerar o token deste ambiente.</p>}
-        {asaasCredentials.map((c) => (
+        {providerCredentials.length === 0 && <p className="text-xs text-ink-muted">Salve uma chave de API para gerar o token deste ambiente.</p>}
+        {providerCredentials.map((c) => (
           <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-forest-950/10 px-3 py-2">
             <span className="text-sm font-semibold">{ENVIRONMENT_LABEL[c.environment]}</span>
             <div className="flex flex-wrap gap-2">
@@ -100,16 +102,15 @@ export function WebhookPanel({ companyId, credentials, events, canManage }: Webh
             </div>
           </div>
         ))}
-        <p className="text-xs text-ink-muted">No painel do Asaas: Integrações → Webhooks → Novo webhook. Cole a URL, o token e marque os eventos de cobrança.</p>
       </div>
 
       <div className="flex flex-col gap-2">
         <p className="text-xs font-bold text-ink-900">Últimos eventos recebidos</p>
-        {asaasEvents.length === 0 ? (
-          <p className="text-xs text-ink-muted">Nenhum evento ainda. Ele aparece aqui assim que o Asaas enviar o primeiro aviso.</p>
+        {providerEvents.length === 0 ? (
+          <p className="text-xs text-ink-muted">Nenhum evento ainda. Ele aparece aqui assim que o {providerName} enviar o primeiro aviso.</p>
         ) : (
           <ul className="divide-y divide-forest-950/10 rounded-xl border border-forest-950/10">
-            {asaasEvents.slice(0, 8).map((e) => {
+            {providerEvents.slice(0, 8).map((e) => {
               const result = eventResult(e);
               return (
                 <li key={e.id} className="grid grid-cols-1 gap-1 px-3 py-2 text-xs sm:grid-cols-[150px_1fr_auto] sm:items-center">
@@ -131,7 +132,7 @@ export function WebhookPanel({ companyId, credentials, events, canManage }: Webh
         danger
         description={
           <p>
-            O token atual de {rotating ? ENVIRONMENT_LABEL[rotating] : ""} deixa de funcionar na hora. Eventos do Asaas vão falhar até você colar o novo token no painel do Asaas.
+            O token atual de {rotating ? ENVIRONMENT_LABEL[rotating] : ""} deixa de funcionar na hora. Eventos do {providerName} vão falhar até você colar o novo token no painel do {providerName}.
           </p>
         }
         confirmLabel="Gerar novo token"

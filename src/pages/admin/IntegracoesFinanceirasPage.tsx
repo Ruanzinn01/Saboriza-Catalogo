@@ -63,6 +63,10 @@ export function IntegracoesFinanceirasPage() {
             {ASAAS_ENVIRONMENTS.map((environment) => (
               <EnvironmentPanel
                 key={environment}
+                provider="ASAAS"
+                providerName="Asaas"
+                kind="payment"
+                showWallet
                 environment={environment}
                 credential={asaasCredentials.find((c) => c.environment === environment) ?? null}
                 canManage={canManage}
@@ -78,15 +82,38 @@ export function IntegracoesFinanceirasPage() {
           <h2 className="text-base font-bold text-forest-950">Documentos fiscais</h2>
           <p className="text-sm text-ink-muted">Notas de produto e de serviço seguem regras e provedores diferentes, por isso ficam separadas.</p>
         </div>
-        <FiscalPanel credentials={credentials} />
+        <FiscalPanel credentials={credentials} canManage={canManage} />
       </section>
 
       <section id="webhooks" className="flex flex-col gap-4">
         <div>
           <h2 className="text-base font-bold text-forest-950">Webhooks</h2>
-          <p className="text-sm text-ink-muted">Avisos automáticos que o Asaas envia quando um pagamento ou uma nota muda de status.</p>
+          <p className="text-sm text-ink-muted">Avisos automáticos que o provedor envia quando um pagamento ou uma nota fiscal muda de status.</p>
         </div>
-        {companyId && <WebhookPanel companyId={companyId} credentials={credentials} events={events} canManage={canManage} />}
+        {companyId && (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <WebhookPanel
+              companyId={companyId}
+              provider="ASAAS"
+              providerName="Asaas"
+              functionSlug="asaas-webhook"
+              description="Avisa o Saboriza quando uma cobrança é paga, vence ou é estornada."
+              credentials={credentials}
+              events={events}
+              canManage={canManage}
+            />
+            <WebhookPanel
+              companyId={companyId}
+              provider="BASE"
+              providerName="Base"
+              functionSlug="base-webhook"
+              description="Avisa o Saboriza quando uma NF-e de produto é autorizada, rejeitada ou cancelada."
+              credentials={credentials}
+              events={events}
+              canManage={canManage}
+            />
+          </div>
+        )}
       </section>
 
       <IntegrationHelp />
