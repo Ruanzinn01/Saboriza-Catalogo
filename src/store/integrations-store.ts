@@ -197,7 +197,7 @@ export const useIntegrationsStore = create<IntegrationsState>()((set, get) => ({
     const { error } = await supabase.rpc("set_active_integration_credential", {
       p_company_id: companyId,
       p_provider: provider,
-      p_environment: environment,
+      p_environment: environment as string,
     });
     if (error) {
       toast.error(errorMessage(error, "Não foi possível alterar o ambiente ativo"));
