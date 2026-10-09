@@ -30,6 +30,16 @@ export function withContext(path: string, params: URLSearchParams) {
 }
 
 /**
+ * Linha de folha salarial (synthesized em despesas-store.getAllExpenses) não tem detalhe próprio
+ * em `expenses` — abre o aprofundamento de Gestão Salarial do colaborador em vez do
+ * ExpenseDetailModal genérico (BUG 01 §5/§6/§7.3).
+ */
+export function expenseDetailPath(e: Expense): string {
+  if (e.origin === "salary" && e.employeeId) return `/admin/despesas/pessoal/${e.employeeId}`;
+  return `/admin/despesas/${e.id}`;
+}
+
+/**
  * Tabela com LINHA INTEIRA clicável (DRT §1/§2). Botões internos devem usar
  * stopPropagation para não disparar a navegação da linha. Abre o detalhe como modal
  * (ExpenseDetailModal), preservando o contexto de filtros atual na URL.
@@ -42,8 +52,8 @@ export function ExpenseTable({ rows, emptyMessage }: { rows: Expense[]; emptyMes
     return <p className="p-6 text-center text-sm text-ink-muted">{emptyMessage ?? "Nenhum lançamento encontrado."}</p>;
   }
 
-  function openDetail(id: string) {
-    navigate(withContext(`/admin/despesas/${id}`, params));
+  function openDetail(row: Expense) {
+    navigate(withContext(expenseDetailPath(row), params));
   }
 
   return (
@@ -64,13 +74,13 @@ export function ExpenseTable({ rows, emptyMessage }: { rows: Expense[]; emptyMes
           {rows.map((e) => (
             <tr
               key={e.id}
-              onClick={() => openDetail(e.id)}
+              onClick={() => openDetail(e)}
               className="cursor-pointer border-b border-forest-950/5 last:border-none hover:bg-forest-950/5"
               tabIndex={0}
               role="button"
               aria-label={`Abrir detalhe de ${e.description}`}
               onKeyDown={(ev) => {
-                if (ev.key === "Enter" || ev.key === " ") openDetail(e.id);
+                if (ev.key === "Enter" || ev.key === " ") openDetail(e);
               }}
             >
               <td className="px-4 py-3">
@@ -90,7 +100,7 @@ export function ExpenseTable({ rows, emptyMessage }: { rows: Expense[]; emptyMes
                 <button
                   onClick={(ev) => {
                     ev.stopPropagation();
-                    openDetail(e.id);
+                    openDetail(e);
                   }}
                   className="text-xs font-semibold text-forest-800 hover:underline"
                 >

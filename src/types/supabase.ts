@@ -5506,6 +5506,7 @@ export type Database = {
           competence: string
           created_at: string
           deductions: number
+          due_date: string | null
           employee_id: string
           id: string
           net_amount: number
@@ -5519,6 +5520,7 @@ export type Database = {
           competence: string
           created_at?: string
           deductions?: number
+          due_date?: string | null
           employee_id: string
           id?: string
           net_amount: number
@@ -5532,6 +5534,7 @@ export type Database = {
           competence?: string
           created_at?: string
           deductions?: number
+          due_date?: string | null
           employee_id?: string
           id?: string
           net_amount?: number

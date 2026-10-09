@@ -64,6 +64,7 @@ export interface SalaryObligation {
   status: "ABERTO" | "PAGO" | "ATRASADO";
   advancesPaid: number;
   remaining: number;
+  dueDate: string | null;
 }
 
 export interface SalaryAdvance {
@@ -167,6 +168,8 @@ interface DespesasState {
   }) => Promise<string | null>;
 
   // Read-model (agregações client-side sobre `expenses` já carregado)
+  /** `expenses` + folha salarial sintetizada de obligations/advances (BUG 01 — ver buildSalaryVirtualExpenses). */
+  getAllExpenses: () => Expense[];
   getByPeriod: (period: ExpensePeriod, referenceDate?: Date, customRange?: PeriodRange) => Expense[];
   getEvolution: (window: EvolutionWindow, referenceDate?: Date) => { month: string; label: string; total: number }[];
   getByOrigin: (list?: Expense[]) => { origin: ExpenseOrigin; label: string; total: number }[];
@@ -209,6 +212,55 @@ function mapExpenseRow(e: Record<string, unknown>): Expense {
   };
 }
 
+/**
+ * Folha salarial não escreve em `expenses` (ver RPC create_expense_launch) — o fato financeiro
+ * nasce uma única vez em salary_obligations/salary_advances. Para os indicadores, gráficos,
+ * Próximos Vencimentos e Despesas do Período enxergarem a folha sem duplicar nada, sintetizamos
+ * aqui uma linha por obrigação, nunca persistida. Clique nessas linhas abre o aprofundamento
+ * de Gestão Salarial (ver expenseDetailPath em shared.tsx), não o ExpenseDetailModal genérico.
+ */
+function buildSalaryVirtualExpenses(obligations: SalaryObligation[], advances: SalaryAdvance[]): Expense[] {
+  const todayIso = new Date().toISOString().slice(0, 10);
+  return obligations.map((o) => {
+    const lastPaidAdvance = advances
+      .filter((a) => a.obligationId === o.id && a.status === "PAGO")
+      .sort((a, b) => (b.paidAt ?? "").localeCompare(a.paidAt ?? ""))[0];
+    const isSettled = o.remaining <= 0;
+    const isOverdue = !isSettled && !!o.dueDate && o.dueDate < todayIso;
+    const status: ExpenseStatus = isSettled ? "PAGO" : isOverdue ? "ATRASADO" : "ABERTO";
+    return {
+      id: `salary:${o.id}`,
+      description: `Folha salarial — ${o.employeeName}`,
+      category: "Gestão Salarial",
+      subcategory: null,
+      itemDetail: null,
+      nature: "SALARIO",
+      origin: "salary",
+      pattern: "fixed",
+      employeeId: o.employeeId,
+      partnerId: null,
+      amount: o.baseSalary,
+      paidAmount: o.advancesPaid,
+      status,
+      competence: o.competence,
+      dueDate: o.dueDate,
+      scheduledPaymentAt: null,
+      settledAt: isSettled ? lastPaidAdvance?.paidAt ?? null : null,
+      paidAt: lastPaidAdvance?.paidAt ?? null,
+      blockType: null,
+      blockReason: null,
+      blockedAt: null,
+      originalExpenseId: null,
+      adjustmentReason: null,
+      sourceModule: "salary_obligations",
+      sourceEntityId: o.employeeId,
+      partyName: o.employeeName,
+      documentRef: null,
+      createdAt: o.competence,
+    };
+  });
+}
+
 export const useDespesasStore = create<DespesasState>((set, get) => ({
   expenses: [],
   obligations: [],
@@ -231,7 +283,7 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
         supabase.from("expenses").select("*").eq("company_id", companyId).order("created_at", { ascending: false }),
         supabase
           .from("salary_obligations")
-          .select("id, employee_id, competence, base_salary, status, employees(name)")
+          .select("id, employee_id, competence, base_salary, status, due_date, employees(name)")
           .eq("company_id", companyId)
           .order("competence", { ascending: false }),
         supabase.from("salary_advances").select("id, salary_obligation_id, amount, status, requested_at, paid_at, reversed_advance_id").eq("company_id", companyId),
@@ -277,6 +329,7 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
           status: o.status as SalaryObligation["status"],
           advancesPaid: paid,
           remaining: o.base_salary - paid,
+          dueDate: o.due_date,
         };
       }),
       advances,
@@ -349,9 +402,13 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
     });
     const effectiveBase = typeof resolvedBase === "number" ? resolvedBase : baseSalary;
 
+    // Vencimento padrão: 5º dia do mês seguinte à competência (convenção de folha), editável futuramente.
+    const [compYear, compMonth] = competence.split("-").map(Number);
+    const dueDate = new Date(compYear, compMonth, 5).toISOString().slice(0, 10);
+
     const { error } = await supabase
       .from("salary_obligations")
-      .insert({ employee_id: employeeId, competence, base_salary: effectiveBase, net_amount: effectiveBase, company_id: companyId });
+      .insert({ employee_id: employeeId, competence, base_salary: effectiveBase, net_amount: effectiveBase, company_id: companyId, due_date: dueDate });
     if (error) return error.code === "23505" ? "Já existe obrigação salarial para este colaborador nesta competência" : error.message;
     await get().fetchAll();
     return null;
@@ -476,8 +533,13 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
     return null;
   },
 
+  getAllExpenses: () => {
+    const { expenses, obligations, advances } = get();
+    return [...expenses, ...buildSalaryVirtualExpenses(obligations, advances)];
+  },
+
   getByPeriod: (period, referenceDate = new Date(), customRange) => {
-    const { expenses } = get();
+    const expenses = get().getAllExpenses();
     let from: string;
     let to: string;
 
@@ -518,7 +580,7 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
   },
 
   getByOrigin: (list) => {
-    const expenses = list ?? get().expenses;
+    const expenses = list ?? get().getAllExpenses();
     const totals = new Map<ExpenseOrigin, number>();
     expenses.forEach((e) => totals.set(e.origin, (totals.get(e.origin) ?? 0) + e.amount));
     return (Object.keys(ORIGIN_LABEL) as ExpenseOrigin[])
@@ -527,7 +589,7 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
   },
 
   getComposition: (list) => {
-    const expenses = list ?? get().expenses;
+    const expenses = list ?? get().getAllExpenses();
     const groups: Record<ExpensePattern, { total: number; count: number }> = {
       fixed: { total: 0, count: 0 },
       variable: { total: 0, count: 0 },

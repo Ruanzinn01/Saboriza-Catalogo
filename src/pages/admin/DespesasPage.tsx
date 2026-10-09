@@ -4,7 +4,7 @@ import { Plus, FileText } from "lucide-react";
 import { useDespesasStore, type ExpenseOrigin, type ExpensePattern } from "@/store/despesas-store";
 import { AdminState } from "@/components/admin/AdminState";
 import { Button } from "@/components/ui/Button";
-import { brl, ExpenseTable, withContext } from "@/pages/admin/despesas/shared";
+import { brl, expenseDetailPath, ExpenseTable, withContext } from "@/pages/admin/despesas/shared";
 import { useDespesasFilters } from "@/pages/admin/despesas/useDespesasFilters";
 import { DESPESAS_COLORS, ORIGIN_COLOR_HEX, KPI_DOT_COLOR } from "@/pages/admin/despesas/theme";
 import { ReportModal } from "@/pages/admin/despesas/ReportModal";
@@ -233,6 +233,7 @@ function CompositionCards({ list }: { list: ReturnType<typeof useDespesasStore.g
 export function DespesasPage() {
   const expenses = useDespesasStore((s) => s.expenses);
   const obligations = useDespesasStore((s) => s.obligations);
+  const advances = useDespesasStore((s) => s.advances);
   const status = useDespesasStore((s) => s.status);
   const fetchAll = useDespesasStore((s) => s.fetchAll);
   const subscribeRealtime = useDespesasStore((s) => s.subscribeRealtime);
@@ -240,6 +241,7 @@ export function DespesasPage() {
   const getByPeriod = useDespesasStore((s) => s.getByPeriod);
   const getByOrigin = useDespesasStore((s) => s.getByOrigin);
   const getComposition = useDespesasStore((s) => s.getComposition);
+  const getAllExpenses = useDespesasStore((s) => s.getAllExpenses);
   const navigate = useNavigate();
 
   const { period, referenceDate, origin, status: statusFilter, search, setPeriod, moveMonth, update, params } = useDespesasFilters();
@@ -252,7 +254,11 @@ export function DespesasPage() {
     return () => unsubscribeRealtime();
   }, [fetchAll, subscribeRealtime, unsubscribeRealtime]);
 
-  const periodExpenses = useMemo(() => getByPeriod(period, referenceDate), [getByPeriod, period, referenceDate, expenses]);
+  const periodExpenses = useMemo(
+    () => getByPeriod(period, referenceDate),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [getByPeriod, period, referenceDate, expenses, obligations, advances]
+  );
 
   const periodRange = useMemo(() => {
     const y = referenceDate.getFullYear();
@@ -285,7 +291,9 @@ export function DespesasPage() {
 
   const kpis = useMemo(() => {
     const total = periodExpenses.reduce((s, e) => s + e.amount, 0);
-    const pago = periodExpenses.filter((e) => e.status === "PAGO").reduce((s, e) => s + e.amount, 0);
+    // Soma o valor efetivamente pago (não só status PAGO) — pagamento parcial e adiantamento
+    // de folha já liquidados contam aqui, mesmo com o compromisso ainda em aberto (BUG 01 §4.2).
+    const pago = periodExpenses.reduce((s, e) => s + (e.paidAmount ?? 0), 0);
     const aPagar = periodExpenses
       .filter((e) => e.status === "ABERTO" || e.status === "ATRASADO" || e.status === "BLOQUEADO")
       .reduce((s, e) => s + (e.amount - (e.paidAmount ?? 0)), 0);
@@ -294,10 +302,11 @@ export function DespesasPage() {
     return { total, pago, aPagar, agendado, atrasado };
   }, [periodExpenses]);
 
-  const due = useMemo(
-    () => expenses.filter((e) => e.status !== "PAGO" && e.dueDate).sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? "")).slice(0, 6),
-    [expenses]
-  );
+  const due = useMemo(() => {
+    const all = getAllExpenses();
+    return all.filter((e) => e.status !== "PAGO" && e.dueDate).sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? "")).slice(0, 6);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expenses, obligations, advances, getAllExpenses]);
 
   const folha = useMemo(() => {
     const monthKey = referenceDate.toISOString().slice(0, 7);
@@ -426,7 +435,7 @@ export function DespesasPage() {
               {due.map((e) => (
                 <button
                   key={e.id}
-                  onClick={() => navigate(withContext(`/admin/despesas/${e.id}`, params))}
+                  onClick={() => navigate(withContext(expenseDetailPath(e), params))}
                   className="grid w-full grid-cols-[12px_1fr_58px_auto] items-start gap-2.5 border-b py-2.5 text-left last:border-none"
                   style={{ borderColor: "#eff0eb" }}
                 >
