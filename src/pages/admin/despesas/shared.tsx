@@ -79,7 +79,7 @@ export function ExpenseTable({ rows, emptyMessage }: { rows: Expense[]; emptyMes
                   {[e.partyName, e.documentRef].filter(Boolean).join(" · ") || (e.sourceModule ? `Origem: ${e.sourceModule}` : "Lançamento direto")}
                 </p>
               </td>
-              <td className="px-4 py-3 text-ink-700/70">{e.category}</td>
+              <td className="px-4 py-3 text-ink-700/70">{e.subcategory ? `${e.category} · ${e.subcategory}` : e.category}</td>
               <td className="px-4 py-3 text-ink-700/70">{e.dueDate ?? "-----"}</td>
               <td className="px-4 py-3 text-ink-700/70">{e.pattern === "fixed" ? "Fixa" : e.pattern === "variable" ? "Variável" : "Eventual"}</td>
               <td className="px-4 py-3">

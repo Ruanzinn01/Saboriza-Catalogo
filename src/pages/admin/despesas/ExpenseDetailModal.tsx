@@ -131,13 +131,19 @@ export function ExpenseDetailModal({ expenseId, onClose }: { expenseId: string; 
               <span className="block text-[10px] uppercase" style={{ color: "#7a8179" }}>Status</span>
               <strong className="text-[13px]"><span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: tone.bg, color: tone.text }}>{tone.label}</span></strong>
             </div>
-            <div className="rounded-xl p-3" style={{ background: "#f6f8f3" }}><span className="block text-[10px] uppercase" style={{ color: "#7a8179" }}>Categoria</span><strong className="text-[13px]">{expense.category}</strong></div>
+            <div className="rounded-xl p-3" style={{ background: "#f6f8f3" }}><span className="block text-[10px] uppercase" style={{ color: "#7a8179" }}>Categoria</span><strong className="text-[13px]">{expense.subcategory ? `${expense.category} · ${expense.subcategory}` : expense.category}</strong></div>
             <div className="rounded-xl p-3" style={{ background: "#f6f8f3" }}><span className="block text-[10px] uppercase" style={{ color: "#7a8179" }}>Competência</span><strong className="text-[13px]">{expense.competence ?? "-----"}</strong></div>
             <div className="rounded-xl p-3" style={{ background: "#f6f8f3" }}>
               <span className="block text-[10px] uppercase" style={{ color: "#7a8179" }}>{expense.status === "PAGO" ? "Pagamento" : "Saldo"}</span>
               <strong className="text-[13px]">{expense.status === "PAGO" ? expense.settledAt?.slice(0, 10) ?? "Confirmado" : brl(remaining)}</strong>
             </div>
           </div>
+
+          {expense.itemDetail && (
+            <p className="mb-2.5 rounded-[10px] p-3 text-xs leading-relaxed" style={{ background: "#f6f8f3", color: C.green }}>
+              <strong>Descrição:</strong> {expense.itemDetail}
+            </p>
+          )}
 
           {expense.blockType && (
             <p className="rounded-[10px] p-3 text-xs leading-relaxed" style={{ background: "#fff4d8", color: "#806426" }}>

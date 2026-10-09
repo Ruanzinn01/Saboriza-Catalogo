@@ -13,6 +13,8 @@ export interface Expense {
   id: string;
   description: string;
   category: string;
+  subcategory: string | null;
+  itemDetail: string | null;
   nature: ExpenseNature;
   origin: ExpenseOrigin;
   pattern: ExpensePattern;
@@ -179,6 +181,8 @@ function mapExpenseRow(e: Record<string, unknown>): Expense {
     id: e.id as string,
     description: e.description as string,
     category: e.category as string,
+    subcategory: (e.subcategory as string | null) ?? null,
+    itemDetail: (e.item_detail as string | null) ?? null,
     nature: e.nature as ExpenseNature,
     origin: (e.origin as ExpenseOrigin) ?? "expense",
     pattern: (e.pattern as ExpensePattern) ?? "eventual",

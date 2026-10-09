@@ -395,10 +395,13 @@ export function DespesasPage() {
             </button>
           </div>
           <div className="flex flex-col divide-y px-4" style={{ borderColor: "#eff0eb" }}>
-            <div className="flex items-center justify-between gap-3 py-3">
+            <button
+              onClick={() => navigate(withContext("/admin/despesas/pessoal", params))}
+              className="flex w-full items-center justify-between gap-3 py-3 text-left"
+            >
               <div><strong style={{ color: C.green }}>Folha salarial</strong><p className="text-xs" style={{ color: C.muted }}>{folha.count} colaborador(es) · clique para ver cada pessoa</p></div>
               <div className="text-right"><p className="font-bold" style={{ color: C.green }}>{brl(folha.bruta)}</p></div>
-            </div>
+            </button>
             <div className="flex items-center justify-between gap-3 py-3">
               <div><strong style={{ color: C.green }}>Saldo salarial a pagar</strong><p className="text-xs" style={{ color: C.muted }}>Após adiantamentos e pagamentos já realizados</p></div>
               <div className="text-right"><p className="font-bold" style={{ color: C.green }}>{brl(folha.saldo)}</p><small style={{ color: C.muted }}>{brl(folha.pago)} já pagos</small></div>

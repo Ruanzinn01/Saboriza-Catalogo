@@ -137,10 +137,13 @@ export function CategoriesModal({ kind, onClose }: { kind: LaunchKind; onClose: 
   const [catKind, setCatKind] = useState<LaunchKind>(kind === "salary" ? "expense" : kind);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [saving, setSaving] = useState(false);
 
   async function submit() {
-    if (!name.trim()) return;
+    if (!name.trim() || saving) return;
+    setSaving(true);
     const err = await createCategory(name.trim(), catKind, false);
+    setSaving(false);
     if (err) toast.error(err);
     else {
       toast.success("Categoria criada");
@@ -220,7 +223,7 @@ export function CategoriesModal({ kind, onClose }: { kind: LaunchKind; onClose: 
           <option value="partner">Sócios e retiradas</option>
         </select>
       </div>
-      <Button onClick={() => void submit()} className="mt-3">Criar categoria</Button>
+      <Button onClick={() => void submit()} disabled={saving} className="mt-3">{saving ? "Salvando..." : "Criar categoria"}</Button>
     </ModalShell>
   );
 }
@@ -228,32 +231,94 @@ export function CategoriesModal({ kind, onClose }: { kind: LaunchKind; onClose: 
 /** Cadastrar item — equivalente a `itemModal()`. */
 export function NewItemModal({ kind, onClose }: { kind: LaunchKind; onClose: () => void }) {
   const categories = useExpenseLaunchStore((s) => s.categories);
+  const catalogItems = useExpenseLaunchStore((s) => s.catalogItems);
   const createCatalogItem = useExpenseLaunchStore((s) => s.createCatalogItem);
+  const updateCatalogItemName = useExpenseLaunchStore((s) => s.updateCatalogItemName);
+  const deleteCatalogItem = useExpenseLaunchStore((s) => s.deleteCatalogItem);
   const [name, setName] = useState("");
   const [itemKind, setItemKind] = useState<"asset" | "expense" | "partner">(kind === "salary" || kind === "stock" ? "expense" : kind);
   const [categoryId, setCategoryId] = useState("");
   const [unit, setUnit] = useState("un");
   const [price, setPrice] = useState("0");
   const [suggest, setSuggest] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   const categoryOptions = categories.filter((c) => c.kind === itemKind);
 
   async function submit() {
-    if (!name.trim()) return;
+    if (!name.trim() || saving) return;
     if (itemKind === "asset" && unit !== "un") {
       toast.error("Bens devem ser cadastrados por unidade.");
       return;
     }
+    setSaving(true);
     const err = await createCatalogItem({ name: name.trim(), kind: itemKind, categoryId, unit, suggestedPrice: Number(price), suggestRecurring: suggest });
+    setSaving(false);
     if (err) toast.error(err);
     else {
       toast.success("Item cadastrado");
-      onClose();
+      setName("");
     }
+  }
+
+  async function saveEdit() {
+    if (!editingId || !editingName.trim()) return;
+    const err = await updateCatalogItemName(editingId, editingName.trim());
+    if (err) toast.error(err);
+    else {
+      toast.success("Item atualizado");
+      setEditingId(null);
+    }
+  }
+
+  async function remove(id: string) {
+    if (!window.confirm("Excluir este item? Lançamentos já feitos com ele não são afetados.")) return;
+    const err = await deleteCatalogItem(id);
+    if (err) toast.error(err);
+    else toast.success("Item excluído");
   }
 
   return (
     <ModalShell title="Cadastrar item" onClose={onClose}>
+      <div className="mb-4 max-h-64 overflow-auto">
+        {catalogItems.map((i) => (
+          <div key={i.id} className="flex items-center justify-between gap-2 border-b py-3" style={{ borderColor: C.line }}>
+            {editingId === i.id ? (
+              <input
+                autoFocus
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && void saveEdit()}
+                maxLength={120}
+                className="flex-1 rounded-[10px] border px-3 py-2 text-sm"
+                style={{ borderColor: C.line }}
+              />
+            ) : (
+              <div>
+                <strong className="text-sm" style={{ color: C.green }}>{i.name}</strong>
+                <p className="text-xs" style={{ color: C.muted }}>{i.code} · {brl(i.suggestedPrice)} / {i.unit}</p>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              {editingId === i.id ? (
+                <>
+                  <button onClick={() => void saveEdit()} className="rounded-lg border px-2.5 py-1.5 text-xs font-bold" style={{ borderColor: "#d8dfd7", color: C.green }}>Salvar</button>
+                  <button onClick={() => setEditingId(null)} className="px-1.5 text-xs" style={{ color: C.muted }}>Cancelar</button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => { setEditingId(i.id); setEditingName(i.name); }} className="px-1.5 text-xs font-bold" style={{ color: C.green }}>Editar</button>
+                  <button onClick={() => void remove(i.id)} className="px-1.5 text-xs font-bold" style={{ color: "#b3261e" }}>Excluir</button>
+                </>
+              )}
+            </div>
+          </div>
+        ))}
+        {catalogItems.length === 0 && <p className="py-3 text-sm" style={{ color: C.muted }}>Nenhum item cadastrado ainda.</p>}
+      </div>
+      <h3 className="mb-2 font-bold" style={{ color: C.green }}>Novo item</h3>
       <label className="mb-3 block text-sm">
         <span className="mb-1 block text-xs font-semibold">Nome *</span>
         <input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} placeholder="Ex.: Expositor de chão ou aluguel do depósito" className={fieldCls} style={{ borderColor: C.line }} />
@@ -283,7 +348,7 @@ export function NewItemModal({ kind, onClose }: { kind: LaunchKind; onClose: () 
         <input type="checkbox" checked={suggest} onChange={(e) => setSuggest(e.target.checked)} className="mt-0.5" />
         <span className="text-xs">Sugerir lançamento recorrente ao adicionar este item ao carrinho.</span>
       </label>
-      <Button onClick={() => void submit()} className="mt-4">Salvar cadastro</Button>
+      <Button onClick={() => void submit()} disabled={saving} className="mt-4">{saving ? "Salvando..." : "Salvar cadastro"}</Button>
     </ModalShell>
   );
 }

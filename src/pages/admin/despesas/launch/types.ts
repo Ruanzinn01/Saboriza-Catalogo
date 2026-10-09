@@ -8,6 +8,7 @@ export interface CartLine {
   catalogItemId?: string;
   employeeId?: string;
   name: string;
+  description?: string;
   unit: string;
   quantity: number;
   unitPrice: number;

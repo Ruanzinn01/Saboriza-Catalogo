@@ -280,6 +280,7 @@ export function NovaDespesaPage() {
       catalogItemId: l.catalogItemId,
       employeeId: l.employeeId,
       nameSnapshot: l.name,
+      description: l.description,
       unit: l.unit,
       quantity: l.quantity,
       unitPrice: l.unitPrice,
@@ -522,6 +523,17 @@ export function NovaDespesaPage() {
                       </label>
                       <strong className="pb-2 text-right text-sm" style={{ color: C.green }}>{brl(l.quantity * l.unitPrice)}</strong>
                     </div>
+                  )}
+                  {!l.payrollType && (
+                    <label className="mt-3 block text-[10px]" style={{ color: C.muted }}>Descrição (opcional) — detalhe o que diferencia este item
+                      <input
+                        value={l.description ?? ""}
+                        onChange={(e) => updateLine(l.cid, { description: e.target.value })}
+                        placeholder="Ex.: rótulo colorau/açafrão 200g, 10 mil unidades"
+                        className="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+                        style={{ borderColor: C.line }}
+                      />
+                    </label>
                   )}
                   {l.kind === "expense" && (
                     <label className="mt-3 flex items-center gap-2 text-xs" style={{ color: C.green }}>

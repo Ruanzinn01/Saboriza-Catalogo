@@ -53,6 +53,7 @@ export interface LaunchItemInput {
   catalogItemId?: string;
   employeeId?: string;
   nameSnapshot: string;
+  description?: string;
   unit: string;
   quantity: number;
   unitPrice: number;
@@ -147,6 +148,7 @@ function toPayloadJson(p: LaunchPayload) {
       catalog_item_id: i.catalogItemId ?? null,
       employee_id: i.employeeId ?? null,
       name_snapshot: i.nameSnapshot,
+      description: i.description?.trim() || null,
       unit: i.unit,
       quantity: i.quantity,
       unit_price: i.unitPrice,
@@ -179,6 +181,8 @@ interface ExpenseLaunchState {
   deleteCategory: (id: string) => Promise<string | null>;
   setCategoryRate: (id: string, rateable: boolean) => Promise<string | null>;
   createCatalogItem: (input: { name: string; kind: "asset" | "expense" | "partner"; categoryId: string; unit: string; suggestedPrice: number; suggestRecurring: boolean }) => Promise<string | null>;
+  updateCatalogItemName: (id: string, name: string) => Promise<string | null>;
+  deleteCatalogItem: (id: string) => Promise<string | null>;
   findCommitment: (kind: LaunchKind, partyName: string, contractLabel: string, rawMaterialId?: string, catalogItemId?: string) => ExpenseRecurrence | null;
   createLaunch: (payload: LaunchPayload) => Promise<{ launchId: string | null; error: string | null }>;
 }
@@ -199,7 +203,7 @@ export const useExpenseLaunchStore = create<ExpenseLaunchState>((set, get) => ({
 
     const [{ data: catRows }, { data: itemRows }, { data: recRows }] = await Promise.all([
       supabase.from("expense_categories").select("id, name, kind, rateable").eq("company_id", companyId).eq("active", true).order("name"),
-      supabase.from("expense_catalog_items").select("id, name, code, category_id, kind, unit, suggested_price, suggest_recurring").eq("company_id", companyId).order("name"),
+      supabase.from("expense_catalog_items").select("id, name, code, category_id, kind, unit, suggested_price, suggest_recurring").eq("company_id", companyId).eq("active", true).order("name"),
       supabase.from("expense_recurrences").select("id, kind, party_name, contract_label, amount, frequency, raw_material_id, catalog_item_id, status").eq("company_id", companyId).eq("status", "ATIVA"),
     ]);
 
@@ -274,6 +278,20 @@ export const useExpenseLaunchStore = create<ExpenseLaunchState>((set, get) => ({
       suggested_price: input.suggestedPrice,
       suggest_recurring: input.suggestRecurring,
     });
+    if (error) return error.message;
+    await get().fetchAll();
+    return null;
+  },
+
+  updateCatalogItemName: async (id, name) => {
+    const { error } = await supabase.from("expense_catalog_items").update({ name }).eq("id", id);
+    if (error) return error.code === "23505" ? "Item já cadastrado" : error.message;
+    await get().fetchAll();
+    return null;
+  },
+
+  deleteCatalogItem: async (id) => {
+    const { error } = await supabase.from("expense_catalog_items").update({ active: false }).eq("id", id);
     if (error) return error.message;
     await get().fetchAll();
     return null;
