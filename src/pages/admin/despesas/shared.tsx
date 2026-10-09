@@ -7,6 +7,23 @@ const C = DESPESAS_COLORS;
 
 export const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+/**
+ * Formata data YYYY-MM-DD (civil, sem hora) como DD/MM/AAAA via fatiamento de string — nunca
+ * via `new Date(iso)`, que interpreta a data como UTC e pode deslocar um dia em fusos negativos
+ * (BUG 02 §11/§18).
+ */
+export function brDate(iso: string | null | undefined): string {
+  if (!iso) return "-----";
+  const [y, m, d] = iso.slice(0, 10).split("-");
+  return `${d}/${m}/${y}`;
+}
+
+/** "Parcela 02/05" — só exibida quando a despesa realmente tem mais de 1 parcela (BUG 02 §6.1/§10). */
+export function installmentLabel(e: Expense): string | null {
+  if (!e.installmentNumber || !e.installmentCount || e.installmentCount <= 1) return null;
+  return `Parcela ${String(e.installmentNumber).padStart(2, "0")}/${String(e.installmentCount).padStart(2, "0")}`;
+}
+
 export const STATUS_TONE: Record<ExpenseStatus, string> = {
   ABERTO: "bg-ink-900/5 text-ink-700",
   AGENDADO: "bg-blue-50 text-blue-700",
@@ -87,10 +104,11 @@ export function ExpenseTable({ rows, emptyMessage }: { rows: Expense[]; emptyMes
                 <p className="font-semibold text-ink-900">{e.description}</p>
                 <p className="mt-0.5 text-[11px] text-ink-muted">
                   {[e.partyName, e.documentRef].filter(Boolean).join(" · ") || (e.sourceModule ? `Origem: ${e.sourceModule}` : "Lançamento direto")}
+                  {installmentLabel(e) && <span className="ml-1.5 font-semibold text-forest-800">· {installmentLabel(e)}</span>}
                 </p>
               </td>
               <td className="px-4 py-3 text-ink-700/70">{e.subcategory ? `${e.category} · ${e.subcategory}` : e.category}</td>
-              <td className="px-4 py-3 text-ink-700/70">{e.dueDate ?? "-----"}</td>
+              <td className="px-4 py-3 text-ink-700/70">{brDate(e.dueDate)}</td>
               <td className="px-4 py-3 text-ink-700/70">{e.pattern === "fixed" ? "Fixa" : e.pattern === "variable" ? "Variável" : "Eventual"}</td>
               <td className="px-4 py-3">
                 <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_TONE[e.status]}`}>{STATUS_LABEL[e.status]}</span>

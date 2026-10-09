@@ -2367,6 +2367,8 @@ export type Database = {
           employee_id: string | null
           id: string
           idempotency_key: string | null
+          installment_count: number | null
+          installment_number: number | null
           item_detail: string | null
           launch_id: string | null
           nature: string
@@ -2377,6 +2379,7 @@ export type Database = {
           partner_id: string | null
           party_name: string | null
           pattern: string
+          payment_method: string | null
           scheduled_payment_at: string | null
           settled_at: string | null
           source_entity_id: string | null
@@ -2404,6 +2407,8 @@ export type Database = {
           employee_id?: string | null
           id?: string
           idempotency_key?: string | null
+          installment_count?: number | null
+          installment_number?: number | null
           item_detail?: string | null
           launch_id?: string | null
           nature?: string
@@ -2414,6 +2419,7 @@ export type Database = {
           partner_id?: string | null
           party_name?: string | null
           pattern?: string
+          payment_method?: string | null
           scheduled_payment_at?: string | null
           settled_at?: string | null
           source_entity_id?: string | null
@@ -2441,6 +2447,8 @@ export type Database = {
           employee_id?: string | null
           id?: string
           idempotency_key?: string | null
+          installment_count?: number | null
+          installment_number?: number | null
           item_detail?: string | null
           launch_id?: string | null
           nature?: string
@@ -2451,6 +2459,7 @@ export type Database = {
           partner_id?: string | null
           party_name?: string | null
           pattern?: string
+          payment_method?: string | null
           scheduled_payment_at?: string | null
           settled_at?: string | null
           source_entity_id?: string | null

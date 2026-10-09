@@ -3,7 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useDespesasStore, type BlockType } from "@/store/despesas-store";
 import { Button } from "@/components/ui/Button";
+import { brDate, installmentLabel } from "@/pages/admin/despesas/shared";
 import { DESPESAS_COLORS } from "@/pages/admin/despesas/theme";
+
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  boleto: "Boleto",
+  pix: "Pix",
+  transfer: "Transferência",
+  cash: "Dinheiro",
+};
 
 const C = DESPESAS_COLORS;
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -120,23 +128,29 @@ export function ExpenseDetailModal({ expenseId, onClose }: { expenseId: string; 
               <p className="text-[10px] font-bold tracking-[3px]" style={{ color: C.gold }}>{expense.origin.toUpperCase()}</p>
               <h2 className="text-lg font-extrabold" style={{ color: C.green }}>{expense.description}</h2>
               <p className="text-xs" style={{ color: C.muted }}>{[expense.partyName, expense.documentRef].filter(Boolean).join(" · ") || "Lançamento direto"}</p>
+              {installmentLabel(expense) && (
+                <p className="mt-0.5 text-xs font-bold" style={{ color: C.gold }}>
+                  {expense.paymentMethod ? PAYMENT_METHOD_LABEL[expense.paymentMethod] ?? expense.paymentMethod : "Parcela"} — Parcela {String(expense.installmentNumber).padStart(2, "0")} de {String(expense.installmentCount).padStart(2, "0")}
+                </p>
+              )}
             </div>
             <button onClick={onClose} className="px-1.5 text-2xl leading-none" style={{ color: C.green }}>×</button>
           </div>
 
           <div className="my-3.5 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             <div className="rounded-xl p-3" style={{ background: "#f6f8f3" }}><span className="block text-[10px] uppercase" style={{ color: "#7a8179" }}>Valor</span><strong className="text-[13px]">{brl(expense.amount)}</strong></div>
-            <div className="rounded-xl p-3" style={{ background: "#f6f8f3" }}><span className="block text-[10px] uppercase" style={{ color: "#7a8179" }}>Vencimento</span><strong className="text-[13px]">{expense.dueDate ?? "-----"}</strong></div>
+            <div className="rounded-xl p-3" style={{ background: "#f6f8f3" }}><span className="block text-[10px] uppercase" style={{ color: "#7a8179" }}>Vencimento</span><strong className="text-[13px]">{brDate(expense.dueDate)}</strong></div>
             <div className="rounded-xl p-3" style={{ background: "#f6f8f3" }}>
               <span className="block text-[10px] uppercase" style={{ color: "#7a8179" }}>Status</span>
               <strong className="text-[13px]"><span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: tone.bg, color: tone.text }}>{tone.label}</span></strong>
             </div>
             <div className="rounded-xl p-3" style={{ background: "#f6f8f3" }}><span className="block text-[10px] uppercase" style={{ color: "#7a8179" }}>Categoria</span><strong className="text-[13px]">{expense.subcategory ? `${expense.category} · ${expense.subcategory}` : expense.category}</strong></div>
-            <div className="rounded-xl p-3" style={{ background: "#f6f8f3" }}><span className="block text-[10px] uppercase" style={{ color: "#7a8179" }}>Competência</span><strong className="text-[13px]">{expense.competence ?? "-----"}</strong></div>
+            <div className="rounded-xl p-3" style={{ background: "#f6f8f3" }}><span className="block text-[10px] uppercase" style={{ color: "#7a8179" }}>Competência</span><strong className="text-[13px]">{brDate(expense.competence)}</strong></div>
             <div className="rounded-xl p-3" style={{ background: "#f6f8f3" }}>
               <span className="block text-[10px] uppercase" style={{ color: "#7a8179" }}>{expense.status === "PAGO" ? "Pagamento" : "Saldo"}</span>
-              <strong className="text-[13px]">{expense.status === "PAGO" ? expense.settledAt?.slice(0, 10) ?? "Confirmado" : brl(remaining)}</strong>
+              <strong className="text-[13px]">{expense.status === "PAGO" ? brDate(expense.settledAt) : brl(remaining)}</strong>
             </div>
+            <div className="rounded-xl p-3" style={{ background: "#f6f8f3" }}><span className="block text-[10px] uppercase" style={{ color: "#7a8179" }}>Forma</span><strong className="text-[13px]">{expense.paymentMethod ? PAYMENT_METHOD_LABEL[expense.paymentMethod] ?? expense.paymentMethod : "-----"}</strong></div>
           </div>
 
           {expense.itemDetail && (

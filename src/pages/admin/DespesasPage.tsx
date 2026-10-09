@@ -4,7 +4,7 @@ import { Plus, FileText } from "lucide-react";
 import { useDespesasStore, type ExpenseOrigin, type ExpensePattern } from "@/store/despesas-store";
 import { AdminState } from "@/components/admin/AdminState";
 import { Button } from "@/components/ui/Button";
-import { brl, expenseDetailPath, ExpenseTable, withContext } from "@/pages/admin/despesas/shared";
+import { brDate, brl, expenseDetailPath, ExpenseTable, installmentLabel, withContext } from "@/pages/admin/despesas/shared";
 import { useDespesasFilters } from "@/pages/admin/despesas/useDespesasFilters";
 import { DESPESAS_COLORS, ORIGIN_COLOR_HEX, KPI_DOT_COLOR } from "@/pages/admin/despesas/theme";
 import { ReportModal } from "@/pages/admin/despesas/ReportModal";
@@ -442,9 +442,12 @@ export function DespesasPage() {
                   <span className="mt-1 inline-block h-2 w-2 rounded-full" style={{ background: e.status === "ATRASADO" ? "#c45e54" : e.status === "AGENDADO" ? "#4885bd" : e.status === "BLOQUEADO" ? C.orange : C.gray }} />
                   <span>
                     <b style={{ color: C.green }}>{e.description}</b>
-                    <small className="block" style={{ color: C.muted }}>{e.status === "BLOQUEADO" ? "Bloqueado" : e.status}</small>
+                    <small className="block" style={{ color: C.muted }}>
+                      {e.status === "BLOQUEADO" ? "Bloqueado" : e.status}
+                      {installmentLabel(e) && ` · ${installmentLabel(e)}`}
+                    </small>
                   </span>
-                  <span className="text-center text-[15px] font-extrabold leading-tight whitespace-nowrap" style={{ color: C.red }}>{e.dueDate?.slice(8, 10)}/{e.dueDate?.slice(5, 7)}</span>
+                  <span className="text-center text-[13px] font-extrabold leading-tight whitespace-nowrap" style={{ color: C.red }}>{brDate(e.dueDate)}</span>
                   <span className="whitespace-nowrap font-bold" style={{ color: C.green }}>{brl(e.amount - (e.paidAmount ?? 0))}</span>
                 </button>
               ))}

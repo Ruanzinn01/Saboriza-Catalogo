@@ -37,6 +37,9 @@ export interface Expense {
   sourceEntityId: string | null;
   partyName: string | null;
   documentRef: string | null;
+  installmentNumber: number | null;
+  installmentCount: number | null;
+  paymentMethod: string | null;
   createdAt: string;
 }
 
@@ -208,6 +211,9 @@ function mapExpenseRow(e: Record<string, unknown>): Expense {
     sourceEntityId: e.source_entity_id as string | null,
     partyName: e.party_name as string | null,
     documentRef: e.document_ref as string | null,
+    installmentNumber: (e.installment_number as number | null) ?? null,
+    installmentCount: (e.installment_count as number | null) ?? null,
+    paymentMethod: (e.payment_method as string | null) ?? null,
     createdAt: e.created_at as string,
   };
 }
@@ -256,6 +262,9 @@ function buildSalaryVirtualExpenses(obligations: SalaryObligation[], advances: S
       sourceEntityId: o.employeeId,
       partyName: o.employeeName,
       documentRef: null,
+      installmentNumber: null,
+      installmentCount: null,
+      paymentMethod: null,
       createdAt: o.competence,
     };
   });
@@ -560,7 +569,14 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
       to = toIsoDate(new Date(referenceDate.getFullYear(), 11, 31));
     }
 
-    return expenses.filter((e) => e.competence && e.competence >= from && e.competence <= to);
+    // Visão por VENCIMENTO (BUG 02 §5): cada parcela cai no mês do seu próprio due_date, não
+    // no mês de competência da compra original — senão uma compra em 5x apareceria inteira
+    // no mês do cadastro. Competência continua guardada no registro para exibição (§3.1/§8),
+    // só não é mais o critério de período desta listagem/indicadores.
+    return expenses.filter((e) => {
+      const ref = e.dueDate ?? e.competence;
+      return ref && ref >= from && ref <= to;
+    });
   },
 
   getEvolution: (window, referenceDate = new Date()) => {
