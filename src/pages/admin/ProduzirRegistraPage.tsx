@@ -1,7 +1,8 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ImageOff } from "lucide-react";
+import { ArrowLeft, ImageOff, ScanLine } from "lucide-react";
 import { toast } from "sonner";
+import { BarcodeScannerModal } from "@/components/admin/BarcodeScannerModal";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useEmployeesStore } from "@/store/employees-store";
 import { useFloorStore } from "@/store/floor-store";
@@ -54,6 +55,7 @@ type Page = "home" | "liberar" | "confirmar" | "urgent" | "diary" | "produced" |
 export function ProduzirRegistraPage() {
   const companyName = useAdminCompanyStore((s) => s.company?.display_name) || "Empresa";
   const products = useCatalogStore((s) => s.products);
+  const categories = useCatalogStore((s) => s.categories);
   const fetchCatalog = useCatalogStore((s) => s.fetchCatalog);
   const materials = useRawMaterialsStore((s) => s.materials);
   const fetchMaterials = useRawMaterialsStore((s) => s.fetchMaterials);
@@ -150,7 +152,6 @@ export function ProduzirRegistraPage() {
     setSaving(false);
     setConfirmProductId(null);
     toast.success("Produção confirmada! Estoque atualizado.");
-    go("produced");
   }
 
   const lowStock = products.filter((p) => p.active && p.currentStock < p.minStock);
@@ -282,6 +283,7 @@ export function ProduzirRegistraPage() {
         {page === "confirmar" && (
           <ConfirmarProducaoView
             products={products}
+            categories={categories}
             query={query}
             setQuery={setQuery}
             urgentDemands={urgentDemands}
@@ -798,6 +800,7 @@ function LiberarProducaoView({
 
 function ConfirmarProducaoView({
   products,
+  categories,
   query,
   setQuery,
   urgentDemands,
@@ -808,6 +811,7 @@ function ConfirmarProducaoView({
   onConfirm,
 }: {
   products: Product[];
+  categories: { id: string; name: string; active: boolean }[];
   query: string;
   setQuery: (v: string) => void;
   urgentDemands: { id: string; productId: string; name: string; totalQuantity: number; doneQuantity: number; status: string }[];
@@ -820,59 +824,78 @@ function ConfirmarProducaoView({
   const [packs, setPacks] = useState(1);
   const [urgentId, setUrgentId] = useState("");
   const [floorExecutionId, setFloorExecutionId] = useState("");
-  const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [categoryId, setCategoryId] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
 
-  const filtered = products.filter((p) => p.active && (p.name + p.code).toLowerCase().includes(query.toLowerCase()));
   const selected = products.find((p) => p.id === confirmProductId) ?? null;
   const urgentOptions = selected ? urgentDemands.filter((u) => u.productId === selected.id && u.status === "ATIVO") : [];
   const readyExecutions = selected
     ? floorExecutions.filter((e) => e.productId === selected.id && e.status === "CONCLUIDO" && !e.productionRecordId)
     : [];
 
-  return (
-    <>
-      <Eyebrow kicker="QR/CÓDIGO" title="Fecha o produto acabado." sub="Confirmação oficial: entra no estoque uma única vez." />
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
+  // Cada nova seleção (manual ou por leitura) começa do zero: evita reaproveitar a chave de
+  // idempotência e a quantidade da confirmação anterior quando a tela permanece aberta pro próximo ciclo.
+  useEffect(() => {
+    if (!confirmProductId) return;
+    setPacks(1);
+    setUrgentId("");
+    setFloorExecutionId("");
+    setIdempotencyKey(crypto.randomUUID());
+  }, [confirmProductId]);
+
+  const categoryNameById = useMemo(() => new Map(categories.map((cat) => [cat.id, cat.name])), [categories]);
+  const activeCategories = useMemo(() => categories.filter((cat) => cat.active), [categories]);
+
+  const filtered = products.filter(
+    (p) => p.active && (!categoryId || p.categoryId === categoryId) && (p.name + p.code).toLowerCase().includes(query.toLowerCase())
+  );
+
+  function presentationLine(p: Product) {
+    return [p.presentation, p.weight].filter(Boolean).join(" - ");
+  }
+
+  function handleScan(code: string) {
+    setScannerOpen(false);
+    const normalized = code.trim();
+    if (!normalized) return;
+    const found = products.find((p) => p.active && (p.gtin === normalized || p.code === normalized));
+    if (!found) {
+      toast.error("Código não encontrado. Tente novamente ou busque manualmente.");
+      return;
+    }
+    setConfirmProductId(found.id);
+  }
+
+  if (selected) {
+    return (
+      <>
+        <Eyebrow kicker="QR/CÓDIGO" title="Confirmar produção" sub="Confira os dados antes de informar a quantidade." />
         <Card>
-          <h2 className="mb-3 text-lg font-bold">Encontrar produto</h2>
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nome ou código do produto" className={c.input} />
-          <div className="mt-3">
-            {filtered.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setConfirmProductId(p.id)}
-                className="flex w-full items-center gap-3 border-b py-3 text-left"
-                style={{ borderColor: c.line }}
-              >
-                {p.imageUrl ? (
-                  <img src={p.imageUrl} alt={p.name} className="h-12 w-12 shrink-0 rounded-xl object-cover" />
-                ) : (
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ background: "#edf1f7", color: c.muted }}>
-                    <ImageOff size={18} />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-bold">{p.name}</h3>
-                  <small style={{ color: c.muted }}>{p.code}</small>
-                </div>
-                {confirmProductId === p.id && <span className={c.tag}>SELECIONADO</span>}
-              </button>
-            ))}
-          </div>
-        </Card>
-        <Card>
-          <h2 className="mb-3 text-lg font-bold">Confirmar Produção</h2>
-          {!selected ? (
-            <p style={{ color: c.muted }}>Selecione um produto ao lado.</p>
-          ) : (
-            <>
-              <p className="mb-2">
-                <b>{selected.name}</b>
+          <button type="button" onClick={() => setConfirmProductId(null)} className="mb-4 text-sm font-bold" style={{ color: c.blue }}>
+            ← Voltar / escolher outro produto
+          </button>
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[300px_1fr]">
+            {selected.imageUrl ? (
+              <img src={selected.imageUrl} alt={selected.name} className="h-72 w-full rounded-2xl object-cover" />
+            ) : (
+              <div className="flex h-72 w-full items-center justify-center rounded-2xl" style={{ background: "#edf1f7", color: c.muted }}>
+                <ImageOff size={40} />
+              </div>
+            )}
+            <div>
+              <h2 className="text-2xl font-bold">{selected.name}</h2>
+              <p style={{ color: c.muted }}>{presentationLine(selected) || "Sem apresentação cadastrada"}</p>
+              <p className="mt-1 font-mono text-xs" style={{ color: c.muted }}>
+                {selected.code}
               </p>
+              <div className={`${c.notice} mt-3 inline-block`}>
+                Pack: <b>{selected.packQuantity} unidade{selected.packQuantity === 1 ? "" : "s"}</b>
+              </div>
+
               {readyExecutions.length > 0 && (
                 <>
-                  <label className="mb-1 block text-xs font-bold">Vincular execução do Chão (opcional)</label>
+                  <label className="mb-1 mt-4 block text-xs font-bold">Vincular execução do Chão (opcional)</label>
                   <select
                     value={floorExecutionId}
                     onChange={(e) => {
@@ -893,15 +916,21 @@ function ConfirmarProducaoView({
                   </select>
                 </>
               )}
-              <label className="mb-1 block text-xs font-bold">Quantidade (packs)</label>
+
+              <label className="mb-1 mt-4 block text-xs font-bold">Quantidade de packs produzidos</label>
               <input
                 type="number"
                 min={1}
                 value={packs}
                 disabled={!!floorExecutionId}
                 onChange={(e) => setPacks(Math.max(1, Number(e.target.value)))}
-                className={`${c.input} mb-1`}
+                className={`${c.input} mb-1 max-w-[220px]`}
               />
+              {selected.packQuantity > 0 && (
+                <p className="mb-3 text-xs" style={{ color: c.muted }}>
+                  {packs} pack(s) × {selected.packQuantity} unidades = {packs * selected.packQuantity} unidades.
+                </p>
+              )}
               {floorExecutionId &&
                 (() => {
                   const exec = readyExecutions.find((x) => x.id === floorExecutionId);
@@ -936,10 +965,71 @@ function ConfirmarProducaoView({
               >
                 {saving ? "Confirmando..." : "Confirmar Produção"}
               </button>
-            </>
-          )}
+            </div>
+          </div>
         </Card>
-      </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Eyebrow kicker="QR/CÓDIGO" title="Fecha o produto acabado." sub="Confirmação oficial: entra no estoque uma única vez." />
+      <Card>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-bold">Encontrar produto</h2>
+          <button type="button" onClick={() => setScannerOpen(true)} className={`${c.btn} ${c.btnSecondary}`}>
+            <ScanLine size={16} /> Ler código com a câmera
+          </button>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Nome ou código do produto"
+            className={`${c.input} flex-1`}
+          />
+          <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className={`${c.input} sm:max-w-[220px]`}>
+            <option value="">Todas as categorias</option>
+            {activeCategories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="mt-3">
+          {filtered.length === 0 ? (
+            <p style={{ color: c.muted }}>Nenhum produto encontrado.</p>
+          ) : (
+            filtered.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setConfirmProductId(p.id)}
+                className="flex w-full items-center gap-3 border-b py-3 text-left"
+                style={{ borderColor: c.line }}
+              >
+                {p.imageUrl ? (
+                  <img src={p.imageUrl} alt={p.name} className="h-12 w-12 shrink-0 rounded-xl object-cover" />
+                ) : (
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl" style={{ background: "#edf1f7", color: c.muted }}>
+                    <ImageOff size={18} />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold">{p.name}</h3>
+                  <small style={{ color: c.muted }}>{presentationLine(p) || p.code}</small>
+                  <small className="block" style={{ color: c.muted }}>
+                    {p.code} · {categoryNameById.get(p.categoryId) ?? "Sem categoria"}
+                  </small>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      </Card>
+      <BarcodeScannerModal open={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleScan} />
     </>
   );
 }
