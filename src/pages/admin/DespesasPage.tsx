@@ -9,6 +9,8 @@ import { useDespesasFilters } from "@/pages/admin/despesas/useDespesasFilters";
 import { DESPESAS_COLORS, ORIGIN_COLOR_HEX, KPI_DOT_COLOR } from "@/pages/admin/despesas/theme";
 import { ReportModal } from "@/pages/admin/despesas/ReportModal";
 import { ExpenseDetailModal } from "@/pages/admin/despesas/ExpenseDetailModal";
+import { KIND_LABEL } from "@/pages/admin/despesas/launch/types";
+import type { LaunchKind } from "@/store/expense-launch-store";
 
 const C = DESPESAS_COLORS;
 
@@ -178,7 +180,7 @@ function OriginCharts({ list }: { list: ReturnType<typeof useDespesasStore.getSt
           <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: "#faf0d7", color: "#977021" }}>aprofundar</span>
         </div>
         <div className="p-4">
-          <div className="flex h-32 items-end gap-2.5 border-b pb-1.5" style={{ borderColor: "#e8ebe5" }}>
+          <div className="flex h-32 items-stretch gap-2.5 border-b pb-1.5" style={{ borderColor: "#e8ebe5" }}>
             {origins.map((o) => (
               <button key={o.origin} onClick={() => openOrigin(o.origin)} className="flex min-w-[42px] flex-1 flex-col items-center justify-end gap-1">
                 <span className="text-[9px] font-bold whitespace-nowrap">{brl(o.total)}</span>
@@ -195,6 +197,42 @@ function OriginCharts({ list }: { list: ReturnType<typeof useDespesasStore.getSt
             ))}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** Valores por Origem — reaproveita os quadrinhos de seleção de Compras e Despesas V3
+ * (ícone/nome/sub de KIND_LABEL) mostrando o valor consolidado de cada origem no período.
+ * Mesmos 5 destinos clicáveis do gráfico circular/barras (stock/asset/expense/salary/partner). */
+function OriginValueCards({ list }: { list: ReturnType<typeof useDespesasStore.getState>["expenses"] }) {
+  const getByOrigin = useDespesasStore((s) => s.getByOrigin);
+  const navigate = useNavigate();
+  const { params } = useDespesasFilters();
+  const totals = new Map(getByOrigin(list).map((o) => [o.origin, o.total]));
+  const kinds: LaunchKind[] = ["stock", "asset", "expense", "salary", "partner"];
+
+  return (
+    <div className="rounded-3xl border bg-white" style={{ borderColor: C.line }}>
+      <div className="border-b p-4" style={{ borderColor: C.line }}>
+        <h2 className="text-[19px] font-bold" style={{ color: C.green }}>Valores por origem</h2>
+      </div>
+      <div className="grid grid-cols-2 gap-2.5 p-4 sm:grid-cols-5">
+        {kinds.map((k) => (
+          <button
+            key={k}
+            onClick={() => navigate(withContext(`/admin/despesas/origem/${k}`, params))}
+            className="rounded-[14px] border p-3.5 text-left hover:bg-[#f9fbf7]"
+            style={{ borderColor: "#dfe3d8", background: "#fff" }}
+          >
+            <span className="mb-2.5 flex h-[38px] w-[38px] items-center justify-center rounded-xl text-xl" style={{ background: "#f0f3ec", color: "#477b59" }}>
+              {KIND_LABEL[k].icon}
+            </span>
+            <strong className="block text-[13px]" style={{ color: C.green }}>{KIND_LABEL[k].name}</strong>
+            <small className="mt-1 block text-[11px]" style={{ color: C.muted }}>{KIND_LABEL[k].sub}</small>
+            <p className="mt-2 text-base font-bold whitespace-nowrap" style={{ color: C.green }}>{brl(totals.get(k) ?? 0)}</p>
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -390,6 +428,7 @@ export function DespesasPage() {
 
       <EvolutionChart referenceDate={referenceDate} />
       <OriginCharts list={periodExpenses} />
+      <OriginValueCards list={periodExpenses} />
       <CompositionCards list={periodExpenses} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
