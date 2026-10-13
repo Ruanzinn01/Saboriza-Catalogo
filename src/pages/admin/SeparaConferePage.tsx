@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { PackageSearch } from "lucide-react";
-import packageJson from "../../../package.json";
+import { Link, useSearchParams } from "react-router-dom";
 import { AdminState } from "@/components/admin/AdminState";
+import { InventoryTab } from "@/components/admin/InventoryTab";
 import { SeparationOrderCard } from "@/components/admin/SeparationOrderCard";
 import { SeparationWeeklyDonut } from "@/components/admin/SeparationWeeklyDonut";
 import { PageHeader } from "@/components/admin/PageHeader";
@@ -10,10 +9,9 @@ import { cn } from "@/lib/cn";
 import { agingLevel, durationLabel } from "@/lib/separation";
 import { playAlertBeep } from "@/lib/audio-beep";
 import { useSeparationStore } from "@/store/separation-store";
-import { useAdminAuthStore } from "@/store/admin-auth-store";
 import type { AgingLevel } from "@/types/separation";
 
-type Tab = "pendentes" | "historico" | "sobre";
+type Tab = "pendentes" | "historico" | "inventario";
 
 function startOfWeek(date: Date) {
   const result = new Date(date);
@@ -34,7 +32,8 @@ const EMPTY_COUNTS: Record<AgingLevel, number> = {
 };
 
 export function SeparaConferePage() {
-  const [tab, setTab] = useState<Tab>("pendentes");
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState<Tab>(searchParams.get("aba") === "inventario" ? "inventario" : "pendentes");
   const queue = useSeparationStore((state) => state.queue);
   const queueStatus = useSeparationStore((state) => state.queueStatus);
   const fetchQueue = useSeparationStore((state) => state.fetchQueue);
@@ -44,7 +43,6 @@ export function SeparaConferePage() {
   const subscribeRealtime = useSeparationStore((state) => state.subscribeRealtime);
   const unsubscribeRealtime = useSeparationStore((state) => state.unsubscribeRealtime);
   const unseenOrderIds = useSeparationStore((state) => state.unseenOrderIds);
-  const session = useAdminAuthStore((state) => state.session);
 
   useEffect(() => {
     fetchQueue();
@@ -94,7 +92,7 @@ export function SeparaConferePage() {
           [
             { key: "pendentes", label: "Pendentes" },
             { key: "historico", label: "Histórico" },
-            { key: "sobre", label: "Sobre" },
+            { key: "inventario", label: "Inventário" },
           ] as { key: Tab; label: string }[]
         ).map((item) => (
           <button
@@ -211,19 +209,7 @@ export function SeparaConferePage() {
         </div>
       )}
 
-      {tab === "sobre" && (
-        <div className="flex flex-col items-center gap-3 rounded-3xl border border-forest-950/10 bg-white p-8 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-forest-950/10 text-forest-950">
-            <PackageSearch size={26} />
-          </span>
-          <h2 className="text-lg font-extrabold text-forest-950">Separa Confere</h2>
-          <p className="font-mono text-xs text-ink-muted">v{packageJson.version}</p>
-          <p className="max-w-sm text-sm text-ink-700/80">
-            Ferramenta de separação e conferência física dos produtos de um pedido, integrada ao Óris360.
-          </p>
-          <p className="text-xs font-semibold text-ink-muted">Logado como {session?.user.user_metadata?.name || session?.user.email}</p>
-        </div>
-      )}
+      {tab === "inventario" && <InventoryTab />}
     </div>
   );
 }

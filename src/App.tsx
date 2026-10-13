@@ -62,6 +62,7 @@ const PatrimonioPage = lazy(() => import("@/pages/admin/PatrimonioPage").then((m
 const DREPage = lazy(() => import("@/pages/admin/DREPage").then((m) => ({ default: m.DREPage })));
 const FechamentoPage = lazy(() => import("@/pages/admin/FechamentoPage").then((m) => ({ default: m.FechamentoPage })));
 const SeparaConferePage = lazy(() => import("@/pages/admin/SeparaConferePage").then((m) => ({ default: m.SeparaConferePage })));
+const SeparaConfereInventoryItemPage = lazy(() => import("@/pages/admin/SeparaConfereInventoryItemPage").then((m) => ({ default: m.SeparaConfereInventoryItemPage })));
 const SeparaConfereOrderPage = lazy(() => import("@/pages/admin/SeparaConfereOrderPage").then((m) => ({ default: m.SeparaConfereOrderPage })));
 const CarregaEntregaPage = lazy(() => import("@/pages/admin/CarregaEntregaPage").then((m) => ({ default: m.CarregaEntregaPage })));
 const CarregamentoOrderPage = lazy(() => import("@/pages/admin/CarregamentoOrderPage").then((m) => ({ default: m.CarregamentoOrderPage })));
@@ -143,6 +144,7 @@ export function App() {
               <Route path="faturar" element={<FaturarListPage />} />
               <Route path="faturar/:orderId" element={<FaturarOrderPage />} />
               <Route path="separa-confere" element={<SeparaConferePage />} />
+              <Route path="separa-confere/inventario/:itemId" element={<SeparaConfereInventoryItemPage />} />
               <Route path="separa-confere/:orderId" element={<SeparaConfereOrderPage />} />
               <Route path="carrega-entrega" element={<CarregaEntregaPage />} />
               <Route path="carrega-entrega/carregar/:orderId" element={<CarregamentoOrderPage />} />
