@@ -42,6 +42,7 @@ const CentralProducaoPage = lazy(() => import("@/pages/admin/CentralProducaoPage
 const IntegracoesFinanceirasPage = lazy(() => import("@/pages/admin/IntegracoesFinanceirasPage").then((m) => ({ default: m.IntegracoesFinanceirasPage })));
 const ErrosSistemaPage = lazy(() => import("@/pages/admin/ErrosSistemaPage").then((m) => ({ default: m.ErrosSistemaPage })));
 const ProductionPanelPage = lazy(() => import("@/pages/admin/ProductionPanelPage").then((m) => ({ default: m.ProductionPanelPage })));
+const EstoquePage = lazy(() => import("@/pages/admin/EstoquePage").then((m) => ({ default: m.EstoquePage })));
 const StockPage = lazy(() => import("@/pages/admin/StockPage").then((m) => ({ default: m.StockPage })));
 const StockInsightsPage = lazy(() => import("@/pages/admin/StockInsightsPage").then((m) => ({ default: m.StockInsightsPage })));
 const ProductStockDetailPage = lazy(() => import("@/pages/admin/ProductStockDetailPage").then((m) => ({ default: m.ProductStockDetailPage })));
@@ -127,7 +128,8 @@ export function App() {
               <Route path="planos-producao" element={<PlanosProducaoPage />} />
               <Route path="central-producao" element={<CentralProducaoPage />} />
               <Route path="producao" element={<ProductionPanelPage />} />
-              <Route path="estoque" element={<StockPage />} />
+              <Route path="estoque" element={<EstoquePage />} />
+              <Route path="estoque/produtos" element={<StockPage />} />
               <Route path="estoque/indicadores" element={<StockInsightsPage />} />
               <Route path="estoque/:productId" element={<ProductStockDetailPage />} />
               <Route path="colaboradores" element={<EmployeesPage />} />
