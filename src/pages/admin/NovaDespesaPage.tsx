@@ -15,7 +15,9 @@ import { brl, withContext } from "@/pages/admin/despesas/shared";
 import { useDespesasFilters } from "@/pages/admin/despesas/useDespesasFilters";
 import { DESPESAS_COLORS } from "@/pages/admin/despesas/theme";
 import { KIND_LABEL, defaultRecurrence, frequencyLabel, type CartLine } from "@/pages/admin/despesas/launch/types";
-import { ItemConfigModal, CategoriesModal, NewItemModal, SalaryApurationModal, AdvanceModal } from "@/pages/admin/despesas/launch/LaunchModals";
+import { ItemConfigModal, CategoriesModal, NewItemModal, QuickMaterialModal, SalaryApurationModal, AdvanceModal } from "@/pages/admin/despesas/launch/LaunchModals";
+import { clearDraft, loadDraft, saveDraft } from "@/pages/admin/despesas/launch/draft";
+import type { RawMaterial } from "@/types/raw-material";
 import type { Employee } from "@/types/employee";
 
 const C = DESPESAS_COLORS;
@@ -66,38 +68,53 @@ export function NovaDespesaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [kind, setKind] = useState<LaunchKind>("stock");
-  const [supplierId, setSupplierId] = useState("");
-  const [partnerId, setPartnerId] = useState("");
-  const [competence, setCompetence] = useState(month());
-  const [documentRef, setDocumentRef] = useState("");
-  const [documentSeries, setDocumentSeries] = useState("");
-  const [documentIssueDate, setDocumentIssueDate] = useState("");
-  const [documentAccessKey, setDocumentAccessKey] = useState("");
-  const [batch, setBatch] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
+  // Rascunho da sessão: sair para cadastrar fornecedor/insumo e voltar não pode perder o lançamento.
+  const [draft] = useState(loadDraft);
+  const [kind, setKind] = useState<LaunchKind>(draft?.kind ?? "stock");
+  const [supplierId, setSupplierId] = useState(draft?.supplierId ?? "");
+  const [partnerId, setPartnerId] = useState(draft?.partnerId ?? "");
+  const [competence, setCompetence] = useState(draft?.competence ?? month());
+  const [documentRef, setDocumentRef] = useState(draft?.documentRef ?? "");
+  const [documentSeries, setDocumentSeries] = useState(draft?.documentSeries ?? "");
+  const [documentIssueDate, setDocumentIssueDate] = useState(draft?.documentIssueDate ?? "");
+  const [documentAccessKey, setDocumentAccessKey] = useState(draft?.documentAccessKey ?? "");
+  const [batch, setBatch] = useState(draft?.batch ?? "");
+  const [expiryDate, setExpiryDate] = useState(draft?.expiryDate ?? "");
 
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
-  const [cart, setCart] = useState<CartLine[]>([]);
+  const [cart, setCart] = useState<CartLine[]>(draft?.cart ?? []);
   const [configLine, setConfigLine] = useState<CartLine | null>(null);
   const [showCategories, setShowCategories] = useState(false);
   const [showNewItem, setShowNewItem] = useState(false);
+  const [showQuickMaterial, setShowQuickMaterial] = useState(false);
   const [salaryModalEmployee, setSalaryModalEmployee] = useState<Employee | null>(null);
   const [advanceModalEmployee, setAdvanceModalEmployee] = useState<Employee | null>(null);
 
-  const [freight, setFreight] = useState("0");
-  const [discount, setDiscount] = useState("0");
-  const [received, setReceived] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState("boleto");
-  const [paymentCondition, setPaymentCondition] = useState<"term" | "cash">("term");
-  const [installmentCount, setInstallmentCount] = useState(1);
-  const [baseDate, setBaseDate] = useState(today());
-  const [recipientKey, setRecipientKey] = useState("");
-  const [recipientHolder, setRecipientHolder] = useState("");
-  const [observations, setObservations] = useState("");
+  const [freight, setFreight] = useState(draft?.freight ?? "0");
+  const [discount, setDiscount] = useState(draft?.discount ?? "0");
+  const [received, setReceived] = useState(draft?.received ?? true);
+  const [paymentMethod, setPaymentMethod] = useState(draft?.paymentMethod ?? "boleto");
+  const [paymentCondition, setPaymentCondition] = useState<"term" | "cash">(draft?.paymentCondition ?? "term");
+  const [installmentCount, setInstallmentCount] = useState(draft?.installmentCount ?? 1);
+  const [baseDate, setBaseDate] = useState(draft?.baseDate ?? today());
+  const [recipientKey, setRecipientKey] = useState(draft?.recipientKey ?? "");
+  const [recipientHolder, setRecipientHolder] = useState(draft?.recipientHolder ?? "");
+  const [observations, setObservations] = useState(draft?.observations ?? "");
   const [parcels, setParcels] = useState<Parcel[]>([{ number: 1, amount: 0, dueDate: today(), scheduledPaymentAt: today() }]);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (draft && draft.cart.length > 0) toast.info("Lançamento em andamento recuperado.");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    saveDraft({
+      kind, supplierId, partnerId, competence, documentRef, documentSeries, documentIssueDate, documentAccessKey, batch, expiryDate,
+      cart, freight, discount, received, paymentMethod, paymentCondition, installmentCount, baseDate, recipientKey, recipientHolder, observations,
+    });
+  }, [kind, supplierId, partnerId, competence, documentRef, documentSeries, documentIssueDate, documentAccessKey, batch, expiryDate, cart, freight, discount, received, paymentMethod, paymentCondition, installmentCount, baseDate, recipientKey, recipientHolder, observations]);
 
   const isDirect = kind === "salary" || kind === "partner";
   const partyName = kind === "salary" ? "Colaboradores da empresa" : kind === "partner" ? partners.find((p) => p.id === partnerId)?.name ?? "" : suppliers.find((s) => s.id === supplierId)?.tradeName || suppliers.find((s) => s.id === supplierId)?.companyName || "";
@@ -153,6 +170,11 @@ export function NovaDespesaPage() {
   function addRawMaterial(materialId: string, supplierOverride?: string) {
     const material = materials.find((m) => m.id === materialId);
     if (!material) return;
+    addMaterialLine(material, supplierOverride);
+  }
+
+  function addMaterialLine(material: RawMaterial, supplierOverride?: string) {
+    const materialId = material.id;
     const effectiveSupplier = supplierOverride ?? supplierId;
     if (!effectiveSupplier) {
       toast.error("Selecione o fornecedor primeiro.");
@@ -334,6 +356,7 @@ export function NovaDespesaPage() {
       toast.error(error ?? "Não foi possível registrar o lançamento");
       return;
     }
+    clearDraft();
     toast.success("Lançamento registrado. A Visão Geral já reflete a alteração.");
     navigate(withContext("/admin/despesas", params));
   }
@@ -420,6 +443,15 @@ export function NovaDespesaPage() {
             {kind !== "salary" && kind !== "stock" && (
               <button onClick={() => setShowNewItem(true)} className="rounded-xl border px-3 py-2 text-xs font-bold" style={{ borderColor: "#d8dfd7", color: C.green }}>+ Cadastrar item</button>
             )}
+            {kind === "stock" && (
+              <button
+                onClick={() => (supplierId ? setShowQuickMaterial(true) : toast.error("Selecione o fornecedor primeiro."))}
+                className="rounded-xl border px-3 py-2 text-xs font-bold"
+                style={{ borderColor: "#d8dfd7", color: C.green }}
+              >
+                + Cadastrar insumo
+              </button>
+            )}
           </div>
           {kind !== "salary" && (
             <div className="flex gap-2.5 p-[18px]">
@@ -451,7 +483,7 @@ export function NovaDespesaPage() {
               ))
             ) : kind === "stock" ? (
               filteredCatalog.length === 0 ? (
-                <p className="p-14 text-center text-sm" style={{ color: C.muted }}>Nenhum insumo encontrado.</p>
+                <p className="p-14 text-center text-sm" style={{ color: C.muted }}>Nenhum insumo encontrado. Use "+ Cadastrar insumo" para cadastrar sem sair do lançamento.</p>
               ) : (
                 (filteredCatalog as typeof materials).map((m) => (
                   <div key={m.id} className="grid grid-cols-[42px_1fr_110px_86px] items-center gap-2.5 border-b p-[15px_20px]" style={{ borderColor: "#eff0eb" }}>
@@ -654,6 +686,14 @@ export function NovaDespesaPage() {
       {configLine && <ItemConfigModal line={configLine} onClose={() => setConfigLine(null)} onSave={(patch) => updateLine(configLine.cid, patch)} />}
       {showCategories && <CategoriesModal kind={kind} onClose={() => setShowCategories(false)} />}
       {showNewItem && <NewItemModal kind={kind} onClose={() => setShowNewItem(false)} />}
+      {showQuickMaterial && (
+        <QuickMaterialModal
+          suggestedCategories={Array.from(new Set(materials.map((m) => m.category).filter(Boolean)))}
+          supplierId={supplierId}
+          onClose={() => setShowQuickMaterial(false)}
+          onCreated={(material) => addMaterialLine(material)}
+        />
+      )}
       {salaryModalEmployee && (
         <SalaryApurationModal
           employee={salaryModalEmployee}
