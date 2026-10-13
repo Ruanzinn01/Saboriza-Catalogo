@@ -44,8 +44,23 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
           },
           () => {}
         )
-        .catch(() => {
-          if (!cancelled) setError("Não foi possível acessar a câmera. Verifique a permissão do navegador.");
+        .then(() => {
+          if (!cancelled) return;
+          scanner
+            .stop()
+            .then(() => scanner.clear())
+            .catch(() => {});
+        })
+        .catch((err: unknown) => {
+          if (cancelled) return;
+          const name = err instanceof Error ? err.name : String(err);
+          if (/NotAllowed|Permission/i.test(name) || /permission|denied/i.test(String(err))) {
+            setError("Permissão da câmera negada. Libere o acesso no navegador ou use a busca manual.");
+          } else if (/NotFound|Devices/i.test(name) || /no camera|not found/i.test(String(err))) {
+            setError("Nenhuma câmera encontrada neste dispositivo. Use a busca manual.");
+          } else {
+            setError("Não foi possível iniciar a câmera. Feche e tente novamente, ou use a busca manual.");
+          }
         });
     });
 

@@ -94,6 +94,8 @@ export function ProduzirRegistraPage() {
   const [showOccForm, setShowOccForm] = useState(false);
   const [showActForm, setShowActForm] = useState(false);
   const [confirmProductId, setConfirmProductId] = useState<string | null>(null);
+  const [confirmCategoryId, setConfirmCategoryId] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const eligible = useMemo(() => employees.filter((e) => e.status === "ATIVO" && e.canOperateProduction), [employees]);
   const productById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
@@ -151,7 +153,34 @@ export function ProduzirRegistraPage() {
     await fetchFloorAll();
     setSaving(false);
     setConfirmProductId(null);
+    setQuery("");
+    setConfirmCategoryId("");
+    go("home");
     toast.success("Produção confirmada! Estoque atualizado.");
+  }
+
+  // Leitura só identifica o produto: não confirma produção nem mexe em estoque.
+  function handleScan(code: string) {
+    setScannerOpen(false);
+    const normalized = code.trim().toLowerCase();
+    if (!normalized) return;
+    const matches = products.filter(
+      (p) => p.active && (p.gtin.trim().toLowerCase() === normalized || p.code.trim().toLowerCase() === normalized)
+    );
+    setConfirmCategoryId("");
+    if (matches.length === 0) {
+      toast.error("Código não encontrado. Tente ler novamente ou busque o produto manualmente.");
+      return;
+    }
+    if (matches.length > 1) {
+      setConfirmProductId(null);
+      setQuery(code.trim());
+      go("confirmar");
+      toast.info("Mais de um produto com esse código. Escolha o correto na lista.");
+      return;
+    }
+    setConfirmProductId(matches[0].id);
+    go("confirmar");
   }
 
   const lowStock = products.filter((p) => p.active && p.currentStock < p.minStock);
@@ -259,8 +288,11 @@ export function ProduzirRegistraPage() {
                 <p className="mt-3" style={{ color: c.muted }}>
                   {lowStock.length} produto(s) abaixo do estoque mínimo. Feche o produto acabado aqui.
                 </p>
-                <button type="button" onClick={() => go("confirmar")} className={`${c.btn} ${c.btnPrimary} w-full mt-2`}>
-                  Confirmar Produção
+                <button type="button" onClick={() => setScannerOpen(true)} className={`${c.btn} ${c.btnPrimary} w-full mt-2`}>
+                  <ScanLine size={18} /> Ler código com a câmera
+                </button>
+                <button type="button" onClick={() => go("confirmar")} className={`${c.btn} ${c.btnSecondary} w-full mt-2`}>
+                  Buscar produto manualmente
                 </button>
               </Card>
             </div>
@@ -290,10 +322,16 @@ export function ProduzirRegistraPage() {
             floorExecutions={floorExecutions}
             confirmProductId={confirmProductId}
             setConfirmProductId={setConfirmProductId}
+            categoryId={confirmCategoryId}
+            setCategoryId={setConfirmCategoryId}
+            onOpenScanner={() => setScannerOpen(true)}
             saving={saving}
             onConfirm={handleConfirmarProducao}
           />
         )}
+
+        <BarcodeScannerModal open={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleScan} />
+
 
         {page === "urgent" && (
           <>
@@ -807,6 +845,9 @@ function ConfirmarProducaoView({
   floorExecutions,
   confirmProductId,
   setConfirmProductId,
+  categoryId,
+  setCategoryId,
+  onOpenScanner,
   saving,
   onConfirm,
 }: {
@@ -818,6 +859,9 @@ function ConfirmarProducaoView({
   floorExecutions: { id: string; productId: string; status: string; targetQuantity: number; operationalQuantity: number; productionRecordId: string | null }[];
   confirmProductId: string | null;
   setConfirmProductId: (v: string | null) => void;
+  categoryId: string;
+  setCategoryId: (v: string) => void;
+  onOpenScanner: () => void;
   saving: boolean;
   onConfirm: (productId: string, packs: number, urgentDemandId: string | null, floorExecutionId: string | null, idempotencyKey: string) => void;
 }) {
@@ -825,8 +869,6 @@ function ConfirmarProducaoView({
   const [urgentId, setUrgentId] = useState("");
   const [floorExecutionId, setFloorExecutionId] = useState("");
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
-  const [categoryId, setCategoryId] = useState("");
-  const [scannerOpen, setScannerOpen] = useState(false);
 
   const selected = products.find((p) => p.id === confirmProductId) ?? null;
   const urgentOptions = selected ? urgentDemands.filter((u) => u.productId === selected.id && u.status === "ATIVO") : [];
@@ -848,23 +890,11 @@ function ConfirmarProducaoView({
   const activeCategories = useMemo(() => categories.filter((cat) => cat.active), [categories]);
 
   const filtered = products.filter(
-    (p) => p.active && (!categoryId || p.categoryId === categoryId) && (p.name + p.code).toLowerCase().includes(query.toLowerCase())
+    (p) => p.active && (!categoryId || p.categoryId === categoryId) && (p.name + p.code + (p.gtin ?? "")).toLowerCase().includes(query.toLowerCase())
   );
 
   function presentationLine(p: Product) {
     return [p.presentation, p.weight].filter(Boolean).join(" - ");
-  }
-
-  function handleScan(code: string) {
-    setScannerOpen(false);
-    const normalized = code.trim();
-    if (!normalized) return;
-    const found = products.find((p) => p.active && (p.gtin === normalized || p.code === normalized));
-    if (!found) {
-      toast.error("Código não encontrado. Tente novamente ou busque manualmente.");
-      return;
-    }
-    setConfirmProductId(found.id);
   }
 
   if (selected) {
@@ -978,7 +1008,7 @@ function ConfirmarProducaoView({
       <Card>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-bold">Encontrar produto</h2>
-          <button type="button" onClick={() => setScannerOpen(true)} className={`${c.btn} ${c.btnSecondary}`}>
+          <button type="button" onClick={onOpenScanner} className={`${c.btn} ${c.btnSecondary}`}>
             <ScanLine size={16} /> Ler código com a câmera
           </button>
         </div>
@@ -1029,7 +1059,6 @@ function ConfirmarProducaoView({
           )}
         </div>
       </Card>
-      <BarcodeScannerModal open={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleScan} />
     </>
   );
 }
