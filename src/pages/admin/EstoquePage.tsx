@@ -1,20 +1,24 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { BarChart3, PackagePlus } from "lucide-react";
+import { EstoqueCobertura } from "@/components/admin/estoque/EstoqueCobertura";
 import { EstoqueGestaoGeral } from "@/components/admin/estoque/EstoqueGestaoGeral";
 import { EstoqueInventario } from "@/components/admin/estoque/EstoqueInventario";
 import { EstoqueItens } from "@/components/admin/estoque/EstoqueItens";
 import { EstoqueMovimentacoes } from "@/components/admin/estoque/EstoqueMovimentacoes";
+import { EstoquePoliticas } from "@/components/admin/estoque/EstoquePoliticas";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 
-type Tab = "gestao" | "movimentacoes" | "itens" | "inventario";
+type Tab = "gestao" | "movimentacoes" | "itens" | "cobertura" | "inventario" | "politicas";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "gestao", label: "Gestão Geral" },
   { key: "movimentacoes", label: "Movimentações" },
   { key: "itens", label: "Itens cadastrados" },
+  { key: "cobertura", label: "Cobertura e reposição" },
   { key: "inventario", label: "Inventário" },
+  { key: "politicas", label: "Políticas e critérios" },
 ];
 
 function parseTab(value: string | null): Tab {
@@ -24,6 +28,7 @@ function parseTab(value: string | null): Tab {
 export function EstoquePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = parseTab(searchParams.get("aba"));
+  const goTo = (key: string) => setSearchParams(key === "gestao" ? {} : { aba: key }, { replace: true });
 
   return (
     <div className="flex flex-col gap-6">
@@ -46,11 +51,11 @@ export function EstoquePage() {
         }
       />
 
-      <div className="flex gap-2 overflow-x-auto rounded-2xl bg-ink-900/5 p-1">
+      <div className="flex gap-1 overflow-x-auto rounded-2xl bg-ink-900/5 p-1">
         {TABS.map((item) => (
           <button
             key={item.key}
-            onClick={() => setSearchParams(item.key === "gestao" ? {} : { aba: item.key }, { replace: true })}
+            onClick={() => goTo(item.key)}
             className={cn(
               "min-h-11 flex-1 whitespace-nowrap rounded-xl px-3 text-sm font-bold transition-colors",
               tab === item.key ? "bg-white text-forest-950 shadow-sm" : "text-ink-muted hover:text-ink-900"
@@ -61,9 +66,11 @@ export function EstoquePage() {
         ))}
       </div>
 
-      {tab === "gestao" && <EstoqueGestaoGeral />}
+      {tab === "gestao" && <EstoqueGestaoGeral goTo={goTo} />}
       {tab === "movimentacoes" && <EstoqueMovimentacoes />}
       {tab === "itens" && <EstoqueItens />}
+      {tab === "cobertura" && <EstoqueCobertura goTo={goTo} />}
+      {tab === "politicas" && <EstoquePoliticas />}
       {tab === "inventario" && <EstoqueInventario />}
     </div>
   );

@@ -5,9 +5,10 @@ import type {
   DivergenceRow,
   LedgerMovementType,
   LedgerRow,
+  StockHealth,
   StockItemType,
+  StockPolicyRow,
   StockPositionItem,
-  StockSituation,
 } from "@/types/estoque";
 
 interface PositionRow {
@@ -21,11 +22,34 @@ interface PositionRow {
   physical: number;
   reserved: number;
   available: number;
+  incoming: number;
+  in_production: number;
   min_stock: number;
   max_stock: number;
-  avg_cost: number | null;
+  daily_rate: number | null;
+  history_days: number;
+  coverage_days: number | null;
+  net_need: number | null;
+  unit_cost: number | null;
   stock_value: number | null;
-  situation: StockSituation;
+  excess_qty: number;
+  excess_value: number;
+  idle_days: number | null;
+  health: StockHealth;
+  policy_min: number;
+  policy_ideal: number;
+  policy_max: number;
+}
+
+interface PolicyDbRow {
+  id: string;
+  unit_id: string;
+  scope: StockPolicyRow["scope"];
+  min_days: number;
+  ideal_days: number;
+  max_days: number;
+  justification: string;
+  created_at: string;
 }
 
 interface LedgerDbRow {
@@ -74,11 +98,23 @@ function toPosition(row: PositionRow): StockPositionItem {
     physical: Number(row.physical),
     reserved: Number(row.reserved),
     available: Number(row.available),
+    incoming: Number(row.incoming),
+    inProduction: Number(row.in_production),
     minStock: Number(row.min_stock),
     maxStock: Number(row.max_stock),
-    avgCost: toNumber(row.avg_cost),
+    dailyRate: toNumber(row.daily_rate),
+    historyDays: Number(row.history_days),
+    coverageDays: toNumber(row.coverage_days),
+    netNeed: toNumber(row.net_need),
+    unitCost: toNumber(row.unit_cost),
     stockValue: toNumber(row.stock_value),
-    situation: row.situation,
+    excessQty: Number(row.excess_qty),
+    excessValue: Number(row.excess_value),
+    idleDays: row.idle_days,
+    health: row.health,
+    policyMin: Number(row.policy_min),
+    policyIdeal: Number(row.policy_ideal),
+    policyMax: Number(row.policy_max),
   };
 }
 
@@ -129,7 +165,10 @@ interface EstoqueState {
   divergences: DivergenceRow[];
   divergencesStatus: "idle" | "loading" | "ready" | "error";
   divergencesError: string | null;
+  policies: StockPolicyRow[];
 
+  fetchPolicies: () => Promise<void>;
+  savePolicy: (input: { unitId: string; scope: StockPolicyRow["scope"]; minDays: number; idealDays: number; maxDays: number; justification: string }) => Promise<string | null>;
   fetchPosition: () => Promise<void>;
   fetchLedger: (filters?: { itemType?: StockItemType; itemId?: string; movementTypes?: LedgerMovementType[] }) => Promise<void>;
   fetchDivergences: (sessionId: string) => Promise<void>;
@@ -145,6 +184,37 @@ export const useEstoqueStore = create<EstoqueState>()((set, get) => ({
   divergences: [],
   divergencesStatus: "idle",
   divergencesError: null,
+  policies: [],
+
+  fetchPolicies: async () => {
+    const { data } = await fromUntyped("stock_policies").select("*").order("created_at", { ascending: false }).limit(50);
+    set({
+      policies: ((data ?? []) as PolicyDbRow[]).map((row) => ({
+        id: row.id,
+        unitId: row.unit_id,
+        scope: row.scope,
+        minDays: Number(row.min_days),
+        idealDays: Number(row.ideal_days),
+        maxDays: Number(row.max_days),
+        justification: row.justification,
+        createdAt: row.created_at,
+      })),
+    });
+  },
+
+  savePolicy: async ({ unitId, scope, minDays, idealDays, maxDays, justification }) => {
+    const { error } = await rpcUntyped("set_stock_policy", {
+      p_unit_id: unitId,
+      p_scope: scope,
+      p_min: minDays,
+      p_ideal: idealDays,
+      p_max: maxDays,
+      p_justification: justification,
+    });
+    if (error) return error.message;
+    await Promise.all([get().fetchPolicies(), get().fetchPosition()]);
+    return null;
+  },
 
   fetchPosition: async () => {
     if (get().position.length === 0) set({ positionStatus: "loading" });

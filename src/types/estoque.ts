@@ -1,6 +1,15 @@
 export type StockItemType = "PRODUCT" | "RAW_MATERIAL";
 
-export type StockSituation = "OUT" | "LOW" | "OK" | "OVER";
+export type StockHealth =
+  | "DIVERGENCE"
+  | "ZERO"
+  | "NO_HISTORY"
+  | "NO_RECENT_DEMAND"
+  | "CRITICAL"
+  | "LOW"
+  | "HEALTHY"
+  | "ABOVE_IDEAL"
+  | "EXCESS";
 
 export interface StockPositionItem {
   itemType: StockItemType;
@@ -13,11 +22,34 @@ export interface StockPositionItem {
   physical: number;
   reserved: number;
   available: number;
+  incoming: number;
+  inProduction: number;
   minStock: number;
   maxStock: number;
-  avgCost: number | null;
+  dailyRate: number | null;
+  historyDays: number;
+  coverageDays: number | null;
+  netNeed: number | null;
+  unitCost: number | null;
   stockValue: number | null;
-  situation: StockSituation;
+  excessQty: number;
+  excessValue: number;
+  idleDays: number | null;
+  health: StockHealth;
+  policyMin: number;
+  policyIdeal: number;
+  policyMax: number;
+}
+
+export interface StockPolicyRow {
+  id: string;
+  unitId: string;
+  scope: "ALL" | "PRODUCT" | "RAW_MATERIAL";
+  minDays: number;
+  idealDays: number;
+  maxDays: number;
+  justification: string;
+  createdAt: string;
 }
 
 export type LedgerMovementType =
