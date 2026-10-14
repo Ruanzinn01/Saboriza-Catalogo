@@ -7,6 +7,7 @@ import { usePontoOrisApuracaoStore } from "@/store/ponto-oris-apuracao-store";
 import { useTimeBankStore } from "@/store/time-bank-store";
 import { AdminState } from "@/components/admin/AdminState";
 import { Button } from "@/components/ui/Button";
+import { PontoRevisaoPanel } from "@/components/admin/PontoRevisaoPanel";
 
 const INCONSISTENCY_LABELS: Record<string, string> = {
   SEQUENCIA_INVALIDA: "Sequência inválida",
@@ -76,12 +77,17 @@ function DayDetailRow({ employeeId, date }: { employeeId: string; date: string }
               <div key={punch.id} className="flex items-center gap-3 rounded-xl border border-forest-950/10 bg-white p-3">
                 {punch.photoUrl ? (
                   <img src={punch.photoUrl} alt={`Evidência da batida de ${PUNCH_LABELS[punch.type]}`} className="h-14 w-14 rounded-lg object-cover" />
+                ) : punch.origin === "ADICIONADA" ? (
+                  <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-gold-500/15 px-1 text-center text-[10px] font-semibold text-gold-800">Sem foto</div>
                 ) : (
                   <div className="h-14 w-14 animate-pulse rounded-lg bg-forest-950/10" />
                 )}
                 <div>
                   <p className="text-sm font-bold text-forest-950">{PUNCH_LABELS[punch.type]}</p>
                   <p className="text-xs text-ink-muted">{formatTime(punch.serverTime)}</p>
+                  {punch.origin !== "BATIDA" && (
+                    <p className="text-[10px] font-semibold uppercase text-gold-800">{punch.origin === "AJUSTADA" ? "Horário ajustado" : "Adicionada por ajuste"}</p>
+                  )}
                 </div>
               </div>
             ))}
@@ -285,6 +291,8 @@ export function EmployeeTimesheetPage() {
           <p className={`text-xl font-extrabold ${pendingCount > 0 ? "text-red-600" : "text-forest-950"}`}>{pendingCount}</p>
         </div>
       </div>
+
+      {employeeId && <PontoRevisaoPanel employeeId={employeeId} competencia={competencia} onChanged={() => fetchMonth(employeeId, competencia.toISOString().slice(0, 10))} />}
 
       {employeeId && <TimeBankCard employeeId={employeeId} competencia={competencia} />}
 

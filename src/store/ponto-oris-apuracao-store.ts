@@ -17,6 +17,7 @@ export interface PunchDetail {
   serverTime: string;
   photoPath: string | null;
   photoUrl: string | null;
+  origin: "BATIDA" | "AJUSTADA" | "ADICIONADA";
 }
 
 export interface DayDetail {
@@ -97,7 +98,7 @@ export const usePontoOrisApuracaoStore = create<ApuracaoState>((set, get) => ({
       extra_minutes: number;
       late_minutes: number;
       inconsistency_type: string | null;
-      punches: { id: string; type: PunchDetail["type"]; server_time: string; photo_path: string | null }[];
+      punches: { id: string; type: PunchDetail["type"]; server_time: string; photo_path: string | null; origin?: PunchDetail["origin"] }[];
     };
 
     const punches: PunchDetail[] = raw.punches.map((p) => ({
@@ -106,6 +107,7 @@ export const usePontoOrisApuracaoStore = create<ApuracaoState>((set, get) => ({
       serverTime: p.server_time,
       photoPath: p.photo_path,
       photoUrl: null,
+      origin: p.origin ?? "BATIDA",
     }));
 
     set({

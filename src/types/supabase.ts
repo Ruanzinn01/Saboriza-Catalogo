@@ -6904,6 +6904,46 @@ export type Database = {
           },
         ]
       }
+      employee_employments: {
+        Row: {
+          closed_at: string | null
+          company_id: string
+          department: string | null
+          employee_id: string
+          employment_regime: string | null
+          employment_type: string | null
+          end_date: string | null
+          end_reason: string | null
+          id: string
+          opened_at: string
+          role: string | null
+          sequence: number
+          start_date: string
+          unit_id: string | null
+        }
+        Insert: { [key: string]: never }
+        Update: { [key: string]: never }
+        Relationships: []
+      }
+      time_mirrors: {
+        Row: {
+          company_id: string
+          competence: string
+          content: Json
+          content_hash: string
+          employee_id: string
+          employment_id: string | null
+          id: string
+          issued_at: string
+          issued_by: string | null
+          revision_id: string
+          supersedes_id: string | null
+          version: number
+        }
+        Insert: { [key: string]: never }
+        Update: { [key: string]: never }
+        Relationships: []
+      }
       time_adjustments: {
         Row: {
           adjustment_date: string
@@ -8294,6 +8334,43 @@ export type Database = {
       resolve_salary_base: {
         Args: { p_competence: string; p_employee_id: string }
         Returns: number
+      }
+      oris360_status_ponto: {
+        Args: { p_competencia: string; p_employee_id: string }
+        Returns: Json
+      }
+      oris360_gerar_revisao_ponto: {
+        Args: { p_competencia: string; p_employee_id: string; p_reason?: string }
+        Returns: string
+      }
+      oris360_conferir_ponto: {
+        Args: { p_competencia: string; p_employee_id: string; p_expected_revision: number }
+        Returns: undefined
+      }
+      oris360_consolidar_ponto: {
+        Args: { p_competencia: string; p_employee_id: string; p_expected_revision: number }
+        Returns: undefined
+      }
+      oris360_emitir_espelho: {
+        Args: { p_competencia: string; p_employee_id: string }
+        Returns: string
+      }
+      oris360_horas_aprovadas: {
+        Args: { p_competencia: string; p_employee_id: string }
+        Returns: Json
+      }
+      oris360_ajustar_batida: {
+        Args: {
+          p_employee_id: string
+          p_kind: string
+          p_punch_id?: string
+          p_punch_type?: string
+          p_new_time?: string
+          p_target_adjustment_id?: string
+          p_reason?: string
+          p_expected_revision?: number
+        }
+        Returns: string
       }
       generate_salary_obligation: {
         Args: { p_competence: string; p_due_date: string; p_due_date_source?: string; p_employee_id: string }
