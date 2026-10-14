@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Building2, Clock } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { AGING_COLORS, agingLevel, daysSince, formatDaysLabel } from "@/lib/separation";
+import { orderPath, useSeparaBase } from "@/lib/separa-base";
 import { useSeparationStore } from "@/store/separation-store";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
 import type { SeparationOrder } from "@/types/separation";
@@ -13,6 +14,7 @@ interface SeparationOrderCardProps {
 
 export function SeparationOrderCard({ order }: SeparationOrderCardProps) {
   const navigate = useNavigate();
+  const base = useSeparaBase();
   const acceptOrder = useSeparationStore((state) => state.acceptOrder);
   const operatorName = useAdminAuthStore((state) => state.session?.user.user_metadata?.name || state.session?.user.email);
   const [accepting, setAccepting] = useState(false);
@@ -67,7 +69,7 @@ export function SeparationOrderCard({ order }: SeparationOrderCardProps) {
     return (
       <button
         type="button"
-        onClick={() => navigate(`/admin/separa-confere/${order.id}`)}
+        onClick={() => navigate(orderPath(base, order.id))}
         className="flex flex-col overflow-hidden rounded-3xl border border-forest-950/10 bg-white text-left transition-colors hover:border-forest-700/30 hover:bg-forest-950/[0.02]"
       >
         {cardBody}

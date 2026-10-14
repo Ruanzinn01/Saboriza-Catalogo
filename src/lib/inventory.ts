@@ -82,3 +82,24 @@ export function sessionStatusLabel(status: InventorySession["status"]): string {
 export function formatQuantity(value: number): string {
   return value.toLocaleString("pt-BR", { maximumFractionDigits: 3 });
 }
+
+export type CodeLookup =
+  | { kind: "empty" }
+  | { kind: "none" }
+  | { kind: "single"; item: InventoryItem }
+  | { kind: "multiple"; items: InventoryItem[] };
+
+function canonicalCode(value: string): string {
+  const compact = value.trim().replace(/\s+/g, "").toLowerCase();
+  return /^\d+$/.test(compact) ? compact.replace(/^0+(?=\d)/, "") : compact;
+}
+
+/** Procura o código lido somente entre os itens da sessão; nunca escolhe um item quando há ambiguidade. */
+export function lookupItemByCode(items: InventoryItem[], rawCode: string): CodeLookup {
+  const code = canonicalCode(rawCode);
+  if (code === "") return { kind: "empty" };
+  const found = items.filter((item) => canonicalCode(item.barcode) === code || canonicalCode(item.sku) === code);
+  if (found.length === 0) return { kind: "none" };
+  if (found.length === 1) return { kind: "single", item: found[0] };
+  return { kind: "multiple", items: found };
+}

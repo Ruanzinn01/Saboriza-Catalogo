@@ -10,12 +10,15 @@ import { cn } from "@/lib/cn";
 import { ITEM_TYPE_LABEL, accuracy } from "@/lib/estoque";
 import { formatDateTime, formatQuantity, percent, sessionLabel, sessionStatusLabel } from "@/lib/inventory";
 import { useEstoqueStore } from "@/store/estoque-store";
+import { EstoqueInventarioHistorico } from "@/components/admin/estoque/EstoqueInventarioHistorico";
+import { useAccessStore } from "@/store/access-store";
 import { useInventoryStore } from "@/store/inventory-store";
 import type { DivergenceRow } from "@/types/estoque";
 
 type Pending = { row: DivergenceRow; action: "APPROVE" | "DISMISS" } | null;
 
 export function EstoqueInventario() {
+  const canManageInventory = useAccessStore((state) => state.canManageInventory);
   const sessions = useInventoryStore((state) => state.sessions);
   const sessionsStatus = useInventoryStore((state) => state.sessionsStatus);
   const selectedSessionId = useInventoryStore((state) => state.selectedSessionId);
@@ -262,6 +265,7 @@ export function EstoqueInventario() {
           </div>
         )}
       </Sheet>
+      {canManageInventory && <EstoqueInventarioHistorico />}
       <InventoryStartSheet open={startOpen} onClose={() => setStartOpen(false)} />
     </div>
   );

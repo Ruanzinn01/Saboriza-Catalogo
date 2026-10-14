@@ -23,6 +23,7 @@ function groupLabel(prefix: string): string {
     receitas: "Receitas",
     patrimonio: "Patrimônio",
     customer_credit: "Crédito de clientes",
+    separa_confere: "Separa Confere",
   };
   return labels[prefix] ?? prefix;
 }
@@ -99,8 +100,29 @@ export function RolesPermissionsPanel() {
     toast.success("Permissões salvas");
   }
 
+  const operatorLink = `${window.location.origin}/operacao/separa-confere`;
+
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2 rounded-2xl border border-forest-950/10 bg-white p-4 text-sm">
+        <p className="font-extrabold text-forest-950">Acesso do operador de separação e inventário</p>
+        <p className="text-xs text-ink-muted">
+          Papéis que recebem a permissão "Operador do Separa Confere (acesso restrito)" ficam confinados à área operacional (Pedidos, Inventário e Histórico) e o servidor bloqueia os módulos administrativos. Não conceda essa permissão a gestores. Envie o link abaixo ao colaborador; ele entra com o próprio e-mail e senha e pode adicionar à tela inicial do celular.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <code className="min-w-0 flex-1 truncate rounded-lg bg-ink-900/5 px-3 py-2 text-xs">{operatorLink}</code>
+          <button
+            type="button"
+            onClick={() => {
+              void navigator.clipboard.writeText(operatorLink).then(() => toast.success("Link copiado"));
+            }}
+            className="min-h-11 rounded-lg border border-forest-950/15 px-3 text-xs font-bold text-forest-800 hover:bg-forest-950/5"
+          >
+            Copiar link
+          </button>
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-end gap-2">
         <div className="flex flex-wrap gap-2">
           {roles.map((role) => (

@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/admin/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { BarcodeScannerModal } from "@/components/admin/BarcodeScannerModal";
 import { SeparationItemSheet } from "@/components/admin/SeparationItemSheet";
+import { useSeparaBase } from "@/lib/separa-base";
 import { useSeparationStore } from "@/store/separation-store";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
 import { packsLabel } from "@/lib/separation";
@@ -14,6 +15,7 @@ import type { SeparationItem } from "@/types/separation";
 
 export function SeparaConfereOrderPage() {
   const { orderId } = useParams();
+  const base = useSeparaBase();
 
   const order = useSeparationStore((state) => state.currentOrder);
   const orderStatus = useSeparationStore((state) => state.currentOrderStatus);
@@ -21,6 +23,7 @@ export function SeparaConfereOrderPage() {
   const confirmItem = useSeparationStore((state) => state.confirmItem);
   const undoItem = useSeparationStore((state) => state.undoItem);
   const requestAdjustment = useSeparationStore((state) => state.requestAdjustment);
+  const reportShortage = useSeparationStore((state) => state.reportShortage);
   const resolveAdjustment = useSeparationStore((state) => state.resolveAdjustment);
   const releaseOrder = useSeparationStore((state) => state.releaseOrder);
   const operatorName = useAdminAuthStore((state) => state.session?.user.user_metadata?.name || state.session?.user.email);
@@ -75,7 +78,7 @@ export function SeparaConfereOrderPage() {
       <PageHeader
         title={`Pedido ${order.number}`}
         description={description}
-        back={{ to: "/admin/separa-confere", label: "Voltar" }}
+        back={{ to: base, label: "Voltar" }}
         actions={
           isMine ? (
             <>
@@ -173,6 +176,7 @@ export function SeparaConfereOrderPage() {
         onClose={() => setSelectedItem(null)}
         onConfirm={(itemId) => confirmItem(order.id, itemId)}
         onRequestAdjustment={(itemId, message) => requestAdjustment(order.id, itemId, message)}
+        onReportShortage={(itemId, separatedUnits, reason) => reportShortage(order.id, itemId, separatedUnits, reason)}
       />
 
       <BarcodeScannerModal open={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleScan} />
