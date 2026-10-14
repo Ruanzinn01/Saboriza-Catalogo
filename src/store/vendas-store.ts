@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { resolveCurrentCompanyId } from "@/lib/current-company";
+import { fetchCommissionRates } from "@/lib/employee-compensation";
+import { rpcUntyped } from "@/lib/supabase-rpc";
 
 export interface Seller {
   id: string;
@@ -47,24 +49,28 @@ export const useVendasStore = create<VendasState>()((set, get) => ({
     if (!companyId) return;
     const { data, error } = await supabase
       .from("employees")
-      .select("id, name, commission_rate_percent")
+      .select("id, name")
       .eq("company_id", companyId)
       .eq("status", "ATIVO")
       .order("name", { ascending: true });
 
     if (error || !data) return;
 
+    const rates = await fetchCommissionRates();
     set({
       sellers: data.map((row) => ({
         id: row.id,
         name: row.name,
-        commissionRatePercent: row.commission_rate_percent,
+        commissionRatePercent: rates.byEmployee[row.id] ?? null,
       })),
     });
   },
 
   updateCommissionRate: async (employeeId, ratePercent) => {
-    const { error } = await supabase.from("employees").update({ commission_rate_percent: ratePercent }).eq("id", employeeId);
+    let { error } = await rpcUntyped("set_employee_commission_rate", { p_employee_id: employeeId, p_rate: ratePercent });
+    if (error && /Could not find the function|PGRST202/i.test(error.message)) {
+      ({ error } = await supabase.from("employees").update({ commission_rate_percent: ratePercent }).eq("id", employeeId));
+    }
     if (error) {
       toast.error("Não foi possível atualizar a taxa de comissão");
       return false;

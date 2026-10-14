@@ -12,7 +12,7 @@ Nada deste documento foi aplicado em produção. Produção só recebeu leituras
 | Correções pré-homologação (competência ambígua, eventos sem perda, USAGE em `private`) | sim | sim | não aplicado | NÃO aplicado |
 | Funções de borda (ponto, Meu 360, Asaas) | sim | sim | não publicadas | NÃO publicadas |
 | Worker de outbox | sim | sim | sem ativação | sem ativação |
-| Front: dual-mode de remuneração, fuso nos ajustes de ponto | NÃO feito | não | não | não |
+| Front: dual-mode de remuneração (funções com fallback), motivo salarial, comissão por função, fuso da empresa nos ajustes de ponto | sim (tsc + 98 testes unitários) | sim | não testado em navegador | NÃO publicado |
 
 ## 2. Achado crítico: gravação de batida pela função de borda falha em produção
 
@@ -73,7 +73,7 @@ Executado e aprovado em replay (`EVIDENCIA_TESTES_COMPATIBILIDADE_E_CORRECOES.tx
 - Duas alterações do mesmo campo na mesma transação: nenhum evento perdido (4/4 e 2/2).
 - Compatibilidade app/funções antigos com banco novo: executada, tudo OK após o grant em `private`.
 
-Não feito: ajustes de ponto no fuso da empresa (front/`company-time.ts`).
+Feito no front (não publicado): ajuste de batida interpreta o horário no fuso da empresa (`src/lib/company-time.ts`, testes unitários) em vez do fuso do navegador.
 
 ## 8. Integrações
 
@@ -84,8 +84,8 @@ Não feito: ajustes de ponto no fuso da empresa (front/`company-time.ts`).
 
 ## 9. Lacunas (não executado)
 
-1. Front dual-mode de remuneração e telas por permissão.
-2. Fuso da empresa nos ajustes de ponto.
+1. Front dual-mode validado só por tipos e testes unitários; falta teste em navegador contra o banco com fase 1 e depois fase 2. Telas fora de Colaboradores/Vendas que leiam salário não foram encontradas na busca por colunas, mas a fase 2 deve ser homologada tela a tela.
+2. (resolvido no código) fuso da empresa nos ajustes de ponto.
 3. Testes de navegador e roteiro H01 a H19 (exigem homologação e dispositivo real).
 4. Teste de integração do webhook Asaas.
 5. Convergência das 3 portas salariais.
