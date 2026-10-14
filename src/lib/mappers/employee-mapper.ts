@@ -1,8 +1,25 @@
 import type { Employee, EmployeeDocument, EmployeeStatus, PersonalAccessState, ToolLinks } from "@/types/employee";
+import { EMPTY_COMPENSATION, type CompensationData } from "@/lib/employee-compensation";
 import type { Database } from "@/types/supabase";
 
 type EmployeeRow = Database["public"]["Tables"]["employees"]["Row"];
 type EmployeeDocumentRow = Database["public"]["Tables"]["employee_documents"]["Row"];
+
+export type EmployeePublicRow = Omit<
+  EmployeeRow,
+  | "salary_base"
+  | "salary_additions"
+  | "salary_benefits"
+  | "salary_effective_date"
+  | "monthly_divisor"
+  | "timesheet_overtime_percent"
+  | "commission_rate_percent"
+  | "pix_key"
+>;
+
+export function employeeFromPublicRow(row: EmployeePublicRow, compensation: CompensationData = EMPTY_COMPENSATION): Employee {
+  return employeeFromRow({ ...row, ...compensation, commission_rate_percent: null } as EmployeeRow);
+}
 
 export function employeeFromRow(row: EmployeeRow): Employee {
   return {

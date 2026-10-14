@@ -2,9 +2,18 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { resolveCurrentCompanyId } from "@/lib/current-company";
-import { type OperatorEmployeeRow, employeeDocumentFromRow, employeeFromOperatorRow, employeeFromRow } from "@/lib/mappers/employee-mapper";
+import { type OperatorEmployeeRow, employeeDocumentFromRow, employeeFromOperatorRow, employeeFromPublicRow, type EmployeePublicRow } from "@/lib/mappers/employee-mapper";
 import { isOperatorPath } from "@/lib/operator-apps";
-import { rpcUntyped } from "@/lib/supabase-rpc";
+import { fromUntyped, rpcUntyped } from "@/lib/supabase-rpc";
+import {
+  EMPLOYEE_PUBLIC_COLUMNS,
+  EMPTY_COMPENSATION,
+  compensationFromInput,
+  fetchCompensation,
+  saveCompensation,
+  type CompensationData,
+  type CompensationMode,
+} from "@/lib/employee-compensation";
 import { normalizeCpfDigits } from "@/types/employee";
 import type { Employee, EmployeeDocument, EmployeeDocumentInput, EmployeeInput } from "@/types/employee";
 import type { Json } from "@/types/supabase";
@@ -73,14 +82,7 @@ function toRow(input: EmployeeInput) {
     timesheet_expected_end: input.timesheetExpectedEnd || null,
     timesheet_break_minutes: input.timesheetBreakMinutes,
     timesheet_tolerance_minutes: input.timesheetToleranceMinutes,
-    timesheet_overtime_percent: input.timesheetOvertimePercent,
 
-    salary_base: input.salaryBase,
-    monthly_divisor: input.monthlyDivisor,
-    salary_additions: input.salaryAdditions,
-    salary_benefits: input.salaryBenefits || null,
-    pix_key: input.pixKey || null,
-    salary_effective_date: input.salaryEffectiveDate || null,
     overtime_minutes_sample: input.overtimeMinutesSample,
     advances_sample: input.advancesSample,
 
@@ -119,11 +121,13 @@ async function logAudit(companyId: string, employeeId: string, eventType: string
 interface EmployeesState {
   employees: Employee[];
   status: "idle" | "loading" | "ready" | "error";
+  compensationMode: CompensationMode;
+  compensationById: Record<string, CompensationData>;
   documentsByEmployee: Record<string, EmployeeDocument[]>;
   historyByEmployee: Record<string, EmployeeAuditEvent[]>;
   fetchEmployees: () => Promise<void>;
   createEmployee: (input: EmployeeInput) => Promise<Employee | null>;
-  updateEmployee: (id: string, input: EmployeeInput, changeSummary?: string) => Promise<boolean>;
+  updateEmployee: (id: string, input: EmployeeInput, changeSummary?: string, compensationReason?: string) => Promise<boolean>;
   fetchDocuments: (employeeId: string) => Promise<void>;
   addDocument: (employeeId: string, input: EmployeeDocumentInput) => Promise<boolean>;
   toggleDocumentShare: (documentId: string, employeeId: string, shared: boolean) => Promise<void>;
@@ -134,6 +138,8 @@ interface EmployeesState {
 export const useEmployeesStore = create<EmployeesState>()((set, get) => ({
   employees: [],
   status: "idle",
+  compensationMode: "hidden",
+  compensationById: {},
   documentsByEmployee: {},
   historyByEmployee: {},
 
@@ -154,7 +160,7 @@ export const useEmployeesStore = create<EmployeesState>()((set, get) => ({
       set({ status: "error" });
       return;
     }
-    const { data, error } = await supabase.from("employees").select("*").eq("company_id", companyId).order("name", { ascending: true });
+    const { data, error } = await fromUntyped("employees").select(EMPLOYEE_PUBLIC_COLUMNS).eq("company_id", companyId).order("name", { ascending: true });
 
     if (error) {
       toast.error("Não foi possível carregar os colaboradores");
@@ -162,7 +168,13 @@ export const useEmployeesStore = create<EmployeesState>()((set, get) => ({
       return;
     }
 
-    set({ employees: data.map(employeeFromRow), status: "ready" });
+    const compensation = await fetchCompensation();
+    set({
+      employees: ((data as EmployeePublicRow[] | null) ?? []).map((row) => employeeFromPublicRow(row, compensation.byEmployee[row.id] ?? EMPTY_COMPENSATION)),
+      compensationMode: compensation.mode,
+      compensationById: compensation.byEmployee,
+      status: "ready",
+    });
   },
 
   createEmployee: async (input) => {
@@ -174,7 +186,7 @@ export const useEmployeesStore = create<EmployeesState>()((set, get) => ({
     const { data, error } = await supabase
       .from("employees")
       .insert({ ...toRow(input), company_id: companyId })
-      .select("*")
+      .select(EMPLOYEE_PUBLIC_COLUMNS)
       .single();
 
     if (error || !data) {
@@ -182,23 +194,42 @@ export const useEmployeesStore = create<EmployeesState>()((set, get) => ({
       return null;
     }
 
-    const employee = employeeFromRow(data);
-    set((state) => ({ employees: [...state.employees, employee].sort((a, b) => a.name.localeCompare(b.name)) }));
+    const created = data as unknown as EmployeePublicRow;
+    const mode = get().compensationMode;
+    const wanted = compensationFromInput(input);
+    const compensationError = await saveCompensation(mode, created.id, EMPTY_COMPENSATION, wanted, "Cadastro inicial do colaborador");
+    if (compensationError) toast.error("Colaborador cadastrado, mas a remuneração não foi gravada: " + compensationError);
+    const applied = mode === "hidden" || compensationError ? EMPTY_COMPENSATION : wanted;
+    const employee = employeeFromPublicRow(created, applied);
+    set((state) => ({ compensationById: { ...state.compensationById, [employee.id]: applied }, employees: [...state.employees, employee].sort((a, b) => a.name.localeCompare(b.name)) }));
     await logAudit(companyId, employee.id, "Admissão", `Cadastro criado — ${employee.role || "sem cargo"} • ${employee.department || "sem departamento"}`);
     toast.success("Colaborador cadastrado");
     return employee;
   },
 
-  updateEmployee: async (id, input, changeSummary) => {
-    const { data, error } = await supabase.from("employees").update(toRow(input)).eq("id", id).select("*").single();
+  updateEmployee: async (id, input, changeSummary, compensationReason) => {
+    const mode = get().compensationMode;
+    const before = get().compensationById[id] ?? EMPTY_COMPENSATION;
+    const wanted = compensationFromInput(input);
+    const salaryChanged = mode === "rpc" && (before.salary_base ?? null) !== (wanted.salary_base ?? null);
+    if (salaryChanged && (compensationReason ?? "").trim().length < 5) {
+      toast.error("Informe o motivo da alteração salarial (mínimo 5 caracteres)");
+      return false;
+    }
+
+    const { data, error } = await supabase.from("employees").update(toRow(input)).eq("id", id).select(EMPLOYEE_PUBLIC_COLUMNS).single();
 
     if (error || !data) {
       toast.error(error?.code === "23505" ? "Já existe colaborador com esse CPF" : "Não foi possível atualizar o colaborador");
       return false;
     }
 
-    const employee = employeeFromRow(data);
+    const compensationError = await saveCompensation(mode, id, before, wanted, compensationReason ?? "");
+    if (compensationError) toast.error("Dados salvos, mas a remuneração não foi gravada: " + compensationError);
+    const applied = mode === "hidden" ? before : compensationError ? before : wanted;
+    const employee = employeeFromPublicRow(data as unknown as EmployeePublicRow, applied);
     set((state) => ({
+      compensationById: { ...state.compensationById, [id]: applied },
       employees: state.employees.map((item) => (item.id === id ? employee : item)).sort((a, b) => a.name.localeCompare(b.name)),
     }));
     if (changeSummary) {

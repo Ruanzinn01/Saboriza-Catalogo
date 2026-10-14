@@ -425,6 +425,8 @@ export function EmployeeProfilePage() {
   const historyByEmployee = useEmployeesStore((s) => s.historyByEmployee);
   const fetchHistory = useEmployeesStore((s) => s.fetchHistory);
   const sendPersonalInvite = useEmployeesStore((s) => s.sendPersonalInvite);
+  const compensationMode = useEmployeesStore((s) => s.compensationMode);
+  const [compensationReason, setCompensationReason] = useState("");
 
   const [units, setUnits] = useState<{ id: string; name: string }[]>([]);
   const existing = useMemo(() => employees.find((e) => e.id === employeeId), [employees, employeeId]);
@@ -505,7 +507,7 @@ export function EmployeeProfilePage() {
     setSaving(true);
     let result: Employee | null = null;
     if (isEditing && existing) {
-      const ok = await updateEmployee(existing.id, form, changeSummary(toInput(existing)));
+      const ok = await updateEmployee(existing.id, form, changeSummary(toInput(existing)), compensationReason);
       result = ok ? { ...existing, ...form } as Employee : null;
     } else {
       result = await createEmployee(form);
@@ -915,7 +917,16 @@ export function EmployeeProfilePage() {
                   <Field label="Adicionais (R$)" type="number" value={form.salaryAdditions.toString()} onChange={(v) => set("salaryAdditions", Number(v) || 0)} />
                   <Field label="Benefícios" value={form.salaryBenefits} onChange={(v) => set("salaryBenefits", v)} />
                   <Field label="Chave Pix" value={form.pixKey} onChange={(v) => set("pixKey", v)} span={2} />
+                  {compensationMode === "rpc" && (
+                    <Field label="Motivo da alteração salarial (obrigatório ao mudar o salário)" value={compensationReason} onChange={setCompensationReason} span={3} />
+                  )}
                 </div>
+                {compensationMode === "hidden" && (
+                  <div className={`mt-3 ${c.notice}`}>
+                    <b>Sem permissão de remuneração:</b> salário, benefícios e chave Pix não são exibidos nem alterados por este usuário.
+                    Peça a permissão "Alterar remuneração e Pix dos colaboradores" ao administrador.
+                  </div>
+                )}
                 <div className={`mt-3 ${c.notice}`}>
                   <b>Regra automática aprovada:</b> Valor-hora = salário-base ÷ divisor. Hora extra = valor-hora × 1,50. Os dois
                   valores são calculados pelo sistema e nunca digitados manualmente.

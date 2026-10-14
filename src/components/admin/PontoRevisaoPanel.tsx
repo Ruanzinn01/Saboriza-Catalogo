@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/Button";
+import { DEFAULT_COMPANY_TIMEZONE, formatDateTimeInZone, formatTimeInZone, zonedDateTimeToIso } from "@/lib/company-time";
 import { buildEspelhoPdf, formatMinutes, type EspelhoContent } from "@/lib/espelho-pdf";
 
 interface PontoStatus {
@@ -61,6 +62,20 @@ export function PontoRevisaoPanel({ employeeId, competencia, onChanged }: { empl
   const [status, setStatus] = useState<PontoStatus | null>(null);
   const [mirrors, setMirrors] = useState<MirrorRow[]>([]);
   const [busy, setBusy] = useState(false);
+  const [companyTz, setCompanyTz] = useState(DEFAULT_COMPANY_TIMEZONE);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const { data: emp } = await supabase.from("employees").select("company_id").eq("id", employeeId).maybeSingle();
+      if (!emp) return;
+      const { data: company } = await supabase.from("companies").select("default_timezone").eq("id", emp.company_id).maybeSingle();
+      if (active && company?.default_timezone) setCompanyTz(company.default_timezone);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [employeeId]);
   const [reason, setReason] = useState("");
   const [viewing, setViewing] = useState<MirrorRow | null>(null);
 
@@ -130,7 +145,7 @@ export function PontoRevisaoPanel({ employeeId, competencia, onChanged }: { empl
       toast.error("Preencha os campos do ajuste");
       return;
     }
-    const newTime = needsTime ? new Date(`${adjDate}T${adjTime}:00`).toISOString() : undefined;
+    const newTime = needsTime ? zonedDateTimeToIso(adjDate, adjTime, companyTz) : undefined;
     const ok = await run(
       () =>
         supabase.rpc("oris360_ajustar_batida", {
@@ -232,7 +247,7 @@ export function PontoRevisaoPanel({ employeeId, competencia, onChanged }: { empl
                   <option value="">{adjDate ? (selectablePunches.length ? "Selecione..." : "Nenhuma batida disponível neste dia") : "Escolha o dia primeiro"}</option>
                   {selectablePunches.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {PUNCH_LABEL[p.type] ?? p.type} · {new Date(p.server_time).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      {PUNCH_LABEL[p.type] ?? p.type} · {formatTimeInZone(p.server_time, companyTz)}
                       {p.origin && p.origin !== "BATIDA" ? ` (${p.origin === "AJUSTADA" ? "ajustada" : "adicionada"})` : ""}
                     </option>
                   ))}
@@ -277,7 +292,7 @@ export function PontoRevisaoPanel({ employeeId, competencia, onChanged }: { empl
             {mirrors.map((m) => (
               <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-forest-950/10 px-3 py-2 text-sm">
                 <span>
-                  Versão {m.version} · revisão {m.content.revision.number} · emitido em {new Date(m.issued_at).toLocaleString("pt-BR")}
+                  Versão {m.version} · revisão {m.content.revision.number} · emitido em {formatDateTimeInZone(m.issued_at, companyTz)}
                   {m.version === mirrors[0].version ? " · atual" : " · substituída"}
                 </span>
                 <span className="flex gap-3">
