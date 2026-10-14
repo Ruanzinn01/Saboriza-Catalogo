@@ -115,6 +115,53 @@ function Field({
   );
 }
 
+interface EmploymentPeriod {
+  id: string;
+  sequence: number;
+  start_date: string;
+  end_date: string | null;
+  end_reason: string | null;
+  role: string | null;
+  department: string | null;
+}
+
+/** Períodos de contratação do colaborador: cada recontratação abre um período novo e o anterior fica preservado. */
+function EmploymentHistory({ employeeId }: { employeeId: string | undefined }) {
+  const [periods, setPeriods] = useState<EmploymentPeriod[]>([]);
+
+  useEffect(() => {
+    if (!employeeId) return;
+    void supabase
+      .from("employee_employments")
+      .select("id, sequence, start_date, end_date, end_reason, role, department")
+      .eq("employee_id", employeeId)
+      .order("sequence", { ascending: false })
+      .then(({ data }) => setPeriods((data ?? []) as EmploymentPeriod[]));
+  }, [employeeId]);
+
+  if (!employeeId || periods.length === 0) return null;
+  const br = (iso: string) => iso.split("-").reverse().join("/");
+
+  return (
+    <div className="mb-5 rounded-[11px] border border-[#e5e8e1] p-3.5">
+      <h3 className="text-sm font-bold">Períodos de contratação</h3>
+      <ul className="mt-2 flex flex-col gap-2">
+        {periods.map((period) => (
+          <li key={period.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+            <span>
+              <b>{period.sequence}º vínculo</b> · {br(period.start_date)} até {period.end_date ? br(period.end_date) : "hoje"}
+              {period.role ? ` · ${period.role}` : ""}
+            </span>
+            <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${period.end_date ? "bg-[#eaf4ec] text-[#4f5f56]" : "bg-[#eaf4ec] text-[#28734e]"}`}>
+              {period.end_date ? `Encerrado${period.end_reason ? ` · ${period.end_reason}` : ""}` : "Vigente"}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function PinSetter({ employeeId, hasPin }: { employeeId: string | undefined; hasPin: boolean }) {
   const fetchEmployees = useEmployeesStore((s) => s.fetchEmployees);
   const [open, setOpen] = useState(false);
@@ -1164,6 +1211,7 @@ export function EmployeeProfilePage() {
 
           {section === "historico" && (
             <Card title="Histórico e auditoria">
+              <EmploymentHistory employeeId={employeeId} />
               {history.length === 0 ? (
                 <p className={c.muted}>Nenhum evento registrado ainda.</p>
               ) : (
