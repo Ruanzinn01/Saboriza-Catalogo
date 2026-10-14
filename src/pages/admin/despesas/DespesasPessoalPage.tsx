@@ -5,7 +5,7 @@ import { useDespesasStore } from "@/store/despesas-store";
 import { useEmployeesStore } from "@/store/employees-store";
 import { AdminState } from "@/components/admin/AdminState";
 import { Button } from "@/components/ui/Button";
-import { DetailHeader, DetailKpis, brl, withContext } from "@/pages/admin/despesas/shared";
+import { DetailHeader, DetailKpis, brDate, brl, withContext } from "@/pages/admin/despesas/shared";
 import { useDespesasFilters } from "@/pages/admin/despesas/useDespesasFilters";
 import { DESPESAS_COLORS } from "@/pages/admin/despesas/theme";
 
@@ -24,6 +24,7 @@ export function DespesasPessoalPage() {
   const generateObligation = useDespesasStore((s) => s.generateObligation);
   const fetchAll = useDespesasStore((s) => s.fetchAll);
   const [competence, setCompetence] = useState(monthRef + "-01");
+  const [dueDate, setDueDate] = useState("");
 
   useEffect(() => {
     if (employees.length === 0) fetchEmployees();
@@ -40,10 +41,19 @@ export function DespesasPessoalPage() {
   const adiantamentosTotal = monthObligations.reduce((s, o) => s + o.advancesPaid, 0);
 
   async function handleGenerateAll() {
-    for (const e of employeesWithoutObligation) {
-      await generateObligation(e.id, e.name, competence, e.salaryBase ?? 0);
+    if (!dueDate) {
+      toast.error("Informe o vencimento da folha desta competência");
+      return;
     }
-    toast.success("Obrigações salariais geradas a partir da vigência vigente em Colaboradores");
+    let failed = 0;
+    for (const e of employeesWithoutObligation) {
+      const err = await generateObligation(e.id, competence, dueDate);
+      if (err) {
+        failed += 1;
+        toast.error(`${e.name}: ${err}`);
+      }
+    }
+    if (failed < employeesWithoutObligation.length) toast.success("Obrigações salariais geradas a partir da vigência vigente em Colaboradores");
   }
 
   return (
@@ -66,9 +76,16 @@ export function DespesasPessoalPage() {
           <input type="month" value={competence.slice(0, 7)} onChange={(e) => setCompetence(e.target.value + "-01")} className="h-11 rounded-xl border px-3 text-sm" style={{ borderColor: C.line }} />
         </label>
         {employeesWithoutObligation.length > 0 && (
-          <Button size="sm" onClick={() => void handleGenerateAll()}>
-            Gerar obrigações ({employeesWithoutObligation.length})
-          </Button>
+          <>
+            <label className="flex flex-col gap-1 text-sm" style={{ color: C.green }}>
+              Vencimento da folha *
+              <input type="date" required value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="h-11 rounded-xl border px-3 text-sm" style={{ borderColor: C.line }} />
+            </label>
+            <Button size="sm" disabled={!dueDate} onClick={() => void handleGenerateAll()}>
+              Gerar obrigações ({employeesWithoutObligation.length})
+            </Button>
+            {!dueDate && <p className="basis-full text-[11px]" style={{ color: C.muted }}>O vencimento não é presumido: informe a data real de pagamento da folha desta competência antes de gerar.</p>}
+          </>
         )}
       </div>
 
@@ -104,7 +121,7 @@ export function DespesasPessoalPage() {
                   </div>
                   <div>
                     <p className="text-sm font-bold" style={{ color: C.green }}>{o.employeeName}</p>
-                    <p className="text-[11px]" style={{ color: C.muted }}>Competência {o.competence.slice(0, 7)}</p>
+                    <p className="text-[11px]" style={{ color: C.muted }}>Competência {o.competence.slice(0, 7)} · vence {brDate(o.dueDate)}</p>
                   </div>
                 </div>
                 <div className="mt-3 flex flex-col gap-1.5 text-[11px]">

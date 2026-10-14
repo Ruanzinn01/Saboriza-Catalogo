@@ -22,23 +22,23 @@ import {
   type ToolLink,
 } from "@/types/employee";
 
-// Paleta fiel ao HTML aprovado: ORIS360_Central_Colaboradores_V4_REFERENCIA_VISUAL_RECONCILIADA.html
+// Tema Financeiro Geral V3.11 — ORIS360_Central_Colaboradores_V4_1_Tema_Financeiro_Geral.html
 const c = {
-  page: "bg-[#f4f7fb] text-[#172033]",
-  card: "rounded-[14px] border border-[#dfe6ef] bg-white shadow-[0_2px_8px_#22324b0b]",
+  page: "bg-[#f4efdf] text-[#18372d]",
+  card: "rounded-[14px] border border-[#e5e8e1] bg-white shadow-[0_2px_8px_#092d230b]",
   cardPad: "p-[18px]",
-  label: "block text-xs font-bold text-[#566278] mb-1.5",
+  label: "block text-xs font-bold text-[#4f5f56] mb-1.5",
   input:
-    "w-full rounded-[9px] border border-[#ccd6e3] bg-white px-[11px] py-2.5 text-sm text-[#172033] outline-none focus:border-[#1769d2]",
-  muted: "text-[#69758a]",
-  brand: "text-[#1769d2]",
-  primaryBtn: "bg-[#1769d2] text-white border border-[#1769d2] hover:brightness-95",
-  btn: "border border-[#cbd6e4] bg-white px-[13px] py-2 rounded-[9px] font-bold text-sm cursor-pointer hover:brightness-[0.98]",
-  navBtn: "w-full text-left px-2.5 py-2.5 rounded-[9px] my-0.5 text-[#354156] hover:bg-[#eaf3ff]",
-  navBtnActive: "bg-[#eaf3ff] text-[#0f4fa4] font-extrabold",
-  notice: "bg-[#fff8e7] border border-[#f2d28d] p-[11px] rounded-[9px] text-[#79520b] text-sm",
-  okbox: "bg-[#ecf8f1] border border-[#bfe5ce] p-[11px] rounded-[9px] text-[#176b3f] text-sm",
-  pill: "text-[11px] px-[7px] py-1 rounded-full bg-[#eef3f8] text-[#5e6b80]",
+    "w-full rounded-[9px] border border-[#d5ddd4] bg-white px-[11px] py-2.5 text-sm text-[#18372d] outline-none focus:border-[#208252] focus-visible:ring-2 focus-visible:ring-[#208252]/30",
+  muted: "text-[#788078]",
+  brand: "text-[#208252]",
+  primaryBtn: "bg-[#208252] text-white border border-[#208252] hover:brightness-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#103f32]",
+  btn: "border border-[#d5ddd4] bg-white px-[13px] py-2 rounded-[9px] font-bold text-sm cursor-pointer hover:brightness-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#208252]",
+  navBtn: "w-full text-left px-2.5 py-2.5 rounded-[9px] my-0.5 text-[#2f4a3e] hover:bg-[#eaf4ec] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#208252]",
+  navBtnActive: "bg-[#eaf4ec] text-[#103f32] font-extrabold",
+  notice: "bg-[#fbf2dc] border border-[#ecd9a3] p-[11px] rounded-[9px] text-[#7a5a12] text-sm",
+  okbox: "bg-[#eaf4ec] border border-[#d5e7d8] p-[11px] rounded-[9px] text-[#28734e] text-sm",
+  pill: "text-[11px] px-[7px] py-1 rounded-full bg-[#eaf4ec] text-[#286c49]",
 };
 
 const SECTIONS: [string, string][] = [
@@ -72,7 +72,7 @@ function Card({ title, action, children, id }: { title: string; action?: ReactNo
   return (
     <section id={id} className={`${c.card} ${c.cardPad} mb-3.5 scroll-mt-4`}>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-[15px] font-bold text-[#172033] m-0">{title}</h2>
+        <h2 className="text-[15px] font-bold text-[#18372d] m-0">{title}</h2>
         {action}
       </div>
       {children}
@@ -108,9 +108,9 @@ function Field({
         placeholder={placeholder}
         readOnly={readOnly}
         onChange={(e) => onChange?.(e.target.value)}
-        className={`${c.input} ${error ? "border-2 border-[#b42318]" : ""} ${readOnly ? "cursor-not-allowed bg-[#f4f7fb]" : ""}`}
+        className={`${c.input} ${error ? "border-2 border-[#b74d43]" : ""} ${readOnly ? "cursor-not-allowed bg-[#f1efe4]" : ""}`}
       />
-      {error && <span className="mt-1 block text-xs text-[#b42318]">{error}</span>}
+      {error && <span className="mt-1 block text-xs text-[#b74d43]">{error}</span>}
     </div>
   );
 }
@@ -248,7 +248,7 @@ function Switch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
       role="switch"
       aria-checked={on}
       onClick={onToggle}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${on ? "bg-[#1769d2]" : "bg-[#b9c3d0]"}`}
+      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${on ? "bg-[#208252]" : "bg-[#c3cbc4]"}`}
     >
       <span className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white transition-all ${on ? "left-[23px]" : "left-[3px]"}`} />
     </button>
@@ -264,7 +264,7 @@ function ReadOnlyCode({ value }: { value: string }) {
           value={value}
           disabled
           placeholder={value ? "" : "Gerada ao salvar"}
-          className={`${c.input} cursor-not-allowed bg-[#f4f7fb] pr-10 text-[#69758a]`}
+          className={`${c.input} cursor-not-allowed bg-[#f1efe4] pr-10 text-[#788078]`}
         />
         {value && (
           <button
@@ -273,7 +273,7 @@ function ReadOnlyCode({ value }: { value: string }) {
               navigator.clipboard.writeText(value);
               toast.success("Matrícula copiada");
             }}
-            className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[#69758a] hover:bg-black/5"
+            className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[#788078] hover:bg-black/5"
           >
             <Copy size={15} />
           </button>
@@ -542,10 +542,10 @@ export function EmployeeProfilePage() {
     <div className={`${c.page} -m-4 min-h-full p-4 sm:-m-6 sm:p-6`}>
       <div className="mb-4 flex items-center gap-3">
         <div className={`text-lg font-extrabold ${c.brand}`}>
-          ÓRIS 360 <span className="text-xs font-semibold text-[#69758a]">• Colaboradores</span>
+          ÓRIS 360 <span className="text-xs font-semibold text-[#788078]">• Colaboradores</span>
         </div>
         <div className="flex-1" />
-        <span className="rounded-full bg-[#e8f5ee] px-2.5 py-1.5 text-xs font-bold text-[#17864b]">
+        <span className="rounded-full bg-[#eaf4ec] px-2.5 py-1.5 text-xs font-bold text-[#28734e]">
           {form.status === "ATIVO" ? "● Ativo" : "● Inativo"}
         </span>
         <button type="button" className={`${c.btn} text-xs`} onClick={() => setSection("ficha360")}>
@@ -555,8 +555,8 @@ export function EmployeeProfilePage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_1fr]">
         <aside className={`${c.card} h-fit p-3.5 lg:sticky lg:top-4`}>
-          <div className="border-b border-[#dfe6ef] px-2 pb-4 pt-2 text-center">
-            <div className="mx-auto grid h-[70px] w-[70px] place-items-center rounded-full bg-gradient-to-br from-[#d8e9ff] to-[#f5f9ff] text-xl font-extrabold text-[#1769d2]">
+          <div className="border-b border-[#e5e8e1] px-2 pb-4 pt-2 text-center">
+            <div className="mx-auto grid h-[70px] w-[70px] place-items-center rounded-full bg-gradient-to-br from-[#dcebdf] to-[#f4faf5] text-xl font-extrabold text-[#208252]">
               {form.photoUrl ? (
                 <img src={form.photoUrl} alt="" className="h-full w-full rounded-full object-cover" />
               ) : (
@@ -565,8 +565,8 @@ export function EmployeeProfilePage() {
             </div>
             <h3 className="mt-2 mb-0.5 text-sm font-bold">{form.name || "Novo colaborador"}</h3>
             <p className={`text-xs ${c.muted}`}>Matrícula {existing?.code ?? "—"}</p>
-            <div className="my-2.5 h-2 overflow-hidden rounded-full bg-[#e8edf4]">
-              <div className="h-full bg-[#1769d2] transition-all" style={{ width: `${progress}%` }} />
+            <div className="my-2.5 h-2 overflow-hidden rounded-full bg-[#e5e8e1]">
+              <div className="h-full bg-[#208252] transition-all" style={{ width: `${progress}%` }} />
             </div>
             <small className={c.muted}>Cadastro {progress}% completo</small>
           </div>
@@ -900,13 +900,13 @@ export function EmployeeProfilePage() {
                     ["Adiantamentos", form.advancesSample],
                     ["Estimativa demonstrativa", totalEstimate],
                   ].map(([label, value]) => (
-                    <div key={label as string} className="rounded-[11px] border border-[#dfe6ef] p-3.5">
-                      <span className="text-xs text-[#69758a]">{label}</span>
+                    <div key={label as string} className="rounded-[11px] border border-[#e5e8e1] p-3.5">
+                      <span className="text-xs text-[#788078]">{label}</span>
                       <b className="mt-1 block text-lg">{money(value as number)}</b>
                     </div>
                   ))}
                 </div>
-                <p className="mt-2 text-xs text-[#69758a]">
+                <p className="mt-2 text-xs text-[#788078]">
                   Amostra aritmética. Não representa salário líquido, folha fechada ou valores devidos.
                 </p>
               </Card>
@@ -935,7 +935,7 @@ export function EmployeeProfilePage() {
                   const link = toolLink(key);
                   const meta = EMPLOYEE_TOOL_LABELS[key];
                   return (
-                    <div key={key} className="rounded-xl border border-[#dfe6ef] p-3.5">
+                    <div key={key} className="rounded-xl border border-[#e5e8e1] p-3.5">
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="m-0 text-sm font-bold">{meta.name}</h3>
@@ -952,7 +952,7 @@ export function EmployeeProfilePage() {
                             ["canOperate", "Pode operar"],
                           ] as [keyof ToolLink, string][]
                         ).map(([field, label]) => (
-                          <label key={field} className="flex items-center gap-1.5 text-xs text-[#4d596d]">
+                          <label key={field} className="flex items-center gap-1.5 text-xs text-[#4f5f56]">
                             <input
                               type="checkbox"
                               checked={link[field]}
@@ -1002,7 +1002,7 @@ export function EmployeeProfilePage() {
               >
                 Simular convite de ativação
               </button>
-              <p className="mt-2 text-xs text-[#69758a]">
+              <p className="mt-2 text-xs text-[#788078]">
                 Nenhum e-mail real é enviado nesta versão. Em produção: link de uso único, validade de 24h.
               </p>
             </Card>
@@ -1013,7 +1013,7 @@ export function EmployeeProfilePage() {
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-sm">
                   <thead>
-                    <tr className="border-b border-[#dfe6ef] text-left text-xs font-bold text-[#566278]">
+                    <tr className="border-b border-[#e5e8e1] text-left text-xs font-bold text-[#4f5f56]">
                       <th className="py-2">Documento</th>
                       <th className="py-2">Referência</th>
                       <th className="py-2">Validade</th>
@@ -1024,17 +1024,17 @@ export function EmployeeProfilePage() {
                   <tbody>
                     {documents.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-4 text-center text-[#69758a]">
+                        <td colSpan={5} className="py-4 text-center text-[#788078]">
                           Nenhum documento adicionado.
                         </td>
                       </tr>
                     ) : (
                       documents.map((doc) => (
-                        <tr key={doc.id} className="border-b border-[#dfe6ef]">
+                        <tr key={doc.id} className="border-b border-[#e5e8e1]">
                           <td className="py-2">
                             {doc.docType}
                             <br />
-                            <small className="text-[#69758a]">{doc.reference}</small>
+                            <small className="text-[#788078]">{doc.reference}</small>
                           </td>
                           <td className="py-2">{doc.reference}</td>
                           <td className="py-2">{doc.expiresAt || "—"}</td>
@@ -1048,7 +1048,7 @@ export function EmployeeProfilePage() {
                           <td className="py-2">
                             <button
                               type="button"
-                              className="text-[#1769d2] underline"
+                              className="text-[#208252] underline"
                               onClick={async () => {
                                 const { data } = await supabase.storage
                                   .from("employee-documents")
@@ -1073,9 +1073,9 @@ export function EmployeeProfilePage() {
               >
                 + Adicionar documento
               </button>
-              {!employeeId && <p className="mt-2 text-xs text-[#69758a]">Salve o cadastro antes de anexar documentos.</p>}
+              {!employeeId && <p className="mt-2 text-xs text-[#788078]">Salve o cadastro antes de anexar documentos.</p>}
 
-              <dialog ref={docDialogRef} className="rounded-2xl border border-[#ccd6e3] p-6 backdrop:bg-[#10243b88]">
+              <dialog ref={docDialogRef} className="rounded-2xl border border-[#d5ddd4] p-6 backdrop:bg-[#092d2388]">
                 <form
                   method="dialog"
                   onSubmit={(e) => {
@@ -1167,10 +1167,10 @@ export function EmployeeProfilePage() {
               {history.length === 0 ? (
                 <p className={c.muted}>Nenhum evento registrado ainda.</p>
               ) : (
-                <div className="border-l-2 border-[#dce6f2] pl-5">
+                <div className="border-l-2 border-[#d5e7d8] pl-5">
                   {history.map((event) => (
                     <div key={event.id} className="relative mb-4">
-                      <span className="absolute -left-[26px] top-1 h-2.5 w-2.5 rounded-full border-[3px] border-[#eaf3ff] bg-[#1769d2]" />
+                      <span className="absolute -left-[26px] top-1 h-2.5 w-2.5 rounded-full border-[3px] border-[#eaf4ec] bg-[#208252]" />
                       <b className="text-sm">
                         {new Date(event.occurredAt).toLocaleString("pt-BR")} • {event.type}
                       </b>
@@ -1193,8 +1193,8 @@ export function EmployeeProfilePage() {
                     ["Cargo", form.role || "—"],
                     ["Admissão", form.admissionDate || "—"],
                   ].map(([label, value]) => (
-                    <div key={label} className="rounded-[11px] border border-[#dfe6ef] p-3.5">
-                      <span className="text-xs text-[#69758a]">{label}</span>
+                    <div key={label} className="rounded-[11px] border border-[#e5e8e1] p-3.5">
+                      <span className="text-xs text-[#788078]">{label}</span>
                       <b className="mt-1 block text-base">{value}</b>
                     </div>
                   ))}
@@ -1227,7 +1227,7 @@ export function EmployeeProfilePage() {
             </>
           )}
 
-          <div className="sticky bottom-0 mt-2 flex flex-wrap justify-end gap-2 rounded-[12px] border border-[#dfe6ef] bg-white/95 p-2.5 backdrop-blur">
+          <div className="sticky bottom-0 mt-2 flex flex-wrap justify-end gap-2 rounded-[12px] border border-[#e5e8e1] bg-white/95 p-2.5 backdrop-blur">
             <button type="button" className={c.btn} onClick={() => navigate("/admin/colaboradores")}>
               Voltar
             </button>

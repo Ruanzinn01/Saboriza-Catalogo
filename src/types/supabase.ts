@@ -6040,7 +6040,8 @@ export type Database = {
           competence: string
           created_at: string
           deductions: number
-          due_date: string | null
+          due_date: string
+          due_date_source: string | null
           employee_id: string
           id: string
           net_amount: number
@@ -6054,7 +6055,8 @@ export type Database = {
           competence: string
           created_at?: string
           deductions?: number
-          due_date?: string | null
+          due_date: string
+          due_date_source?: string | null
           employee_id: string
           id?: string
           net_amount: number
@@ -6068,7 +6070,8 @@ export type Database = {
           competence?: string
           created_at?: string
           deductions?: number
-          due_date?: string | null
+          due_date?: string
+          due_date_source?: string | null
           employee_id?: string
           id?: string
           net_amount?: number
@@ -8291,6 +8294,22 @@ export type Database = {
       resolve_salary_base: {
         Args: { p_competence: string; p_employee_id: string }
         Returns: number
+      }
+      generate_salary_obligation: {
+        Args: { p_competence: string; p_due_date: string; p_due_date_source?: string; p_employee_id: string }
+        Returns: string
+      }
+      change_salary_due_date: {
+        Args: { p_new_due_date: string; p_obligation_id: string; p_reason: string }
+        Returns: undefined
+      }
+      pay_salary_advance: {
+        Args: { p_advance_id: string }
+        Returns: undefined
+      }
+      reverse_salary_advance: {
+        Args: { p_advance_id: string; p_reason?: string }
+        Returns: string
       }
       return_launch_items: {
         Args: { p_launch_id: string; p_lines: Json; p_reason: string }
