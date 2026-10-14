@@ -1,59 +1,43 @@
--- Separa Confere V3 — correções da validação (2026-10-14).
--- STATUS: VERSIONADO, NÃO APLICADO. Testado só em transação revertida em produção (nada gravado). Aplicar primeiro em homologação.
--- Ao aplicar, mover para supabase/migrations/ com a versão registrada em schema_migrations.
+-- Separa Confere V3 — faltas de separação com ciclo de vida (DEF-01: duplicação em produção).
+-- STATUS: VERSIONADO, NÃO APLICADO. Testado só em transação revertida (ver docs/separa-confere-v3).
 --
--- 1) Restrição híbrida: gestor/administrador que também recebe separa_confere.operar NÃO fica confinado.
---    Confinado = só permissões "operar" e nenhuma outra (e sem admin.acessar). Qualquer permissão fora dessa lista libera o painel.
--- 2) Faltas de separação com ciclo de vida: idempotente, correção e cancelamento com histórico imutável.
+-- DEPENDE da regra única de acesso (supabase/pendentes/20261014180000_apps_operacionais_isolados.sql):
+--   private.operator_apps(company) e private.is_restricted_operator(company).
+-- NÃO redefine nenhuma delas. Aplicar depois da migration de apps operacionais.
 --
--- ATENÇÃO — sobreposição com supabase/pendentes/20261014180000_apps_operacionais_isolados.sql (outra frente):
--- ambas redefinem private.is_restricted_operator. A regra final precisa ser uma só; esta é a superconjunto
--- (operar + sem admin.acessar + sem permissão administrativa). Aplicar UMA definição, a última valendo.
+-- Garantias: (1) uma falta aberta por item (índice único parcial); (2) comando idempotente; (3) falta, ajuste e evento
+-- são gravados na MESMA função, portanto na mesma transação (tudo ou nada); (4) concorrência serializada pelo bloqueio
+-- da linha do item do pedido, com o índice único como segunda barreira; (5) histórico imutável.
 
--- ---------------------------------------------------------------------------------------------
--- 1) Restrição híbrida
--- ---------------------------------------------------------------------------------------------
-create or replace function private.user_permission_keys(p_company_id uuid)
-returns text[]
-language sql
-stable security definer
-set search_path to ''
-as $$
-  select coalesce(array_agg(distinct rp.permission_key), '{}'::text[])
-  from public.memberships m
-  join public.membership_roles mr on mr.company_id = m.company_id and mr.membership_id = m.id
-  join public.roles r on r.company_id = mr.company_id and r.id = mr.role_id and r.status = 'ACTIVE'
-  join public.role_permissions rp on rp.company_id = r.company_id and rp.role_id = r.id
-  where m.company_id = p_company_id
-    and m.user_id = (select auth.uid())
-    and m.status = 'ACTIVE'
-    and m.starts_at <= now()
-    and (m.ends_at is null or m.ends_at > now())
-$$;
-
-create or replace function private.is_restricted_operator(p_company_id uuid)
+create or replace function private.can_use_app(p_company_id uuid, p_app text)
 returns boolean
 language sql
 stable security definer
 set search_path to ''
 as $$
-  select k.keys && array['separa_confere.operar', 'producao.operar', 'entrega.operar']
-     and not ('admin.acessar' = any (k.keys))
-     and not exists (
-       select 1 from unnest(k.keys) as x(key)
-       where x.key <> all (array['separa_confere.operar', 'producao.operar', 'entrega.operar'])
-     )
-  from (select private.user_permission_keys(p_company_id) as keys) k
+  select not (select private.is_restricted_operator(p_company_id))
+      or p_app = any (private.operator_apps(p_company_id))
 $$;
 
-revoke all on function private.user_permission_keys(uuid) from public, anon;
-revoke all on function private.is_restricted_operator(uuid) from public, anon;
-grant execute on function private.user_permission_keys(uuid) to authenticated;
-grant execute on function private.is_restricted_operator(uuid) to authenticated;
+revoke all on function private.can_use_app(uuid, text) from public, anon;
+grant execute on function private.can_use_app(uuid, text) to authenticated;
 
--- ---------------------------------------------------------------------------------------------
--- 2) Faltas de separação: ciclo de vida
--- ---------------------------------------------------------------------------------------------
+-- Mesmo nome que o frontend usa para comparar responsável (user_metadata.name, senão e-mail).
+create or replace function private.separation_actor_name()
+returns text
+language sql
+stable security definer
+set search_path to ''
+as $$
+  select coalesce(
+    (select nullif(trim(au.raw_user_meta_data ->> 'name'), '') from auth.users au where au.id = (select auth.uid())),
+    (select au.email from auth.users au where au.id = (select auth.uid())),
+    'Operador')
+$$;
+
+revoke all on function private.separation_actor_name() from public, anon;
+grant execute on function private.separation_actor_name() to authenticated;
+
 alter table public.separation_shortages
   add column if not exists status text not null default 'OPEN' check (status in ('OPEN', 'CANCELLED', 'CLOSED')),
   add column if not exists command_id uuid,
@@ -64,7 +48,6 @@ alter table public.separation_shortages
   add column if not exists cancelled_at timestamptz,
   add column if not exists cancel_reason text;
 
--- Uma falta aberta por item do pedido; reenviar o mesmo comando devolve a mesma falta.
 create unique index if not exists separation_shortages_one_open_per_item on public.separation_shortages (order_item_id) where status = 'OPEN';
 create unique index if not exists separation_shortages_command_uidx on public.separation_shortages (company_id, command_id) where command_id is not null;
 
@@ -109,7 +92,6 @@ create trigger separation_shortage_events_immutable
   before update or delete on public.separation_shortage_events
   for each row execute function private.block_shortage_event_changes();
 
--- Situação para o relatório: aberta, resolvida (quando o ajuste ligado foi resolvido) ou cancelada.
 create or replace view public.separation_shortage_report
 with (security_invoker = true)
 as
@@ -151,12 +133,15 @@ declare
   v_adj uuid;
   v_id uuid;
 begin
+  -- Bloqueia a linha do item: duas chamadas simultâneas para o mesmo item se enfileiram aqui.
   select * into i from public.order_items where id = p_order_item_id for update;
   if not found then raise exception 'Item não encontrado'; end if;
   select * into o from public.orders where id = i.order_id;
-  if not (select private.is_active_company_member(o.company_id)) then raise exception 'Item não encontrado'; end if;
+  if not (select private.is_active_company_member(o.company_id))
+     or not (select private.can_use_app(o.company_id, 'separa_confere')) then
+    raise exception 'Item não encontrado';
+  end if;
 
-  -- Reenvio do mesmo comando (duplo toque, timeout): devolve o resultado já gravado.
   if p_command_id is not null then
     select * into s from public.separation_shortages where company_id = o.company_id and command_id = p_command_id;
     if found then
@@ -174,14 +159,12 @@ begin
     raise exception 'A quantidade separada deve ser menor que a pedida (% unidades)', i.total_units;
   end if;
 
-  v_name := coalesce((select au.raw_user_meta_data ->> 'name' from auth.users au where au.id = auth.uid()),
-                     (select au.email from auth.users au where au.id = auth.uid()), 'Operador');
+  v_name := private.separation_actor_name();
   v_message := trim(format('Falta na separação: %s de %s unidades separadas. %s', p_separated_units, i.total_units, v_reason));
 
   select * into s from public.separation_shortages where order_item_id = i.id and status = 'OPEN' for update;
 
   if found and exists (select 1 from public.order_adjustment_requests a where a.id = s.adjustment_request_id and a.status = 'resolved') then
-    -- O ajuste ligado já foi resolvido: a ocorrência anterior se encerra e uma nova falta começa.
     update public.separation_shortages set status = 'CLOSED', updated_at = now() where id = s.id;
     insert into public.separation_shortage_events (shortage_id, company_id, event, actor_name, data)
     values (s.id, s.company_id, 'RESOLVED', v_name, jsonb_build_object('reason', 'ajuste resolvido'));
@@ -189,9 +172,7 @@ begin
   end if;
 
   if s.id is not null then
-    -- Mesmo conteúdo: nada muda (idempotência por conteúdo).
     if s.separated_units = p_separated_units and s.reason = v_reason then return s.id; end if;
-    -- Conteúdo diferente: correção; os valores anteriores ficam no histórico.
     update public.separation_shortages
        set separated_units = p_separated_units, missing_units = i.total_units - p_separated_units,
            reason = v_reason, updated_at = now()
@@ -239,15 +220,17 @@ declare
   v_name text;
 begin
   select * into s from public.separation_shortages where id = p_shortage_id for update;
-  if not found or not (select private.is_active_company_member(s.company_id)) then raise exception 'Falta não encontrada'; end if;
-  -- Quem registrou ou quem não é operador confinado (gestor/administrador).
+  if not found or not (select private.is_active_company_member(s.company_id))
+     or not (select private.can_use_app(s.company_id, 'separa_confere')) then
+    raise exception 'Falta não encontrada';
+  end if;
+  -- Quem registrou, ou quem não é operador confinado (gestor/administrador).
   if s.reported_by <> auth.uid() and (select private.is_restricted_operator(s.company_id)) then
     raise exception 'Sem permissão para cancelar esta falta';
   end if;
   if s.status = 'CANCELLED' then return; end if;
 
-  v_name := coalesce((select au.raw_user_meta_data ->> 'name' from auth.users au where au.id = auth.uid()),
-                     (select au.email from auth.users au where au.id = auth.uid()), 'Operador');
+  v_name := private.separation_actor_name();
 
   update public.separation_shortages
      set status = 'CANCELLED', cancelled_by = auth.uid(), cancelled_by_name = v_name, cancelled_at = now(),

@@ -1,114 +1,99 @@
 # Separa Confere V3 — validação, evidências e estado por camada
 
-Data: 14/10/2026. Autor da validação: sessão de implementação do V3.
+Atualizado em 14/10/2026. Documentos relacionados: `REGRA_UNICA_DE_ACESSO.md`, `AMBIENTE_DE_HOMOLOGACAO.md`.
 
-> **Não existe homologação real.** O projeto Supabase `saboriza` (`opeietrhbqlhrhljcdtx`) é o único e não tem branches. Os testes abaixo foram feitos **no banco de produção, dentro de transações que terminam em erro (rollback)**, com empresas, usuários e papéis sintéticos criados e desfeitos na própria transação. Isso valida políticas RLS e funções com o papel `authenticated` e `request.jwt.claims` iguais aos do PostgREST. **Não substitui** HTTP real com JWT real, navegador e aparelho.
+> **Não existe homologação real.** Nenhuma verificação abaixo foi feita por HTTP real com JWT, nem em navegador ou aparelho. Ver seção 2.
 
-## 1. Versionamento e publicação
+## 1. Estado por camada (o que está onde)
 
-| Item | Situação |
+| Camada | O que contém | Evidência |
+|---|---|---|
+| **Commit local** | Commit posterior ao `6e03072` na branch `homolog/separa-confere-v3`: regra única, faltas com ciclo de vida, dados mínimos e sinais de tempo real (SQL em `supabase/pendentes/`), `separation-store` adaptado, testes e esta documentação. **Não enviado** | `git log` da branch |
+| **Commit enviado ao GitHub** | Branch `homolog/separa-confere-v3` em **`6e030720832d40c031e084eace1f009b1f8489c5`** (2 commits sobre `origin/main` = `d1d73de`). `main` remoto continua em `d1d73de` | `git ls-remote`: `refs/heads/homolog/separa-confere-v3 = 6e03072…`, `refs/heads/main = d1d73de…` |
+| **Frontend publicado** | **Produção:** `d1d73de` (`dpl_5CsZZAwq…`, `READY`, `target=production`), sem as telas do V3. **Preview** da branch: `dpl_4Quji36y…`, `READY`, `target=null`, build concluído; sem variáveis do Supabase (existem só para Production), portanto não é uma homologação utilizável | Vercel |
+| **Migrations aplicadas (produção)** | `20261014150418 separa_confere_v3` e `20261014150436 separa_confere_v3_grant_operator_fn`. Última registrada: `20261014174752` (185 no total) | `schema_migrations` |
+| **Migrations só versionadas** | `supabase/pendentes/20261014221500_…faltas_ciclo_de_vida.sql`, `…223000_…dados_minimos_e_tempo_real.sql` (e a da outra frente `…180000_apps_operacionais_isolados.sql`). **Nenhuma aplicada em lugar algum** | arquivos |
+| **CI do GitHub** | O workflow (`ci.yml`) dispara só em `push` para `main` e em PR para `main`. **O push da branch não gerou execução** (0 runs para `6e03072`). Equivalente executado localmente na branch: `tsc -b`, `vitest` (84 testes) e `npm run build` passaram; o build da Vercel do preview também concluiu | API do GitHub, Vercel |
+
+O push da branch **não** publicou em produção, **não** aplicou migrations e **não** criou branch de banco (lista de branches vazia; última migration inalterada).
+
+## 2. Classificação das evidências
+
+| Tipo | O que foi feito |
 |---|---|
-| Repositório | `https://github.com/Ruanzinn01/Saboriza-Catalogo` |
-| Branch com o V3 isolado | `homolog/separa-confere-v3` (base `origin/main` = `d1d73de`, **local, não enviada**) |
-| `main` local | 12 commits à frente de `origin/main` (inclui V3 `f0b25ed` e trabalho de outras frentes) |
-| Revisão em produção (Vercel `saboriza-catalogo`) | `d1d73de`, deploy `dpl_5CsZZAwqN33VRpxNv1UzFw8FP3TS`, `READY`, `target=production`, branch `main` |
-| **Push em `main` publica em produção?** | **Sim.** Os 5 últimos deploys de produção vieram de `main` pela integração Git da Vercel. O CI do GitHub (`.github/workflows/ci.yml`) só roda testes e build, não publica |
-| Push em outra branch | Gera **preview** da Vercel. As variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` existem **apenas para `production`**: o preview não tem backend configurado. Proteção SSO ativa (`all_except_custom_domains`) |
+| **Transações SQL com contexto simulado** | Todos os testes de acesso, dados mínimos, sinais e faltas (seção 4). Rodados no banco de produção, dentro de uma transação que termina em erro (rollback), com empresas, usuários, papéis e pedidos **sintéticos**, usando `SET LOCAL ROLE authenticated` e `request.jwt.claims` iguais aos do PostgREST. Validam RLS, funções e gatilhos. Verificado depois: 0 sobras (empresas, usuários, permissões de teste), 26 MB, 42 políticas, 15 colunas em `separation_shortages` |
+| **Chamadas HTTP reais com JWT de operador** | **Nenhuma.** Bloqueio: não há ambiente de homologação nem conta de operador real; não criei usuários em produção |
+| **Realtime real** | **Nenhum.** A entrega de eventos pelo servidor de Realtime não foi exercitada; só foram validados, em SQL, os gatilhos, o conteúdo dos sinais e a visibilidade por RLS |
+| **Navegador e aparelho** | **Nenhum.** O roteiro está na seção 7 |
+| **Testes automatizados** | `vitest`: 84 passando (inclui `lookupItemByCode` e `separation-snapshot`) |
+| **Locks** | Os testes que criam gatilhos em `orders`, `order_items` e `order_adjustment_requests` seguram, durante a transação (segundos), o lock desses DDLs. Escritas simultâneas aguardariam, sem falhar |
 
-### Conteúdo do commit `f0b25ed` (31 arquivos)
+## 3. Defeitos abertos
 
-Frontend: área do operador (`src/pages/operator/*`), `access-store`, `ProtectedRoute` com redirecionamento, `SeparationSections`, `SeparationShortagesReport`, `EstoqueInventarioHistorico`, `InventoryTab` com leitor, `lookupItemByCode` + testes, base de rotas (`separa-base`), `use-online`, ícones e manifest em `public/separa-confere/`.
-Banco: **uma** migration, `20261014230000_separa_confere_v3.sql`.
-
-### Migrations do V3 e reconciliação com o banco
-
-| Versão no banco (`schema_migrations`) | Arquivo na branch | Conferência |
-|---|---|---|
-| `20261014150418 separa_confere_v3` | `supabase/migrations/20261014150418_separa_confere_v3.sql` | Hash MD5 do conteúdo sem espaços e **sem comentários** idêntico ao registrado no banco (`ac6310db…`, 11 891 caracteres). Diferença apenas: o arquivo tem comentários que não foram enviados ao aplicar |
-| `20261014150436 separa_confere_v3_grant_operator_fn` | `supabase/migrations/20261014150436_separa_confere_v3_grant_operator_fn.sql` | **Estava só na sessão.** Arquivo criado agora; hash idêntico ao registrado (`82d67651…`) |
-
-Nada foi reaplicado. O arquivo do commit `f0b25ed` se chamava `20261014230000_…`; a branch usa o nome da versão real, como já feito na reconciliação geral (`b1ae83c`).
-
-## 2. Acesso real (resultados)
-
-Cenário sintético: 2 empresas, papéis e usuários de teste, pedidos e produtos clonados. Tudo revertido (verificado: 15 colunas originais em `separation_shortages`, 42 políticas, 0 empresas/usuários/permissões de teste).
-
-### 2.1 Modelo atual aplicado em produção (V3)
-
-| Perfil | `restricted` | Observação |
-|---|---|---|
-| Operador (só `separa_confere.operar`) | true | Lê 0 `customers`, 0 `raw_materials`; 1 pedido da própria empresa, 0 da outra; `update` em pedido de outra empresa = 0 linhas; falta em item de outra empresa = "Item não encontrado" |
-| **Gestor com `operar` + gerenciar inventário** | **true** | **Defeito.** Perde a leitura de `roles` (0 visíveis). Contraria a regra de que gestor/administrador não perdem acesso |
-| Gestor sem `operar` | false | Sem mudança |
-| Proprietário real | false | `customers=5`, `raw_materials=53` (teste anterior) |
-
-### 2.2 Correção proposta (`supabase/pendentes/20261014221500_…acesso_hibrido_e_faltas.sql`)
-
-Confinado = tem algum `*.operar`, **não** tem `admin.acessar` e **não** tem nenhuma outra permissão. Resultado no mesmo cenário: operador `true`, gestor+operar `false` (roles visíveis 4), gestor sem operar `false`, operar+`admin.acessar` `false`.
-Sobreposição: a migration pendente da outra frente (`20261014180000_apps_operacionais_isolados.sql`) também redefine `is_restricted_operator`. **Só pode valer uma definição**; esta é a mais abrangente.
-
-## 3. Dados expostos ao operador
-
-Medido com o operador sintético (leitura direta pela API):
-
-| Tabela | Colunas legíveis | Usadas na separação | Exposição desnecessária confirmada |
+| ID | Prioridade | Descrição | Estado |
 |---|---|---|---|
-| `orders` | 44 | 13 | telefone, CNPJ, e-mail, endereço, valores, desconto, cupom, vendedor |
-| `order_items` | 15 | 10 | preço unitário e total |
-| `products` | 32 | 4 (`id`, `image_url`, `code`, `gtin`) | preço, custo médio, último custo, margem, fornecedor, estoque |
-| `order_adjustment_requests` | 10 | 7 | — |
+| **DEF-01** | **Alta** | **Falta de separação duplica em produção.** A função aplicada (`separation_report_shortage(uuid, int, text)`) não é idempotente: repetir o registro cria outra falta e outro pedido de ajuste. Hoje o frontend publicado não expõe o botão, mas a função é executável por qualquer membro autenticado pela API | **Aberto.** Correção pronta e testada em `…221500` (índice único de falta aberta por item, comando idempotente, gravação atômica). Aguarda aprovação para aplicar. Mitigação possível sem esperar: revogar `EXECUTE` da função até o frontend sair (também depende de aprovação) |
+| DEF-02 | Alta | Migration de apps operacionais sem `GRANT EXECUTE` em `private.is_app_scope_allowed` (usada em políticas RESTRICTIVE): `authenticated` sem permissão, o que reproduziria o erro 42501 que a V3 teve | Aberto, na outra frente; ver `REGRA_UNICA_DE_ACESSO.md` |
+| DEF-03 | Média | Operador confinado lê todas as colunas de `orders`, `order_items` e `products` (telefone, CNPJ, valores, custo, margem) | Aberto. Solução pronta (`…223000`), depende do frontend novo e da homologação |
+| DEF-04 | Média | Duas definições concorrentes de `is_restricted_operator` | Reconciliação proposta, nada aplicado |
+| DEF-05 | Baixa | Unidade e atribuição não aplicadas em `orders`/`order_items` | Aberto (já registrado pela outra frente). Para inventário a unidade foi validada |
 
-O frontend já seleciona colunas específicas em itens, produtos e ajustes, mas `orders` usa `select("*")` e **a API aceita qualquer coluna**: a restrição está só na tela.
+## 4. Resultados (SQL simulado)
 
-**Proposta validada** (`supabase/pendentes/20261014223000_…dados_minimos.sql`): operador "só Separa" perde o acesso direto às 4 tabelas e usa funções `separation_snapshot`, `separation_accept_order`, `separation_release_order`, `separation_set_item`, `separation_request_adjustment`, `separation_resolve_adjustment`. Resultado pela API: leitura direta 0/0/0 linhas, `update` direto 0, `insert` direto negado por RLS; snapshot devolve **13/10/4** colunas e nenhum campo comercial; aceitar, marcar item, ajuste pendente que impede finalizar e finalização depois de resolver se comportam como hoje; outra empresa 0 pedidos e `set_item` falso; operador com `entrega.operar` e gestor mantêm acesso direto.
-**Não aplicada**: exige trocar `separation-store.ts` para usar as funções. Efeito: o realtime de `orders` deixa de chegar ao operador confinado (usar polling). Ordem segura: homologação, frontend novo, depois banco.
+### 4.1 Regra única de acesso e isolamento
+Matriz completa e precedências em `REGRA_UNICA_DE_ACESSO.md`. Medido: só Separa `restr=t apps={separa_confere}`; Separa+Entrega `apps={separa_confere,entrega}`; Separa + permissões auxiliares **continua confinado** e ainda pode gerenciar inventário; Separa + `admin.acessar` e gestor **não** confinados; só Entrega confinado ao Entrega. Empresa B não lê nem altera nada da A; escopo de unidade barra sessão de inventário de outra unidade.
 
-## 4. Faltas e ajustes
+### 4.2 Dados mínimos
+`separation_snapshot` devolve **13 / 10 / 4** colunas (pedidos / itens / produtos), sem telefone, CNPJ, valores, preço, custo ou margem. Recusas: outra empresa, usuário só do Entrega e usuário sem vínculo. Escritas (aceitar, marcar item, ajuste, resolver, liberar) com paridade com o fluxo atual: ajuste pendente impede finalizar; outro operador não libera; gestor libera. Após a fase B, o operador "só Separa" lê 0 linhas de `orders`/`order_items`/`products`/`order_adjustment_requests` e `update` direto afeta 0; operador Separa+Entrega, administrador e gestor mantêm a leitura direta.
 
-- **Quem acessa a aba Faltas:** gestor e administrador (qualquer membro **não confinado**). A aba existe só em `/admin/separa-confere`; o shell do operador não tem. O operador também é barrado no servidor: lê 0 linhas de faltas e de eventos. O operador **registra** a falta (função), mas não a lê.
-- **Idempotência** (migration pendente): mesmo comando repetido devolve a mesma falta (1 falta, 1 pedido de ajuste, 1 evento); mesmo conteúdo com outro comando também; mesmo comando com conteúdo diferente é recusado (`COMMAND_CONFLITO`).
-- **Correção:** a mesma falta é atualizada (1 falta, 1 ajuste, 2 eventos), a mensagem do ajuste pendente acompanha, os valores anteriores ficam no evento `CORRECTED`.
-- **Resolver o ajuste:** a situação passa a "Resolvida" (derivada); nova falta no mesmo item cria **nova ocorrência**, a antiga é encerrada com evento `RESOLVED` (3 eventos), 2 faltas e 2 ajustes no total.
-- **Cancelar:** outro operador é recusado; o autor cancela, o ajuste pendente é encerrado, repetir o cancelamento não duplica evento; pela regra da função, gestor também pode cancelar (caminho não exercitado nos testes).
-- **Histórico imutável:** `update` e `delete` em eventos são bloqueados por gatilho.
-- **Estado em produção hoje:** a função aplicada é a versão sem comando idempotente. Repetir o registro **duplica** (o frontend em produção ainda nem expõe o botão). A correção está pendente de homologação.
+### 4.3 Tempo real sem campos restritos
+Tabela `separation_signals` com apenas `order_id, company_id, status, responsible, separation_finished, version, updated_at`, mantida por gatilhos em `orders`, `order_items` e `order_adjustment_requests`. Operador do Separa lê os sinais da própria empresa, não os de outra empresa; usuário só do Entrega lê 0; escrita direta é negada; `version` incrementou a cada mudança (12 após o fluxo de teste). O frontend assina `separation_signals` (filtro por empresa) além do canal antigo de `orders`, agrupa eventos (250 ms) e relê pela função. **Polling não foi implementado como substituto**; o tempo real é o mecanismo principal. A entrega real dos eventos depende de homologação.
 
-## 5. Leitor (comportamento existente, sem ampliação)
+### 4.4 Faltas e ajustes (código final)
+- **Repetir:** mesmo comando duas vezes → mesma falta, 1 falta, 1 ajuste.
+- **Corrigir:** mesma falta atualizada (separadas 2 → 1), 1 ajuste, 2 eventos (`REPORTED`, `CORRECTED`).
+- **Resolver o ajuste:** situação "Resolvida" para o gestor; nova falta no item abre **nova ocorrência**, a antiga fica `CLOSED` com evento `RESOLVED`; 2 ocorrências e 2 ajustes no total.
+- **Cancelar por gestor:** situação "Cancelada" por `mgr@…`, 3 eventos, 0 ajustes pendentes; cancelar de novo não gera evento; nova falta depois do cancelamento abre ocorrência (2 no total, 1 aberta).
+- **Cancelar por outro operador confinado:** recusado.
+- **Acesso:** usuário só do Entrega e empresa B não registram (item "não encontrado"); operador do Separa lê 0 no relatório; gestor lê.
+- **Atomicidade:** falha simulada logo depois do ajuste → 0 ajustes e 0 faltas gravados; nova tentativa → 1 ajuste e 1 falta.
+- **Barreira do banco:** segunda falta aberta direta no mesmo item → `unique_violation`; comando repetido direto → `unique_violation`.
+- **Simultaneidade:** duas chamadas para o mesmo item se enfileiram no bloqueio da linha do item (`FOR UPDATE`) e a segunda cai no caminho idempotente; o índice único é a segunda barreira. **Teste com duas conexões reais não foi feito** (exige ambiente com conexões independentes).
+- **Quem acessa a aba Faltas:** gestor e administrador (não confinados). O operador registra, não lê.
 
-- Dentro do pedido (`SeparaConfereOrderPage`): botão "Ler código" só para o responsável da separação; usa `BarcodeScannerModal` (`html5-qrcode`, câmera traseira), o mesmo componente de Carregamento e Produzir; compara o código lido com `code` ou `gtin` **exatos** dos itens do pedido; fora do pedido: "Produto não pertence a este pedido"; item encontrado abre a ficha, **não confirma** a separação.
-- Inventário: botão "Ler código" só na aba Inventário com sessão aberta; busca por `gtin` ou SKU **dentro da sessão**, normalizando zeros à esquerda e caixa; ambíguo abre escolha; já contado avisa; leitor físico digita na busca e usa Enter. Não registra contagem.
-- Não há leitor em Pendentes nem em Histórico.
+## 5. Dados expostos hoje ao operador (medição)
 
-## 6. Roteiro para aparelho real (HTTPS de homologação)
+| Tabela | Colunas legíveis | Usadas na separação |
+|---|---|---|
+| `orders` | 44 | 13 |
+| `order_items` | 15 | 10 |
+| `products` | 32 | 4 |
+| `order_adjustment_requests` | 10 | 7 |
 
-Pré-requisitos: ambiente de homologação com frontend em HTTPS, banco com as migrations e um papel de operador (somente `separa_confere.operar`).
+## 6. Leitor (comportamento existente, preservado)
 
-1. Abrir `/operacao/separa-confere` no Android (Chrome) e no iPhone (Safari); entrar com a conta de teste; conferir que abre Pedidos e que a barra tem só Pedidos, Inventário e Histórico.
-2. Digitar `/admin` e `/admin/estoque` na barra de endereço: deve voltar para a área do operador.
-3. Android: menu do navegador, "Instalar app"/"Adicionar à tela inicial"; conferir nome "Separa Confere" e o ícone aprovado. iPhone: Compartilhar, "Adicionar à Tela de Início". Abrir pelo ícone: modo standalone, sem barra do navegador.
-4. Pedidos: aceitar, abrir item, **Ler código** do pedido (permissão de câmera), ler um código do pedido e um de fora; registrar uma falta; repetir tocando duas vezes.
-5. Inventário (com sessão aberta iniciada por gestor): **Ler código** (permitir e negar câmera), código da sessão, de fora, duplicado; digitar com leitor físico (Bluetooth/USB) na busca e Enter; contar um item, zero explícito, voltar à lista (filtro e rolagem preservados); recarregar a página.
-6. Modo avião: aviso no topo, nada guardado; reconectar e repetir.
-7. Fechar o leitor e verificar que a luz da câmera apaga.
-8. Entrar como gestor na mesma URL: deve acessar também `/admin`.
+- **Dentro do pedido** (`SeparaConfereOrderPage`): botão "Ler código" só para o responsável; `BarcodeScannerModal` (`html5-qrcode`, câmera traseira); casa `code` ou `gtin` **exatos** com os itens do pedido; fora do pedido: "Produto não pertence a este pedido"; item encontrado abre a ficha e **não confirma**. Não foi alterado.
+- **Inventário:** botão "Ler código" só na aba Inventário com sessão aberta; busca por `gtin` ou SKU dentro da sessão (zeros à esquerda e caixa normalizados); ambíguo abre escolha; já contado avisa; leitor físico digita na busca com Enter. Não registra contagem. Sem leitor em Pendentes ou Histórico.
+
+## 7. Roteiro para aparelho real (HTTPS de homologação)
+
+Pré-requisitos: homologação com frontend em HTTPS, banco com as migrations e um papel de operador (somente `separa_confere.operar`).
+1. Abrir `/operacao/separa-confere` no Android (Chrome) e no iPhone (Safari); entrar com a conta de teste; conferir Pedidos e a barra só com Pedidos, Inventário e Histórico.
+2. Digitar `/admin` e `/admin/estoque`: deve voltar para a área do operador.
+3. Android: "Instalar app"/"Adicionar à tela inicial". iPhone: Compartilhar, "Adicionar à Tela de Início". Conferir nome "Separa Confere" e ícone aprovado; abrir pelo ícone (standalone).
+4. Pedidos: aceitar, abrir item, **Ler código** do pedido (permissão de câmera), um código do pedido e um de fora; registrar falta; tocar duas vezes no botão.
+5. Inventário (sessão aberta por gestor): **Ler código** (permitir e negar câmera), código da sessão, de fora, duplicado; leitor físico na busca com Enter; contar, zero explícito, voltar à lista (filtro e rolagem), recarregar.
+6. Modo avião: aviso no topo, nada guardado; reconectar.
+7. Fechar o leitor: a luz da câmera apaga.
+8. Entrar como gestor na mesma URL: acessa também `/admin`.
+9. Tempo real: com dois aparelhos, criar/liberar/aceitar pedido em um e ver a fila do outro atualizar sem recarregar.
 Registrar vídeo ou captura de cada passo.
-
-## 7. Estado por camada
-
-| Camada | O que está nela |
-|---|---|
-| **Somente local** | Branch `homolog/separa-confere-v3` (rename, migration do grant, 2 migrations pendentes, front das faltas com fallback, esta documentação); `main` local com 12 commits à frente |
-| **Versionado (remoto)** | Nada do V3. `origin/main` está em `d1d73de` |
-| **Em homologação** | Nada. Não existe ambiente |
-| **Em produção** | Banco: V3 (`150418`) + grant (`150436`). Frontend: `d1d73de`, **sem** o V3 de interface |
-
-Defasagem conhecida: o banco já tem o V3 e o frontend publicado não. As telas novas só aparecem quando o frontend for publicado.
 
 ## 8. Pendências e bloqueios
 
-1. Ambiente de homologação (Supabase branch ou projeto novo + variáveis `Preview` na Vercel apontando para ele). Branch Supabase: US$ 0,01344/hora, organização no plano free (pode exigir upgrade).
-2. Decidir a regra única de `is_restricted_operator` entre as duas frentes.
-3. Aplicar, em homologação, as 2 migrations pendentes e rodar o roteiro de acesso por HTTP real com JWT.
-4. Refatorar `separation-store.ts` para as funções de dados mínimos e polling.
+1. Ambiente de homologação (decisão e eventual custo: `AMBIENTE_DE_HOMOLOGACAO.md`).
+2. Reconciliar as duas frentes antes de qualquer aplicação (`REGRA_UNICA_DE_ACESSO.md`).
+3. Em homologação: aplicar na ordem documentada, rodar HTTP com JWT real, Realtime real, duas conexões simultâneas, navegador e aparelho.
+4. Aprovação específica para: aplicar `…221500` (DEF-01), publicar o frontend e qualquer alteração no banco de produção.
 5. Central de PDFs: dependência indisponível, registrada.
 6. Fora desta etapa: uso duplo de item, correção de compras, lote na separação.
