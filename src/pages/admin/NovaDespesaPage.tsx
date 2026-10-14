@@ -256,7 +256,7 @@ export function NovaDespesaPage() {
         ...prev,
         {
           cid: uid(), kind: "stock" as const, rawMaterialId: isProduct ? undefined : item.itemId, productId: isProduct ? item.itemId : undefined,
-          sku: item.sku, gtin: item.gtin, brand: item.brand, name: item.name, unit: item.unit, quantity: 1,
+          sku: item.sku, gtin: item.gtin, brand: item.brand, tracksLots: item.tracksLots, name: item.name, unit: item.unit, quantity: 1,
           unitPrice: item.lastPurchaseCost ?? (item.avgCost > 0 ? item.avgCost : 0), rateable: false, contractLabel: "Principal",
           recurrence: defaultRecurrence(today()), destLabel: KIND_LABEL.stock.dest,
         },
@@ -368,6 +368,10 @@ export function NovaDespesaPage() {
     }
     if (total < 0) {
       toast.error("O desconto não pode ultrapassar o valor total da compra.");
+      return;
+    }
+    if (cart.some((l) => l.tracksLots) && (batch.trim() === "" || expiryDate === "")) {
+      toast.error("Há item com rastreamento de lote: informe Lote e Validade nos dados da nota.");
       return;
     }
     const parcelSum = Math.round(parcels.reduce((s, p) => s + p.amount, 0) * 100);
@@ -543,8 +547,8 @@ export function NovaDespesaPage() {
           </div>
           {kind === "stock" && (
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <label className="text-xs"><span className="mb-1.5 block font-semibold">Lote</span><input value={batch} onChange={(e) => setBatch(e.target.value)} className={fieldCls} style={{ borderColor: C.line }} /></label>
-              <label className="text-xs"><span className="mb-1.5 block font-semibold">Validade</span><input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} className={fieldCls} style={{ borderColor: C.line }} /></label>
+              <label className="text-xs"><span className="mb-1.5 block font-semibold">Lote{cart.some((l) => l.tracksLots) ? " *" : ""}</span><input value={batch} onChange={(e) => setBatch(e.target.value)} className={fieldCls} style={{ borderColor: C.line }} /></label>
+              <label className="text-xs"><span className="mb-1.5 block font-semibold">Validade{cart.some((l) => l.tracksLots) ? " *" : ""}</span><input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} className={fieldCls} style={{ borderColor: C.line }} /></label>
             </div>
           )}
           <label className="mt-3 block text-xs"><span className="mb-1.5 block font-semibold">Chave de acesso da NF-e (opcional)</span><input value={documentAccessKey} onChange={(e) => setDocumentAccessKey(e.target.value)} maxLength={44} className={fieldCls} style={{ borderColor: C.line }} /></label>

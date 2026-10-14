@@ -42,6 +42,10 @@ export function EstoqueGestaoGeral({ goTo }: EstoqueGestaoGeralProps) {
   const fetchPosition = useEstoqueStore((state) => state.fetchPosition);
   const divergences = useEstoqueStore((state) => state.divergences);
   const fetchDivergences = useEstoqueStore((state) => state.fetchDivergences);
+  const losses = useEstoqueStore((state) => state.losses);
+  const returns = useEstoqueStore((state) => state.returns);
+  const fetchLosses = useEstoqueStore((state) => state.fetchLosses);
+  const fetchReturns = useEstoqueStore((state) => state.fetchReturns);
   const sessions = useInventoryStore((state) => state.sessions);
   const fetchSessions = useInventoryStore((state) => state.fetchSessions);
 
@@ -55,7 +59,9 @@ export function EstoqueGestaoGeral({ goTo }: EstoqueGestaoGeralProps) {
   useEffect(() => {
     void fetchPosition();
     void fetchSessions();
-  }, [fetchPosition, fetchSessions]);
+    void fetchLosses();
+    void fetchReturns();
+  }, [fetchPosition, fetchSessions, fetchLosses, fetchReturns]);
 
   const session = useMemo(() => sessions.find((candidate) => candidate.status === "OPEN") ?? sessions.find((candidate) => candidate.status !== "SCHEDULED") ?? null, [sessions]);
 
@@ -101,6 +107,11 @@ export function EstoqueGestaoGeral({ goTo }: EstoqueGestaoGeralProps) {
   const openDivergences = divergences.filter((row) => row.isLatest && row.difference !== 0 && row.adjustmentStatus === "NONE");
   const approved = divergences.filter((row) => row.adjustmentStatus === "APPROVED");
   const canSeeResults = Boolean(session?.canManage);
+  const monthPrefix = new Date().toISOString().slice(0, 7);
+  const monthLosses = losses.filter((row) => row.occurredOn.startsWith(monthPrefix));
+  const monthLossCost = monthLosses.reduce((sum, row) => sum + (row.totalCost ?? 0), 0);
+  const monthLossUnknown = monthLosses.filter((row) => row.totalCost === null).length;
+  const awaitingReturns = returns.filter((row) => row.status === "AWAITING").length;
   const needAlerts = filtered.filter((item) => ["ZERO", "CRITICAL", "LOW"].includes(item.health));
   const withoutDemand = filtered.filter((item) => item.dailyRate === null);
 
@@ -175,7 +186,7 @@ export function EstoqueGestaoGeral({ goTo }: EstoqueGestaoGeralProps) {
           sub={historyDays < IDLE_THRESHOLD_DAYS ? `Histórico de ${historyDays}/${IDLE_THRESHOLD_DAYS} dias: ainda não há como medir 90+ dias parados` : `${summary.idleItems} itens com saldo e 90+ dias sem atividade`}
           onClick={() => openList("Capital sem giro 90+ dias", filtered.filter((item) => item.physical > 0 && (item.idleDays ?? 0) >= IDLE_THRESHOLD_DAYS))}
         />
-        <KpiButton title="PERDAS DO MÊS" accent="#bf5a50" value="—" sub="Perdas e impróprias confirmadas (aba Retornos e perdas)" onClick={() => goTo("retornos")} />
+        <KpiButton title="PERDAS DO MÊS" accent="#bf5a50" value={formatCurrency(monthLossCost)} sub={monthLosses.length === 0 ? "Nenhuma perda confirmada no mês" : `${monthLosses.length} ocorrências${monthLossUnknown > 0 ? ` · ${monthLossUnknown} sem custo conhecido` : ""}`} onClick={() => goTo("retornos")} />
         <KpiButton title="ACURACIDADE INVENTÁRIO" accent="#357db5" value={acc === null ? "—" : `${formatNumber(acc, 1)}%`} sub={acc === null ? "Sem contagens neste período" : "Primeiras contagens sem divergência ÷ contados"} onClick={() => goTo("inventario")} />
       </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -221,8 +232,8 @@ export function EstoqueGestaoGeral({ goTo }: EstoqueGestaoGeralProps) {
             <b className="whitespace-nowrap text-sm">{needAlerts.length} itens ›</b>
           </button>
           <button type="button" onClick={() => goTo("retornos")} className="flex w-full items-center gap-3 border-b border-forest-950/10 px-4 py-3 text-left hover:bg-forest-950/5">
-            <span className="flex-1"><b className="block text-xs">Retornos e perdas</b><small className="text-[11px] text-ink-muted">Cancelamento não torna mercadoria disponível; só a conferência física.</small></span>
-            <b className="whitespace-nowrap text-sm">abrir ›</b>
+            <span className="flex-1"><b className="block text-xs">Retorno aguardando conferência</b><small className="text-[11px] text-ink-muted">Cancelamento não torna mercadoria disponível; só a conferência física.</small></span>
+            <b className="whitespace-nowrap text-sm">{awaitingReturns} ›</b>
           </button>
           <button type="button" onClick={() => openList("Sem base de demanda", withoutDemand)} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-forest-950/5">
             <span className="flex-1"><b className="block text-xs">Histórico insuficiente ou sem consumo</b><small className="text-[11px] text-ink-muted">Sem cobertura artificial.</small></span>

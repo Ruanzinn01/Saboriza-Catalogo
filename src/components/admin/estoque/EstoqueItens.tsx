@@ -21,6 +21,7 @@ export function EstoqueItens() {
   const status = usePurchaseStore((s) => s.catalogStatus);
   const fetchCatalog = usePurchaseStore((s) => s.fetchCatalog);
   const saveSupplierCode = usePurchaseStore((s) => s.saveSupplierCode);
+  const setLotTracking = usePurchaseStore((s) => s.setLotTracking);
   const suppliers = useSuppliersStore((s) => s.suppliers);
   const fetchSuppliers = useSuppliersStore((s) => s.fetchSuppliers);
   const [movementCount, setMovementCount] = useState<number | null>(null);
@@ -137,6 +138,19 @@ export function EstoqueItens() {
                 )}
                 <Button size="sm" variant="outline" className="min-h-11" onClick={() => { setEditing(item); setSupplierId(""); setCode(""); }}>
                   Código do fornecedor
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="min-h-11"
+                  aria-pressed={item.tracksLots}
+                  onClick={async () => {
+                    const message = await setLotTracking(item.itemType, item.itemId, !item.tracksLots);
+                    if (message) toast.error(message);
+                    else toast.success(item.tracksLots ? "Rastreamento de lote desativado." : "Rastreamento de lote ativado: a entrada passa a exigir lote e validade.");
+                  }}
+                >
+                  {item.tracksLots ? "Lote: rastreado" : "Rastrear lote"}
                 </Button>
               </div>
             </div>

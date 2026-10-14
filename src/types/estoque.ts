@@ -56,6 +56,8 @@ export type LedgerMovementType =
   | "ENTRY"
   | "PURCHASE_ENTRY"
   | "PURCHASE_RETURN"
+  | "CUSTOMER_RETURN"
+  | "LOSS"
   | "SALE_OUT"
   | "PRODUCTION_IN"
   | "PRODUCTION_CONSUMPTION"
@@ -76,6 +78,36 @@ export interface LedgerRow {
   note: string;
   occurredAt: string;
   unitCost: number | null;
+}
+
+export type LossKind = "EXPIRY" | "BREAKAGE" | "CONTAMINATION" | "DAMAGE" | "OTHER";
+
+export interface StockReturnRow {
+  id: string;
+  source: "CANCELLATION" | "PARTIAL_DELIVERY";
+  sourceRef: string;
+  productId: string;
+  productName: string;
+  expectedUnits: number;
+  status: "AWAITING" | "CONFIRMED";
+  goodUnits: number | null;
+  badUnits: number | null;
+  notes: string;
+  createdAt: string;
+}
+
+export interface LossRow {
+  id: string;
+  itemType: StockItemType;
+  itemId: string;
+  itemName: string;
+  quantity: number;
+  kind: LossKind;
+  occurredOn: string;
+  reason: string;
+  unitCost: number | null;
+  totalCost: number | null;
+  source: "MANUAL" | "RETURN";
 }
 
 export type AdjustmentStatus = "NONE" | "APPROVED" | "DISMISSED";

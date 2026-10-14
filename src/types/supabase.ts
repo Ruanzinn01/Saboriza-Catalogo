@@ -5034,6 +5034,7 @@ export type Database = {
           sale_unit: string | null
           supplier_id: string | null
           target_margin_pct: number | null
+          tracks_lots: boolean
           unit_price: number
           unit_weight_grams: number | null
           updated_at: string
@@ -5067,6 +5068,7 @@ export type Database = {
           sale_unit?: string | null
           supplier_id?: string | null
           target_margin_pct?: number | null
+          tracks_lots?: boolean
           unit_price: number
           unit_weight_grams?: number | null
           updated_at?: string
@@ -5100,6 +5102,7 @@ export type Database = {
           sale_unit?: string | null
           supplier_id?: string | null
           target_margin_pct?: number | null
+          tracks_lots?: boolean
           unit_price?: number
           unit_weight_grams?: number | null
           updated_at?: string
@@ -5449,6 +5452,7 @@ export type Database = {
           purchase_multiple: number
           purchase_unit_factor: number
           purchase_unit_label: string
+          tracks_lots: boolean
           unit_locked: boolean
           updated_at: string
         }
@@ -5479,6 +5483,7 @@ export type Database = {
           purchase_multiple?: number
           purchase_unit_factor?: number
           purchase_unit_label?: string
+          tracks_lots?: boolean
           unit_locked?: boolean
           updated_at?: string
         }
@@ -5509,6 +5514,7 @@ export type Database = {
           purchase_multiple?: number
           purchase_unit_factor?: number
           purchase_unit_label?: string
+          tracks_lots?: boolean
           unit_locked?: boolean
           updated_at?: string
         }
@@ -6280,6 +6286,71 @@ export type Database = {
           },
         ]
       }
+      stock_loss_records: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          item_id: string
+          item_name: string
+          item_type: string
+          kind: string
+          occurred_on: string
+          quantity: number
+          reason: string
+          registered_by: string | null
+          source: string
+          source_id: string | null
+          total_cost: number | null
+          unit_cost: number | null
+          unit_id: string | null
+        }
+        Insert: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          item_id: string
+          item_name: string
+          item_type: string
+          kind: string
+          occurred_on: string
+          quantity: number
+          reason: string
+          registered_by?: string | null
+          source?: string
+          source_id?: string | null
+          total_cost?: number | null
+          unit_cost?: number | null
+          unit_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_name?: string
+          item_type?: string
+          kind?: string
+          occurred_on?: string
+          quantity?: number
+          reason?: string
+          registered_by?: string | null
+          source?: string
+          source_id?: string | null
+          total_cost?: number | null
+          unit_cost?: number | null
+          unit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_loss_records_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_movements: {
         Row: {
           company_id: string
@@ -6354,6 +6425,139 @@ export type Database = {
           },
           {
             foreignKeyName: "stock_movements_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_policies: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          ideal_days: number
+          justification: string
+          max_days: number
+          min_days: number
+          scope: string
+          unit_id: string
+        }
+        Insert: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ideal_days: number
+          justification: string
+          max_days: number
+          min_days: number
+          scope?: string
+          unit_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ideal_days?: number
+          justification?: string
+          max_days?: number
+          min_days?: number
+          scope?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_policies_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_returns: {
+        Row: {
+          bad_units: number | null
+          company_id: string
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          delivery_item_id: string | null
+          expected_units: number
+          good_units: number | null
+          id: string
+          notes: string | null
+          order_id: string | null
+          product_id: string
+          source: string
+          source_ref: string
+          status: string
+          unit_id: string | null
+        }
+        Insert: {
+          bad_units?: number | null
+          company_id: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          delivery_item_id?: string | null
+          expected_units: number
+          good_units?: number | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          product_id: string
+          source: string
+          source_ref?: string
+          status?: string
+          unit_id?: string | null
+        }
+        Update: {
+          bad_units?: number | null
+          company_id?: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          delivery_item_id?: string | null
+          expected_units?: number
+          good_units?: number | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          product_id?: string
+          source?: string
+          source_ref?: string
+          status?: string
+          unit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_returns_delivery_item_id_fkey"
+            columns: ["delivery_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_delivery_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_returns_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_returns_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_returns_unit_id_fkey"
             columns: ["unit_id"]
             isOneToOne: false
             referencedRelation: "units"
@@ -7184,6 +7388,18 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      confirm_stock_return: {
+        Args: {
+          p_good: number
+          p_notes: string
+          p_received: boolean
+          p_return_id: string
+        }
+        Returns: {
+          bad_units: number
+          good_units: number
+        }[]
+      }
       create_asset_investment: {
         Args: {
           p_amount: number
@@ -7834,7 +8050,8 @@ export type Database = {
           sale_price: number
           sku: string
           supplier_code: string
-          target_margin_pct: number | null
+          target_margin_pct: number
+          tracks_lots: boolean
           unit: string
           usage: string
         }[]
@@ -7843,6 +8060,17 @@ export type Database = {
       record_pin_attempt: {
         Args: { p_device_id: string; p_employee_id: string; p_success: boolean }
         Returns: undefined
+      }
+      register_stock_loss: {
+        Args: {
+          p_item_id: string
+          p_item_type: string
+          p_kind: string
+          p_occurred_on: string
+          p_quantity: number
+          p_reason: string
+        }
+        Returns: string
       }
       remove_integration_credential: {
         Args: {
@@ -7982,6 +8210,10 @@ export type Database = {
         }
         Returns: Json
       }
+      set_item_lot_tracking: {
+        Args: { p_enabled: boolean; p_item_id: string; p_item_type: string }
+        Returns: undefined
+      }
       set_monthly_close_automation: {
         Args: { p_company_id: string; p_enabled: boolean }
         Returns: undefined
@@ -7998,24 +8230,64 @@ export type Database = {
         Args: { p_company_id: string; p_status: string }
         Returns: undefined
       }
+      set_stock_policy: {
+        Args: {
+          p_ideal: number
+          p_justification: string
+          p_max: number
+          p_min: number
+          p_scope: string
+          p_unit_id: string
+        }
+        Returns: string
+      }
+      stock_lots: {
+        Args: never
+        Returns: {
+          base_unit: string
+          days_to_expiry: number
+          expires_on: string
+          item_id: string
+          item_name: string
+          item_type: string
+          lot_code: string
+          received_on: string
+          received_qty: number
+          remaining_qty: number
+          sku: string
+          status: string
+        }[]
+      }
       stock_position: {
         Args: never
         Returns: {
           available: number
-          avg_cost: number
           base_unit: string
           category: string
+          coverage_days: number
+          daily_rate: number
+          excess_qty: number
+          excess_value: number
+          health: string
+          history_days: number
+          idle_days: number
+          in_production: number
+          incoming: number
           is_active: boolean
           item_id: string
           item_type: string
           max_stock: number
           min_stock: number
           name: string
+          net_need: number
           physical: number
+          policy_ideal: number
+          policy_max: number
+          policy_min: number
           reserved: number
-          situation: string
           sku: string
           stock_value: number
+          unit_cost: number
         }[]
       }
       update_employee_salary: {

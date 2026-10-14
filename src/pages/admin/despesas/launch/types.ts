@@ -9,6 +9,7 @@ export interface CartLine {
   sku?: string;
   gtin?: string;
   brand?: string;
+  tracksLots?: boolean;
   catalogItemId?: string;
   employeeId?: string;
   name: string;

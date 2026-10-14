@@ -59,6 +59,8 @@ export const MOVEMENT_LABEL: Record<LedgerMovementType, string> = {
   ENTRY: "Entrada manual",
   PURCHASE_ENTRY: "Entrada de compra",
   PURCHASE_RETURN: "Devolução ao fornecedor",
+  CUSTOMER_RETURN: "Retorno de cliente",
+  LOSS: "Perda / avaria",
   SALE_OUT: "Saída de pedido",
   PRODUCTION_IN: "Entrada de produção",
   PRODUCTION_CONSUMPTION: "Consumo de produção",
@@ -66,6 +68,19 @@ export const MOVEMENT_LABEL: Record<LedgerMovementType, string> = {
   INVENTORY_ADJUSTMENT: "Ajuste de inventário",
   MANUAL_ADJUSTMENT: "Ajuste manual",
 };
+
+export const LOSS_KIND_LABEL = {
+  EXPIRY: "Vencimento",
+  BREAKAGE: "Quebra",
+  CONTAMINATION: "Contaminação",
+  DAMAGE: "Dano",
+  OTHER: "Outro",
+} as const;
+
+export const RETURN_SOURCE_LABEL = {
+  CANCELLATION: "Pedido cancelado após separação",
+  PARTIAL_DELIVERY: "Entrega parcial",
+} as const;
 
 export interface PositionSummary {
   total: number;

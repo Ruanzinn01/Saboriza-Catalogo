@@ -5,10 +5,13 @@ import type {
   DivergenceRow,
   LedgerMovementType,
   LedgerRow,
+  LossKind,
+  LossRow,
   StockHealth,
   StockItemType,
   StockPolicyRow,
   StockPositionItem,
+  StockReturnRow,
 } from "@/types/estoque";
 
 interface PositionRow {
@@ -39,6 +42,33 @@ interface PositionRow {
   policy_min: number;
   policy_ideal: number;
   policy_max: number;
+}
+
+interface ReturnDbRow {
+  id: string;
+  source: StockReturnRow["source"];
+  source_ref: string;
+  product_id: string;
+  expected_units: number;
+  status: StockReturnRow["status"];
+  good_units: number | null;
+  bad_units: number | null;
+  notes: string | null;
+  created_at: string;
+}
+
+interface LossDbRow {
+  id: string;
+  item_type: StockItemType;
+  item_id: string;
+  item_name: string;
+  quantity: number;
+  kind: LossKind;
+  occurred_on: string;
+  reason: string;
+  unit_cost: number | null;
+  total_cost: number | null;
+  source: LossRow["source"];
 }
 
 interface PolicyDbRow {
@@ -166,7 +196,13 @@ interface EstoqueState {
   divergencesStatus: "idle" | "loading" | "ready" | "error";
   divergencesError: string | null;
   policies: StockPolicyRow[];
+  returns: StockReturnRow[];
+  losses: LossRow[];
 
+  fetchReturns: () => Promise<void>;
+  fetchLosses: () => Promise<void>;
+  confirmReturn: (input: { returnId: string; goodUnits: number; notes: string; received: boolean }) => Promise<string | null>;
+  registerLoss: (input: { itemType: StockItemType; itemId: string; quantity: number; kind: LossKind; occurredOn: string; reason: string }) => Promise<string | null>;
   fetchPolicies: () => Promise<void>;
   savePolicy: (input: { unitId: string; scope: StockPolicyRow["scope"]; minDays: number; idealDays: number; maxDays: number; justification: string }) => Promise<string | null>;
   fetchPosition: () => Promise<void>;
@@ -185,6 +221,71 @@ export const useEstoqueStore = create<EstoqueState>()((set, get) => ({
   divergencesStatus: "idle",
   divergencesError: null,
   policies: [],
+  returns: [],
+  losses: [],
+
+  fetchReturns: async () => {
+    const [{ data }, productsResult] = await Promise.all([
+      fromUntyped("stock_returns").select("*").order("created_at", { ascending: false }).limit(100),
+      fromUntyped("products").select("id, name"),
+    ]);
+    const names = new Map(((productsResult.data ?? []) as { id: string; name: string }[]).map((row) => [row.id, row.name]));
+    set({
+      returns: ((data ?? []) as ReturnDbRow[]).map((row) => ({
+        id: row.id,
+        source: row.source,
+        sourceRef: row.source_ref,
+        productId: row.product_id,
+        productName: names.get(row.product_id) ?? "Produto",
+        expectedUnits: Number(row.expected_units),
+        status: row.status,
+        goodUnits: toNumber(row.good_units),
+        badUnits: toNumber(row.bad_units),
+        notes: row.notes ?? "",
+        createdAt: row.created_at,
+      })),
+    });
+  },
+
+  fetchLosses: async () => {
+    const { data } = await fromUntyped("stock_loss_records").select("*").order("occurred_on", { ascending: false }).limit(100);
+    set({
+      losses: ((data ?? []) as LossDbRow[]).map((row) => ({
+        id: row.id,
+        itemType: row.item_type,
+        itemId: row.item_id,
+        itemName: row.item_name,
+        quantity: Number(row.quantity),
+        kind: row.kind,
+        occurredOn: row.occurred_on,
+        reason: row.reason,
+        unitCost: toNumber(row.unit_cost),
+        totalCost: toNumber(row.total_cost),
+        source: row.source,
+      })),
+    });
+  },
+
+  confirmReturn: async ({ returnId, goodUnits, notes, received }) => {
+    const { error } = await rpcUntyped("confirm_stock_return", { p_return_id: returnId, p_good: goodUnits, p_notes: notes, p_received: received });
+    if (error) return error.message;
+    await Promise.all([get().fetchReturns(), get().fetchLosses(), get().fetchPosition()]);
+    return null;
+  },
+
+  registerLoss: async ({ itemType, itemId, quantity, kind, occurredOn, reason }) => {
+    const { error } = await rpcUntyped("register_stock_loss", {
+      p_item_type: itemType,
+      p_item_id: itemId,
+      p_quantity: quantity,
+      p_kind: kind,
+      p_occurred_on: occurredOn,
+      p_reason: reason,
+    });
+    if (error) return error.message;
+    await Promise.all([get().fetchLosses(), get().fetchPosition()]);
+    return null;
+  },
 
   fetchPolicies: async () => {
     const { data } = await fromUntyped("stock_policies").select("*").order("created_at", { ascending: false }).limit(50);

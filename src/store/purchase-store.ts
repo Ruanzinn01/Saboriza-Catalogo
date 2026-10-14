@@ -28,6 +28,7 @@ export interface PurchaseCatalogItem {
   salePrice: number | null;
   targetMarginPct: number | null;
   imageUrl: string;
+  tracksLots: boolean;
 }
 
 export interface PurchaseDraftSummary {
@@ -72,6 +73,7 @@ function toCatalogItem(row: {
   sale_price: number | null;
   target_margin_pct: number | null;
   image_url: string | null;
+  tracks_lots: boolean;
 }): PurchaseCatalogItem {
   return {
     itemType: row.item_type as PurchaseItemType,
@@ -92,6 +94,7 @@ function toCatalogItem(row: {
     salePrice: row.sale_price === null ? null : Number(row.sale_price),
     targetMarginPct: row.target_margin_pct === null ? null : Number(row.target_margin_pct),
     imageUrl: row.image_url ?? "",
+    tracksLots: row.tracks_lots,
   };
 }
 
@@ -134,6 +137,7 @@ interface PurchaseState {
   createProductCategory: (name: string) => Promise<{ id: string; name: string } | string>;
   createQuickItem: (input: QuickItemInput) => Promise<{ item: PurchaseCatalogItem } | { error: string }>;
   saveSupplierCode: (supplierId: string, itemType: PurchaseItemType, itemId: string, code: string) => Promise<string | null>;
+  setLotTracking: (itemType: PurchaseItemType, itemId: string, enabled: boolean) => Promise<string | null>;
   fetchLaunchItems: (launchId: string) => Promise<LaunchItemRow[]>;
   confirmReceipt: (launchId: string) => Promise<string | null>;
   returnItems: (
@@ -328,6 +332,13 @@ export const usePurchaseStore = create<PurchaseState>()((set, get) => ({
         { onConflict: "company_id,supplier_id,item_type,item_id" }
       );
     if (error) return error.code === "23505" ? "Este código já está vinculado a outro item deste fornecedor." : error.message;
+    return null;
+  },
+
+  setLotTracking: async (itemType, itemId, enabled) => {
+    const { error } = await supabase.rpc("set_item_lot_tracking", { p_item_type: itemType, p_item_id: itemId, p_enabled: enabled });
+    if (error) return error.message;
+    await get().fetchCatalog(null);
     return null;
   },
 

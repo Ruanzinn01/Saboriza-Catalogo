@@ -4,13 +4,15 @@ import { EstoqueCobertura } from "@/components/admin/estoque/EstoqueCobertura";
 import { EstoqueGestaoGeral } from "@/components/admin/estoque/EstoqueGestaoGeral";
 import { EstoqueInventario } from "@/components/admin/estoque/EstoqueInventario";
 import { EstoqueItens } from "@/components/admin/estoque/EstoqueItens";
+import { EstoqueLotes } from "@/components/admin/estoque/EstoqueLotes";
 import { EstoqueMovimentacoes } from "@/components/admin/estoque/EstoqueMovimentacoes";
 import { EstoquePoliticas } from "@/components/admin/estoque/EstoquePoliticas";
+import { EstoqueRetornos } from "@/components/admin/estoque/EstoqueRetornos";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 
-type Tab = "gestao" | "movimentacoes" | "itens" | "cobertura" | "inventario" | "politicas";
+type Tab = "gestao" | "movimentacoes" | "itens" | "cobertura" | "inventario" | "retornos" | "lotes" | "politicas";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "gestao", label: "Gestão Geral" },
@@ -18,6 +20,8 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "itens", label: "Itens cadastrados" },
   { key: "cobertura", label: "Cobertura e reposição" },
   { key: "inventario", label: "Inventário" },
+  { key: "retornos", label: "Retornos e perdas" },
+  { key: "lotes", label: "Lotes e validade" },
   { key: "politicas", label: "Políticas e critérios" },
 ];
 
@@ -70,6 +74,8 @@ export function EstoquePage() {
       {tab === "movimentacoes" && <EstoqueMovimentacoes />}
       {tab === "itens" && <EstoqueItens />}
       {tab === "cobertura" && <EstoqueCobertura goTo={goTo} />}
+      {tab === "retornos" && <EstoqueRetornos goTo={goTo} />}
+      {tab === "lotes" && <EstoqueLotes goTo={goTo} />}
       {tab === "politicas" && <EstoquePoliticas />}
       {tab === "inventario" && <EstoqueInventario />}
     </div>
