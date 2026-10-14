@@ -222,7 +222,7 @@ async function handlePunch(body: Record<string, unknown>) {
   // Elegibilidade revalidada no ato: colaborador ativo, da empresa (e da unidade, quando o dispositivo tem) do aparelho.
   let employeeQuery = serviceClient
     .from("employees")
-    .select("id, company_id, timesheet_pin_hash")
+    .select("id, company_id, timesheet_pin_hash, timesheet_enabled")
     .eq("id", employeeId)
     .eq("company_id", device.company_id)
     .eq("status", "ATIVO");
@@ -231,6 +231,21 @@ async function handlePunch(body: Record<string, unknown>) {
 
   if (!employee || !employee.timesheet_pin_hash) {
     return jsonResponse({ error: "colaborador inválido" }, 404);
+  }
+
+  // Elegibilidade para registrar jornada: ponto habilitado e vínculo vigente. A identificação pela matrícula
+  // continua existindo independentemente da habilitação; o banco repete as duas regras na gravação.
+  if (!employee.timesheet_enabled) {
+    return jsonResponse({ error: "PONTO_NAO_HABILITADO: colaborador não habilitado para registrar jornada" }, 403);
+  }
+  const { data: openEmployment } = await serviceClient
+    .from("employee_employments")
+    .select("id")
+    .eq("employee_id", employee.id)
+    .is("end_date", null)
+    .maybeSingle();
+  if (!openEmployment) {
+    return jsonResponse({ error: "VINCULO_INVALIDO: colaborador sem vínculo vigente" }, 403);
   }
 
   const pinHash = await sha256Hex(pin);
@@ -297,6 +312,10 @@ async function handlePunch(body: Record<string, unknown>) {
         return jsonResponse({ error: "IDEMPOTENCY_CONFLICT: chave já usada por outra batida" }, 409);
       }
       return jsonResponse({ punch_id: race.id, server_time: race.server_time, type: race.type });
+    }
+    // Regras de elegibilidade aplicadas pelo banco (defesa em profundidade) voltam como 403, não como erro genérico.
+    if (/^(VINCULO_INVALIDO|PONTO_NAO_HABILITADO)/.test(insertError.message)) {
+      return jsonResponse({ error: insertError.message }, 403);
     }
     return jsonResponse({ error: insertError.message }, 400);
   }
