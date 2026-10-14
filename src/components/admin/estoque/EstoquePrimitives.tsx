@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/currency";
-import { HEALTH_COLOR, HEALTH_LABEL, ITEM_TYPE_PLURAL, MOVEMENT_LABEL, healthRangeNote } from "@/lib/estoque";
+import { GROUP_LABEL, HEALTH_COLOR, HEALTH_LABEL, MOVEMENT_LABEL, healthRangeNote } from "@/lib/estoque";
 import { formatDateTime } from "@/lib/inventory";
 import { formatNumber } from "@/lib/number";
 import { fromUntyped } from "@/lib/supabase-rpc";
@@ -143,7 +143,7 @@ export function PositionTable({ items, onOpen }: { items: StockPositionItem[]; o
                 <b>{item.name}</b>
                 <small className="block font-mono text-[10px] text-ink-muted">{item.sku}</small>
               </td>
-              <td className="px-3 py-3 text-ink-700/80">{ITEM_TYPE_PLURAL[item.itemType]}</td>
+              <td className="px-3 py-3 text-ink-700/80">{GROUP_LABEL[item.group]}</td>
               <td className="px-3 py-3">{formatNumber(item.physical)} {item.baseUnit}</td>
               <td className="px-3 py-3">{formatNumber(item.reserved)} {item.baseUnit}</td>
               <td className="px-3 py-3">{formatNumber(item.available)} {item.baseUnit}</td>
@@ -207,7 +207,7 @@ export function ItemDetailDialog({ item, onClose }: { item: StockPositionItem | 
   return (
     <Dialog open onClose={onClose} title={item.name}>
       <p className="text-sm text-ink-700">
-        {item.sku} · {ITEM_TYPE_PLURAL[item.itemType]} · {item.category || "Sem categoria"}
+        {item.sku} · {GROUP_LABEL[item.group]} · {item.category || "Sem categoria"}
       </p>
       <div className="mt-3 grid grid-cols-3 gap-2">
         {[

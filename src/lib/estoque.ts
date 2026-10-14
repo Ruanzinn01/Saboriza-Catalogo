@@ -1,5 +1,5 @@
 import type { StatusTone } from "@/components/ui/StatusBadge";
-import type { LedgerMovementType, StockHealth, StockItemType, StockPositionItem } from "@/types/estoque";
+import type { LedgerMovementType, StockGroup, StockHealth, StockItemType, StockPositionItem } from "@/types/estoque";
 
 export const HEALTH_LABEL: Record<StockHealth, string> = {
   DIVERGENCE: "Divergência",
@@ -40,6 +40,23 @@ export const HEALTH_COLOR: Record<StockHealth, string> = {
 
 export const HEALTH_FILTER_ORDER: StockHealth[] = ["ZERO", "CRITICAL", "LOW", "HEALTHY", "ABOVE_IDEAL", "EXCESS", "NO_HISTORY", "NO_RECENT_DEMAND"];
 
+export const GROUP_ORDER: StockGroup[] = ["PRODUCT", "MATERIAL", "PACKAGING", "SUPPLY"];
+
+export const GROUP_LABEL: Record<StockGroup, string> = {
+  PRODUCT: "Produtos acabados",
+  MATERIAL: "Matérias-primas",
+  PACKAGING: "Embalagens",
+  SUPPLY: "Insumos",
+};
+
+// Mesmas cores do protótipo de Estoque (tipos de estoque).
+export const GROUP_COLOR: Record<StockGroup, string> = {
+  PRODUCT: "#357db5",
+  MATERIAL: "#208252",
+  PACKAGING: "#d2a640",
+  SUPPLY: "#7966a6",
+};
+
 export const ITEM_TYPE_LABEL: Record<StockItemType, string> = {
   PRODUCT: "Produto",
   RAW_MATERIAL: "Matéria-prima",
@@ -59,6 +76,7 @@ export const MOVEMENT_LABEL: Record<LedgerMovementType, string> = {
   ENTRY: "Entrada manual",
   PURCHASE_ENTRY: "Entrada de compra",
   PURCHASE_RETURN: "Devolução ao fornecedor",
+  PURCHASE_CORRECTION: "Correção de compra",
   CUSTOMER_RETURN: "Retorno de cliente",
   INITIAL_BALANCE: "Saldo inicial",
   LOSS: "Perda / avaria",

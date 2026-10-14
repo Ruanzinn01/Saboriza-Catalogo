@@ -31,6 +31,7 @@ const emptyForm: RawMaterialInput = {
   manualCost: 0,
   primarySupplierId: null,
   gtin: "",
+  groupKind: "MATERIAL",
   isActive: true,
 };
 
@@ -53,6 +54,7 @@ function toInput(material: RawMaterial): RawMaterialInput {
     manualCost: material.manualCost,
     primarySupplierId: material.primarySupplierId,
     gtin: material.gtin,
+    groupKind: material.groupKind,
     isActive: material.isActive,
   };
 }

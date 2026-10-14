@@ -10,8 +10,9 @@ import {
   HEALTH_FILTER_ORDER,
   HEALTH_LABEL,
   IDLE_THRESHOLD_DAYS,
-  ITEM_TYPE_COLOR,
-  ITEM_TYPE_PLURAL,
+  GROUP_COLOR,
+  GROUP_LABEL,
+  GROUP_ORDER,
   accuracy,
   healthRangeNote,
   summarizePosition,
@@ -20,7 +21,7 @@ import { normalizeText, percent } from "@/lib/inventory";
 import { formatNumber } from "@/lib/number";
 import { useEstoqueStore } from "@/store/estoque-store";
 import { useInventoryStore } from "@/store/inventory-store";
-import type { StockHealth, StockItemType, StockPositionItem } from "@/types/estoque";
+import type { StockGroup, StockHealth, StockPositionItem } from "@/types/estoque";
 
 const selectCls = "min-h-11 rounded-xl border border-ink-900/15 bg-white px-3 text-sm text-ink-900 outline-none focus:border-forest-700";
 const SHOWN_HEALTH: StockHealth[] = ["ZERO", "CRITICAL", "LOW", "HEALTHY", "ABOVE_IDEAL", "EXCESS"];
@@ -50,7 +51,7 @@ export function EstoqueGestaoGeral({ goTo }: EstoqueGestaoGeralProps) {
   const sessions = useInventoryStore((state) => state.sessions);
   const fetchSessions = useInventoryStore((state) => state.fetchSessions);
 
-  const [typeFilter, setTypeFilter] = useState<StockItemType | "ALL">("ALL");
+  const [typeFilter, setTypeFilter] = useState<StockGroup | "ALL">("ALL");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [healthFilter, setHealthFilter] = useState<StockHealth | "">("");
   const [query, setQuery] = useState("");
@@ -71,7 +72,7 @@ export function EstoqueGestaoGeral({ goTo }: EstoqueGestaoGeralProps) {
   }, [session?.id, session?.canManage, session?.counted, fetchDivergences]);
 
   const categories = useMemo(
-    () => Array.from(new Set(position.filter((item) => typeFilter === "ALL" || item.itemType === typeFilter).map((item) => item.category).filter(Boolean))).sort((a, b) => a.localeCompare(b, "pt-BR")),
+    () => Array.from(new Set(position.filter((item) => typeFilter === "ALL" || item.group === typeFilter).map((item) => item.category).filter(Boolean))).sort((a, b) => a.localeCompare(b, "pt-BR")),
     [position, typeFilter]
   );
 
@@ -79,7 +80,7 @@ export function EstoqueGestaoGeral({ goTo }: EstoqueGestaoGeralProps) {
     const term = normalizeText(query.trim());
     return position.filter(
       (item) =>
-        (typeFilter === "ALL" || item.itemType === typeFilter) &&
+        (typeFilter === "ALL" || item.group === typeFilter) &&
         (categoryFilter === "" || item.category === categoryFilter) &&
         (healthFilter === "" || item.health === healthFilter) &&
         (term === "" || normalizeText(`${item.name} ${item.sku} ${item.category}`).includes(term))
@@ -93,15 +94,15 @@ export function EstoqueGestaoGeral({ goTo }: EstoqueGestaoGeralProps) {
   if (status === "loading" || status === "idle") return <AdminState variant="loading" message="Carregando posição do estoque..." />;
   if (status === "error") return <AdminState variant="error" message="Não foi possível carregar o estoque." onRetry={() => void fetchPosition()} />;
 
-  const byType = (type: StockItemType) => filtered.filter((item) => item.itemType === type);
+  const byType = (group: StockGroup) => filtered.filter((item) => item.group === group);
   const valueOf = (items: StockPositionItem[]) => items.reduce((sum, item) => sum + (item.stockValue ?? 0), 0);
-  const typeEntries = (["PRODUCT", "RAW_MATERIAL"] as StockItemType[]).map((type) => ({ name: ITEM_TYPE_PLURAL[type], value: byType(type).length, color: ITEM_TYPE_COLOR[type] }));
+  const typeEntries = GROUP_ORDER.map((group) => ({ name: GROUP_LABEL[group], value: byType(group).length, color: GROUP_COLOR[group] }));
   const healthEntries = (Object.keys(summary.byHealth) as StockHealth[])
     .filter((health) => summary.byHealth[health] > 0)
     .map((health) => ({ name: HEALTH_LABEL[health], value: summary.byHealth[health], color: HEALTH_COLOR[health], health }));
 
   const openList = (title: string, items: StockPositionItem[]) => setList({ title, items });
-  const valueMax = Math.max(...(["PRODUCT", "RAW_MATERIAL"] as StockItemType[]).map((type) => valueOf(byType(type))), 1);
+  const valueMax = Math.max(...GROUP_ORDER.map((group) => valueOf(byType(group))), 1);
 
   // Inventário: acuracidade e contagem realizada são medidas diferentes e nunca se confundem.
   const acc = session ? accuracy(session.counted, session.divergences) : null;
@@ -121,8 +122,9 @@ export function EstoqueGestaoGeral({ goTo }: EstoqueGestaoGeralProps) {
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value as typeof typeFilter); setCategoryFilter(""); }} className={selectCls} aria-label="Tipo de estoque">
           <option value="ALL">Todos os tipos</option>
-          <option value="PRODUCT">Produtos</option>
-          <option value="RAW_MATERIAL">Matérias-primas</option>
+          {GROUP_ORDER.map((group) => (
+            <option key={group} value={group}>{GROUP_LABEL[group]}</option>
+          ))}
         </select>
         <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className={selectCls} aria-label="Categoria">
           <option value="">Todas as categorias</option>
@@ -146,16 +148,16 @@ export function EstoqueGestaoGeral({ goTo }: EstoqueGestaoGeralProps) {
       </div>
 
       <Section title="Quanto temos em estoque" note="valores físicos a custo" />
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <KpiButton title="ESTOQUE TOTAL" value={formatCurrency(summary.valueAtCost)} sub={`Total a custo · ${summary.total} SKUs distintos${summary.itemsWithoutCost > 0 ? ` · ${summary.itemsWithoutCost} sem custo` : ""}`} onClick={() => openList("Composição do estoque", filtered)} />
-        {(["PRODUCT", "RAW_MATERIAL"] as StockItemType[]).map((type) => (
+        {GROUP_ORDER.map((group) => (
           <KpiButton
-            key={type}
-            title={ITEM_TYPE_PLURAL[type].toUpperCase()}
-            accent={ITEM_TYPE_COLOR[type]}
-            value={formatCurrency(valueOf(byType(type)))}
-            sub={`Posição física a custo · ${byType(type).length} SKUs`}
-            onClick={() => openList(ITEM_TYPE_PLURAL[type], byType(type))}
+            key={group}
+            title={GROUP_LABEL[group].toUpperCase()}
+            accent={GROUP_COLOR[group]}
+            value={formatCurrency(valueOf(byType(group)))}
+            sub={`Posição física a custo · ${byType(group).length} SKUs`}
+            onClick={() => openList(GROUP_LABEL[group], byType(group))}
           />
         ))}
       </div>
@@ -199,16 +201,16 @@ export function EstoqueGestaoGeral({ goTo }: EstoqueGestaoGeralProps) {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card title="Composição por tipo" note="Participação por número de SKUs. Clique na legenda para filtrar.">
-          <Donut entries={typeEntries} center={filtered.length} label="SKUs distintos" onSelect={(index) => setTypeFilter((["PRODUCT", "RAW_MATERIAL"] as StockItemType[])[index])} />
+          <Donut entries={typeEntries} center={filtered.length} label="SKUs distintos" onSelect={(index) => setTypeFilter(GROUP_ORDER[index])} />
         </Card>
         <Card title="Valor em estoque por tipo" note="Valores em R$ a custo. As categorias comerciais estão no filtro superior.">
           <div className="flex flex-col gap-3 p-4">
-            {(["PRODUCT", "RAW_MATERIAL"] as StockItemType[]).map((type) => {
-              const value = valueOf(byType(type));
+            {GROUP_ORDER.map((group) => {
+              const value = valueOf(byType(group));
               return (
-                <button key={type} type="button" onClick={() => setTypeFilter(type)} className="text-left">
-                  <div className="mb-1 flex justify-between text-xs"><b>{ITEM_TYPE_PLURAL[type]}</b><span>{formatCurrency(value)}</span></div>
-                  <div className="h-3 overflow-hidden rounded-full bg-ink-900/10"><div className="h-full rounded-full" style={{ width: `${(value / valueMax) * 100}%`, background: ITEM_TYPE_COLOR[type] }} /></div>
+                <button key={group} type="button" onClick={() => setTypeFilter(group)} className="text-left">
+                  <div className="mb-1 flex justify-between text-xs"><b>{GROUP_LABEL[group]}</b><span>{formatCurrency(value)}</span></div>
+                  <div className="h-3 overflow-hidden rounded-full bg-ink-900/10"><div className="h-full rounded-full" style={{ width: `${(value / valueMax) * 100}%`, background: GROUP_COLOR[group] }} /></div>
                 </button>
               );
             })}

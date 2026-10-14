@@ -24,6 +24,7 @@ function toRow(input: RawMaterialInput) {
     manual_cost: input.manualCost,
     primary_supplier_id: input.primarySupplierId,
     gtin: input.gtin,
+    group_kind: input.groupKind,
     is_active: input.isActive,
   };
 }

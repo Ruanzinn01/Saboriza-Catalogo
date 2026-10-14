@@ -5,7 +5,7 @@ import { RawMaterialCategoryField } from "@/components/admin/RawMaterialCategory
 import { ReadOnlyCodeField } from "@/components/admin/ReadOnlyCodeField";
 import { StockRangeGauge } from "@/components/admin/StockRangeGauge";
 import { Input } from "@/components/ui/Input";
-import { CONTROL_UNITS, COST_BASES, COST_BASIS_LABELS } from "@/types/raw-material";
+import { CONTROL_UNITS, COST_BASES, COST_BASIS_LABELS, RAW_MATERIAL_GROUPS, RAW_MATERIAL_GROUP_LABEL } from "@/types/raw-material";
 import type { RawMaterialInput } from "@/types/raw-material";
 import type { Supplier } from "@/types/supplier";
 
@@ -61,6 +61,22 @@ export function RawMaterialFormFields({
             rows={3}
             className="rounded-xl border border-ink-900/15 bg-white px-4 py-3 text-sm text-ink-900 outline-none focus:border-forest-700"
           />
+        </label>
+
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold text-ink-900">Tipo do item</span>
+          <select
+            value={form.groupKind}
+            onChange={(e) => onChange("groupKind", e.target.value as RawMaterialInput["groupKind"])}
+            className="h-11 rounded-xl border border-ink-900/15 bg-white px-4 text-sm text-ink-900 outline-none focus:border-forest-700"
+          >
+            {RAW_MATERIAL_GROUPS.map((group) => (
+              <option key={group} value={group}>
+                {RAW_MATERIAL_GROUP_LABEL[group]}
+              </option>
+            ))}
+          </select>
+          <span className="text-xs text-ink-muted">Define o grupo no Estoque: matéria-prima, embalagem ou insumo.</span>
         </label>
 
         <RawMaterialCategoryField value={form.category} onChange={(name) => onChange("category", name)} />

@@ -1,4 +1,4 @@
-import type { RawMaterial, ControlUnit, CostBasis } from "@/types/raw-material";
+import type { RawMaterial, ControlUnit, CostBasis, RawMaterialGroup } from "@/types/raw-material";
 import type { Database } from "@/types/supabase";
 
 type RawMaterialRow = Database["public"]["Tables"]["raw_materials"]["Row"];
@@ -28,6 +28,7 @@ export function rawMaterialFromRow(row: RawMaterialRow): RawMaterial {
     isActive: row.is_active,
     unitLocked: row.unit_locked,
     gtin: row.gtin,
+    groupKind: row.group_kind as RawMaterialGroup,
     lastPurchaseCost: row.last_purchase_cost === null ? null : Number(row.last_purchase_cost),
     lastPurchaseDate: row.last_purchase_date,
     createdAt: row.created_at,

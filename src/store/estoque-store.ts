@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { supabase } from "@/lib/supabase";
 import { fromUntyped, rpcUntyped } from "@/lib/supabase-rpc";
 import type {
   AdjustmentStatus,
@@ -9,6 +10,7 @@ import type {
   LedgerRow,
   LossKind,
   LossRow,
+  StockGroup,
   StockHealth,
   StockItemType,
   StockPolicyRow,
@@ -140,6 +142,7 @@ const toNumber = (value: number | string | null): number | null => (value === nu
 function toPosition(row: PositionRow): StockPositionItem {
   return {
     itemType: row.item_type,
+    group: row.item_type === "PRODUCT" ? "PRODUCT" : "MATERIAL",
     itemId: row.item_id,
     sku: row.sku ?? "",
     name: row.name,
@@ -402,7 +405,12 @@ export const useEstoqueStore = create<EstoqueState>()((set, get) => ({
       set({ positionStatus: "error" });
       return;
     }
-    set({ position: ((data ?? []) as PositionRow[]).map(toPosition), positionStatus: "ready" });
+    const groups = await supabase.from("raw_materials").select("id, group_kind");
+    const groupById = new Map((groups.data ?? []).map((row) => [row.id, row.group_kind as StockGroup]));
+    set({
+      position: ((data ?? []) as PositionRow[]).map(toPosition).map((item) => (item.itemType === "RAW_MATERIAL" ? { ...item, group: groupById.get(item.itemId) ?? "MATERIAL" } : item)),
+      positionStatus: "ready",
+    });
   },
 
   fetchLedger: async (filters) => {

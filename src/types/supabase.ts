@@ -5146,6 +5146,75 @@ export type Database = {
           },
         ]
       }
+      purchase_corrections: {
+        Row: {
+          applied_to_open: number
+          company_id: string
+          corrected_at: string
+          corrected_by: string | null
+          credit_created: number
+          delta_value: number
+          extra_charge: number
+          id: string
+          launch_id: string
+          launch_item_id: string
+          new_quantity: number
+          new_unit_price: number
+          old_quantity: number
+          old_unit_price: number
+          reason: string
+        }
+        Insert: {
+          applied_to_open?: number
+          company_id: string
+          corrected_at?: string
+          corrected_by?: string | null
+          credit_created?: number
+          delta_value: number
+          extra_charge?: number
+          id?: string
+          launch_id: string
+          launch_item_id: string
+          new_quantity: number
+          new_unit_price: number
+          old_quantity: number
+          old_unit_price: number
+          reason: string
+        }
+        Update: {
+          applied_to_open?: number
+          company_id?: string
+          corrected_at?: string
+          corrected_by?: string | null
+          credit_created?: number
+          delta_value?: number
+          extra_charge?: number
+          id?: string
+          launch_id?: string
+          launch_item_id?: string
+          new_quantity?: number
+          new_unit_price?: number
+          old_quantity?: number
+          old_unit_price?: number
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_corrections_launch_id_fkey"
+            columns: ["launch_id"]
+            isOneToOne: false
+            referencedRelation: "expense_launches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_corrections_launch_item_id_fkey"
+            columns: ["launch_item_id"]
+            isOneToOne: false
+            referencedRelation: "expense_launch_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchase_drafts: {
         Row: {
           company_id: string
@@ -5436,6 +5505,7 @@ export type Database = {
           current_stock: number
           default_reorder_qty: number
           description: string
+          group_kind: string
           gtin: string
           id: string
           image_url: string
@@ -5467,6 +5537,7 @@ export type Database = {
           current_stock?: number
           default_reorder_qty?: number
           description?: string
+          group_kind?: string
           gtin?: string
           id?: string
           image_url?: string
@@ -5498,6 +5569,7 @@ export type Database = {
           current_stock?: number
           default_reorder_qty?: number
           description?: string
+          group_kind?: string
           gtin?: string
           id?: string
           image_url?: string
@@ -6432,6 +6504,106 @@ export type Database = {
           },
         ]
       }
+      stock_opening_balances: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          item_id: string
+          item_type: string
+          justification: string
+          quantity: number
+          registered_by: string | null
+          unit_cost: number | null
+          unit_id: string | null
+        }
+        Insert: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          item_id: string
+          item_type: string
+          justification: string
+          quantity: number
+          registered_by?: string | null
+          unit_cost?: number | null
+          unit_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+          justification?: string
+          quantity?: number
+          registered_by?: string | null
+          unit_cost?: number | null
+          unit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_opening_balances_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_period_closings: {
+        Row: {
+          closed_at: string
+          closed_by: string | null
+          company_id: string
+          competence: string
+          entries_value: number
+          exits_value: number
+          id: string
+          items_count: number
+          partial: boolean
+          snapshot: Json
+          total_value: number
+          unit_id: string
+        }
+        Insert: {
+          closed_at?: string
+          closed_by?: string | null
+          company_id?: string
+          competence: string
+          entries_value?: number
+          exits_value?: number
+          id?: string
+          items_count: number
+          partial?: boolean
+          snapshot: Json
+          total_value: number
+          unit_id: string
+        }
+        Update: {
+          closed_at?: string
+          closed_by?: string | null
+          company_id?: string
+          competence?: string
+          entries_value?: number
+          exits_value?: number
+          id?: string
+          items_count?: number
+          partial?: boolean
+          snapshot?: Json
+          total_value?: number
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_period_closings_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_policies: {
         Row: {
           company_id: string
@@ -7315,6 +7487,7 @@ export type Database = {
         Args: { p_draft_id: string; p_status: string }
         Returns: undefined
       }
+      close_stock_period: { Args: { p_competence: string }; Returns: string }
       confirm_launch_receipt: { Args: { p_launch_id: string }; Returns: number }
       confirm_production_release: {
         Args: {
@@ -7398,6 +7571,20 @@ export type Database = {
         Returns: {
           bad_units: number
           good_units: number
+        }[]
+      }
+      correct_launch_item: {
+        Args: {
+          p_item_id: string
+          p_new_quantity: number
+          p_new_unit_price: number
+          p_reason: string
+        }
+        Returns: {
+          applied_to_open: number
+          credit_created: number
+          delta_value: number
+          extra_charge: number
         }[]
       }
       create_asset_investment: {
@@ -8061,6 +8248,16 @@ export type Database = {
         Args: { p_device_id: string; p_employee_id: string; p_success: boolean }
         Returns: undefined
       }
+      register_opening_balance: {
+        Args: {
+          p_item_id: string
+          p_item_type: string
+          p_justification: string
+          p_quantity: number
+          p_unit_cost: number
+        }
+        Returns: string
+      }
       register_stock_loss: {
         Args: {
           p_item_id: string
@@ -8240,6 +8437,15 @@ export type Database = {
           p_unit_id: string
         }
         Returns: string
+      }
+      stock_integration_status: {
+        Args: never
+        Returns: {
+          events_30d: number
+          last_event_at: string
+          origin_key: string
+          pending: number
+        }[]
       }
       stock_lots: {
         Args: never

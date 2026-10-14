@@ -4,7 +4,7 @@ import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { normalizeText } from "@/lib/inventory";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useRawMaterialsStore } from "@/store/raw-materials-store";
-import type { ControlUnit } from "@/types/raw-material";
+import type { ControlUnit, RawMaterialGroup } from "@/types/raw-material";
 
 export type PurchaseItemType = "PRODUCT" | "RAW_MATERIAL";
 export type PurchaseUsage = "MATERIAL" | "RESALE";
@@ -114,6 +114,7 @@ export interface QuickItemInput {
   supplierCode: string;
   brand: string;
   presentation: string;
+  group?: RawMaterialGroup;
 }
 
 interface PurchaseState {
@@ -140,6 +141,12 @@ interface PurchaseState {
   setLotTracking: (itemType: PurchaseItemType, itemId: string, enabled: boolean) => Promise<string | null>;
   fetchLaunchItems: (launchId: string) => Promise<LaunchItemRow[]>;
   confirmReceipt: (launchId: string) => Promise<string | null>;
+  correctItem: (
+    itemId: string,
+    quantity: number,
+    unitPrice: number,
+    reason: string
+  ) => Promise<{ deltaValue: number; appliedToOpen: number; creditCreated: number; extraCharge: number } | { error: string }>;
   returnItems: (
     launchId: string,
     lines: { launchItemId: string; quantity: number }[],
@@ -302,6 +309,7 @@ export const usePurchaseStore = create<PurchaseState>()((set, get) => ({
         manualCost: 0,
         primarySupplierId: input.supplierId,
         gtin,
+        groupKind: input.group ?? "MATERIAL",
         isActive: true,
       });
       if (!created) return { error: "Não foi possível cadastrar o insumo." };
@@ -365,6 +373,23 @@ export const usePurchaseStore = create<PurchaseState>()((set, get) => ({
   confirmReceipt: async (launchId) => {
     const { error } = await supabase.rpc("confirm_launch_receipt", { p_launch_id: launchId });
     return error ? error.message : null;
+  },
+
+  correctItem: async (itemId, quantity, unitPrice, reason) => {
+    const { data, error } = await supabase.rpc("correct_launch_item", {
+      p_item_id: itemId,
+      p_new_quantity: quantity,
+      p_new_unit_price: unitPrice,
+      p_reason: reason,
+    });
+    if (error) return { error: error.message };
+    const row = data?.[0];
+    return {
+      deltaValue: Number(row?.delta_value ?? 0),
+      appliedToOpen: Number(row?.applied_to_open ?? 0),
+      creditCreated: Number(row?.credit_created ?? 0),
+      extraCharge: Number(row?.extra_charge ?? 0),
+    };
   },
 
   returnItems: async (launchId, lines, reason) => {

@@ -5,6 +5,7 @@ import type { StockPositionItem } from "@/types/estoque";
 function item(overrides: Partial<StockPositionItem>): StockPositionItem {
   return {
     itemType: "PRODUCT",
+    group: "PRODUCT",
     itemId: "i1",
     sku: "SKU-1",
     name: "Item",

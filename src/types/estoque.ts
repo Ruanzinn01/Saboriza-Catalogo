@@ -1,5 +1,7 @@
 export type StockItemType = "PRODUCT" | "RAW_MATERIAL";
 
+export type StockGroup = "PRODUCT" | "MATERIAL" | "PACKAGING" | "SUPPLY";
+
 export type StockHealth =
   | "DIVERGENCE"
   | "ZERO"
@@ -13,6 +15,7 @@ export type StockHealth =
 
 export interface StockPositionItem {
   itemType: StockItemType;
+  group: StockGroup;
   itemId: string;
   sku: string;
   name: string;
@@ -56,6 +59,7 @@ export type LedgerMovementType =
   | "ENTRY"
   | "PURCHASE_ENTRY"
   | "PURCHASE_RETURN"
+  | "PURCHASE_CORRECTION"
   | "CUSTOMER_RETURN"
   | "INITIAL_BALANCE"
   | "LOSS"

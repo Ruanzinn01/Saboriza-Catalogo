@@ -6,12 +6,12 @@ import { HealthBadge, ItemDetailDialog, KpiButton } from "@/components/admin/est
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { formatCurrency } from "@/lib/currency";
-import { HEALTH_FILTER_ORDER, HEALTH_LABEL, ITEM_TYPE_PLURAL, summarizePosition } from "@/lib/estoque";
+import { GROUP_LABEL, GROUP_ORDER, HEALTH_FILTER_ORDER, HEALTH_LABEL, summarizePosition } from "@/lib/estoque";
 import { normalizeText } from "@/lib/inventory";
 import { formatNumber } from "@/lib/number";
 import { useEstoqueStore } from "@/store/estoque-store";
 import { usePurchaseStore } from "@/store/purchase-store";
-import type { StockHealth, StockItemType, StockPositionItem } from "@/types/estoque";
+import type { StockGroup, StockHealth, StockPositionItem } from "@/types/estoque";
 
 const selectCls = "min-h-11 rounded-xl border border-ink-900/15 bg-white px-3 text-sm text-ink-900 outline-none focus:border-forest-700";
 
@@ -21,7 +21,7 @@ export function EstoqueCobertura({ goTo }: { goTo: (tab: string) => void }) {
   const status = useEstoqueStore((s) => s.positionStatus);
   const fetchPosition = useEstoqueStore((s) => s.fetchPosition);
 
-  const [typeFilter, setTypeFilter] = useState<StockItemType | "ALL">("ALL");
+  const [typeFilter, setTypeFilter] = useState<StockGroup | "ALL">("ALL");
   const [healthFilter, setHealthFilter] = useState<StockHealth | "">("");
   const [query, setQuery] = useState("");
   const [proposal, setProposal] = useState<StockPositionItem | null>(null);
@@ -43,7 +43,7 @@ export function EstoqueCobertura({ goTo }: { goTo: (tab: string) => void }) {
     return position
       .filter(
         (item) =>
-          (typeFilter === "ALL" || item.itemType === typeFilter) &&
+          (typeFilter === "ALL" || item.group === typeFilter) &&
           (healthFilter === "" || item.health === healthFilter) &&
           (term === "" || normalizeText(`${item.name} ${item.sku} ${item.category}`).includes(term))
       )
@@ -69,8 +69,9 @@ export function EstoqueCobertura({ goTo }: { goTo: (tab: string) => void }) {
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as typeof typeFilter)} className={selectCls} aria-label="Tipo de estoque">
           <option value="ALL">Todos os tipos</option>
-          <option value="PRODUCT">Produtos</option>
-          <option value="RAW_MATERIAL">Matérias-primas</option>
+          {GROUP_ORDER.map((group) => (
+            <option key={group} value={group}>{GROUP_LABEL[group]}</option>
+          ))}
         </select>
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar nome, apresentação ou código…" aria-label="Buscar item" className={`${selectCls} min-w-[180px] flex-1`} />
         <select value={healthFilter} onChange={(e) => setHealthFilter(e.target.value as StockHealth | "")} className={selectCls} aria-label="Situação">
@@ -139,7 +140,7 @@ export function EstoqueCobertura({ goTo }: { goTo: (tab: string) => void }) {
       <Dialog open={proposal !== null} onClose={() => setProposal(null)} title={proposal ? `Planejar reposição · ${proposal.name}` : ""}>
         {proposal && (
           <>
-            <p className="text-sm text-ink-700">{proposal.sku} · {ITEM_TYPE_PLURAL[proposal.itemType]}</p>
+            <p className="text-sm text-ink-700">{proposal.sku} · {GROUP_LABEL[proposal.group]}</p>
             <p className="my-3 rounded-xl bg-forest-950/5 p-3 text-xs leading-relaxed text-forest-900">
               {proposal.dailyRate === null
                 ? "Sem demanda média válida: não há base para sugestão automática."

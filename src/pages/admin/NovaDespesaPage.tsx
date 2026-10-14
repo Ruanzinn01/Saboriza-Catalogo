@@ -245,11 +245,10 @@ export function NovaDespesaPage() {
       return;
     }
     const isProduct = item.itemType === "PRODUCT";
-    let merged = false;
+    const merged = cart.some((line) => (isProduct ? line.productId : line.rawMaterialId) === item.itemId);
     setCart((prev) => {
       const index = prev.findIndex((line) => (isProduct ? line.productId : line.rawMaterialId) === item.itemId);
       if (index >= 0) {
-        merged = true;
         return prev.map((line, i) => (i === index ? { ...line, quantity: line.quantity + 1 } : line));
       }
       return [

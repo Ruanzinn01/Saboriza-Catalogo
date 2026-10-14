@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { DESPESAS_COLORS } from "@/pages/admin/despesas/theme";
 import { useRawMaterialCategoriesStore } from "@/store/raw-material-categories-store";
 import { usePurchaseStore, type PurchaseCatalogItem, type PurchaseUsage } from "@/store/purchase-store";
-import { CONTROL_UNITS } from "@/types/raw-material";
+import { CONTROL_UNITS, RAW_MATERIAL_GROUPS, RAW_MATERIAL_GROUP_LABEL, type RawMaterialGroup } from "@/types/raw-material";
 import { ModalShell } from "./LaunchModals";
 
 const C = DESPESAS_COLORS;
@@ -30,6 +30,7 @@ export function QuickItemModal({ supplierId, initialBarcode = "", initialName = 
   const createQuickItem = usePurchaseStore((s) => s.createQuickItem);
 
   const [usage, setUsage] = useState<PurchaseUsage>("MATERIAL");
+  const [group, setGroup] = useState<RawMaterialGroup>("MATERIAL");
   const [name, setName] = useState(initialName);
   const [category, setCategory] = useState("");
   const [newCategory, setNewCategory] = useState("");
@@ -86,6 +87,7 @@ export function QuickItemModal({ supplierId, initialBarcode = "", initialName = 
       supplierCode,
       brand,
       presentation,
+      group,
     });
     setSaving(false);
     if ("error" in result) {
@@ -124,6 +126,17 @@ export function QuickItemModal({ supplierId, initialBarcode = "", initialName = 
           ))}
         </div>
       </fieldset>
+
+      {usage === "MATERIAL" && (
+        <label className="mb-3 block text-xs">
+          <span className="mb-1 block font-semibold">Tipo do item *</span>
+          <select value={group} onChange={(e) => setGroup(e.target.value as RawMaterialGroup)} className={fieldCls} style={{ borderColor: C.line }}>
+            {RAW_MATERIAL_GROUPS.map((option) => (
+              <option key={option} value={option}>{RAW_MATERIAL_GROUP_LABEL[option]}</option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="text-xs">

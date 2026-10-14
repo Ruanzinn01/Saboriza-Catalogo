@@ -3,8 +3,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { DESPESAS_COLORS } from "@/pages/admin/despesas/theme";
 import { useExpenseLaunchStore, type LaunchKind } from "@/store/expense-launch-store";
-import { useRawMaterialsStore } from "@/store/raw-materials-store";
-import { CONTROL_UNITS, type ControlUnit, type RawMaterial } from "@/types/raw-material";
 import type { Employee } from "@/types/employee";
 import { brl } from "@/pages/admin/despesas/shared";
 import { frequencyLabel, type CartLine } from "./types";
@@ -351,91 +349,6 @@ export function NewItemModal({ kind, onClose }: { kind: LaunchKind; onClose: () 
         <span className="text-xs">Sugerir lançamento recorrente ao adicionar este item ao carrinho.</span>
       </label>
       <Button onClick={() => void submit()} disabled={saving} className="mt-4">{saving ? "Salvando..." : "Salvar cadastro"}</Button>
-    </ModalShell>
-  );
-}
-
-/** Cadastro rápido de insumo dentro da compra: evita sair da tela e perder o lançamento em andamento. */
-export function QuickMaterialModal({
-  suggestedCategories,
-  supplierId,
-  onClose,
-  onCreated,
-}: {
-  suggestedCategories: string[];
-  supplierId: string;
-  onClose: () => void;
-  onCreated: (material: RawMaterial) => void;
-}) {
-  const createMaterial = useRawMaterialsStore((s) => s.createMaterial);
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState("");
-  const [controlUnit, setControlUnit] = useState<ControlUnit>("kg");
-  const [purchaseUnitLabel, setPurchaseUnitLabel] = useState("");
-  const [purchaseUnitFactor, setPurchaseUnitFactor] = useState("1");
-  const [saving, setSaving] = useState(false);
-
-  const factor = Number(purchaseUnitFactor);
-  const canSave = name.trim() !== "" && Number.isFinite(factor) && factor > 0 && !saving;
-
-  async function submit() {
-    if (!canSave) return;
-    setSaving(true);
-    const material = await createMaterial({
-      name: name.trim(),
-      description: "",
-      category: category.trim(),
-      controlUnit,
-      imageUrl: "",
-      purchaseUnitLabel: purchaseUnitLabel.trim(),
-      purchaseUnitFactor: factor,
-      minStock: 0,
-      maxStock: 0,
-      minPurchaseQty: 0,
-      defaultReorderQty: 0,
-      purchaseMultiple: 0,
-      leadTimeDays: 0,
-      costBasis: "avg_cost",
-      manualCost: 0,
-      primarySupplierId: supplierId || null,
-      gtin: "",
-      isActive: true,
-    });
-    setSaving(false);
-    if (!material) return;
-    onCreated(material);
-    onClose();
-  }
-
-  return (
-    <ModalShell title="Cadastrar insumo" onClose={onClose}>
-      <p className="mb-3 text-xs" style={{ color: C.muted }}>
-        O lançamento em andamento é mantido. Os demais dados (custo, estoque mínimo, foto) podem ser completados depois em Matéria-prima.
-      </p>
-      <label className="mb-3 block text-sm">
-        <span className="mb-1 block text-xs font-semibold">Nome *</span>
-        <input autoFocus value={name} onChange={(e) => setName(e.target.value)} maxLength={120} className={fieldCls} style={{ borderColor: C.line }} />
-      </label>
-      <div className="grid grid-cols-2 gap-2.5">
-        <label className="text-xs"><span className="mb-1 block font-semibold">Categoria</span>
-          <input list="quick-material-categories" value={category} onChange={(e) => setCategory(e.target.value)} className={fieldCls} style={{ borderColor: C.line }} />
-          <datalist id="quick-material-categories">
-            {suggestedCategories.map((c) => <option key={c} value={c} />)}
-          </datalist>
-        </label>
-        <label className="text-xs"><span className="mb-1 block font-semibold">Unidade de controle *</span>
-          <select value={controlUnit} onChange={(e) => setControlUnit(e.target.value as ControlUnit)} className={fieldCls} style={{ borderColor: C.line }}>
-            {CONTROL_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
-          </select>
-        </label>
-        <label className="text-xs"><span className="mb-1 block font-semibold">Embalagem de compra</span>
-          <input value={purchaseUnitLabel} onChange={(e) => setPurchaseUnitLabel(e.target.value)} placeholder="Ex.: saco, caixa" className={fieldCls} style={{ borderColor: C.line }} />
-        </label>
-        <label className="text-xs"><span className="mb-1 block font-semibold">Quanto vem em cada ({controlUnit})</span>
-          <input type="number" min={0.001} step="any" value={purchaseUnitFactor} onChange={(e) => setPurchaseUnitFactor(e.target.value)} className={fieldCls} style={{ borderColor: C.line }} />
-        </label>
-      </div>
-      <Button onClick={() => void submit()} disabled={!canSave} className="mt-4">{saving ? "Salvando..." : "Cadastrar e adicionar ao lançamento"}</Button>
     </ModalShell>
   );
 }
