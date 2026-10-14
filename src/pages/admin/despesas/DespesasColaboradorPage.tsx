@@ -5,7 +5,7 @@ import { CheckCircle2, RotateCcw } from "lucide-react";
 import { useDespesasStore } from "@/store/despesas-store";
 import { useEmployeesStore } from "@/store/employees-store";
 import { AdminState } from "@/components/admin/AdminState";
-import { DetailHeader, brl, withContext } from "@/pages/admin/despesas/shared";
+import { DetailHeader, brDate, brl, withContext } from "@/pages/admin/despesas/shared";
 import { useDespesasFilters } from "@/pages/admin/despesas/useDespesasFilters";
 import { DESPESAS_COLORS } from "@/pages/admin/despesas/theme";
 
@@ -24,7 +24,11 @@ export function DespesasColaboradorPage() {
   const createAdvance = useDespesasStore((s) => s.createAdvance);
   const payAdvance = useDespesasStore((s) => s.payAdvance);
   const reverseAdvance = useDespesasStore((s) => s.reverseAdvance);
+  const changeSalaryDueDate = useDespesasStore((s) => s.changeSalaryDueDate);
   const [advanceValue, setAdvanceValue] = useState("");
+  const [editingDue, setEditingDue] = useState(false);
+  const [newDue, setNewDue] = useState("");
+  const [dueReason, setDueReason] = useState("");
 
   useEffect(() => {
     if (employees.length === 0) fetchEmployees();
@@ -49,6 +53,25 @@ export function DespesasColaboradorPage() {
       setAdvanceValue("");
     }
   }
+
+  async function handleChangeDue() {
+    if (!current) return;
+    const err = await changeSalaryDueDate(current.id, newDue, dueReason);
+    if (err) {
+      toast.error(err);
+      return;
+    }
+    toast.success("Vencimento alterado e registrado na auditoria");
+    setEditingDue(false);
+    setNewDue("");
+    setDueReason("");
+  }
+
+  const paidDates = currentAdvances
+    .filter((a) => a.status === "PAGO" && a.paidAt)
+    .map((a) => a.paidAt as string)
+    .sort();
+  const lastPaidAt = paidDates[paidDates.length - 1];
 
   return (
     <div className="flex flex-col gap-5">
@@ -87,6 +110,45 @@ export function DespesasColaboradorPage() {
             <div className="rounded-[14px] border bg-white p-[15px]" style={{ borderColor: C.line }}><span className="text-[10px] uppercase" style={{ color: C.muted }}>Adiantamentos</span><strong className="mt-[7px] block text-xl" style={{ color: C.green }}>{brl(current.advancesPaid)}</strong></div>
             <div className="rounded-[14px] border bg-white p-[15px]" style={{ borderColor: C.line }}><span className="text-[10px] uppercase" style={{ color: C.muted }}>Saldo atual</span><strong className="mt-[7px] block text-xl" style={{ color: C.green }}>{brl(current.remaining)}</strong></div>
             <div className="rounded-[14px] border bg-white p-[15px]" style={{ borderColor: C.line }}><span className="text-[10px] uppercase" style={{ color: C.muted }}>Situação</span><strong className="mt-[7px] block text-xl" style={{ color: C.green }}>{current.status}</strong></div>
+          </div>
+
+          <div className="rounded-3xl border bg-white p-4" style={{ borderColor: C.line }}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-[19px] font-bold" style={{ color: C.green }}>Datas da obrigação</h2>
+              {current.status !== "PAGO" && current.remaining > 0 && (
+                <button onClick={() => { setEditingDue((v) => !v); setNewDue(current.dueDate ?? ""); }} className="rounded-lg border px-3 py-2 text-xs font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ borderColor: "#d8dfd7", color: C.green }}>
+                  Alterar vencimento
+                </button>
+              )}
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-[10px] p-[11px]" style={{ background: "#f7f9f4" }}><span className="block text-[9px] uppercase" style={{ color: C.muted }}>Competência</span><strong className="text-xs">{current.competence.slice(0, 7)}</strong></div>
+              <div className="rounded-[10px] p-[11px]" style={{ background: "#f7f9f4" }}>
+                <span className="block text-[9px] uppercase" style={{ color: C.muted }}>Vencimento</span>
+                <strong className="text-xs">{brDate(current.dueDate)}</strong>
+                <small className="block text-[10px]" style={{ color: C.muted }}>
+                  {current.dueDateSource === "legacy_convention" ? "Convenção anterior · confirme a data" : current.dueDateSource === "manual_adjustment" ? "Ajustada manualmente" : current.dueDateSource === "payroll_calendar" ? "Calendário de folha" : "Informada no fechamento"}
+                </small>
+              </div>
+              <div className="rounded-[10px] p-[11px]" style={{ background: "#f7f9f4" }}><span className="block text-[9px] uppercase" style={{ color: C.muted }}>Agendamento</span><strong className="text-xs">Não agendado</strong></div>
+              <div className="rounded-[10px] p-[11px]" style={{ background: "#f7f9f4" }}><span className="block text-[9px] uppercase" style={{ color: C.muted }}>Último pagamento</span><strong className="text-xs">{lastPaidAt ? brDate(lastPaidAt) : "Sem pagamento"}</strong></div>
+            </div>
+            {editingDue && (
+              <div className="mt-3 flex flex-wrap items-end gap-2 rounded-[12px] border p-3" style={{ borderColor: C.line }}>
+                <label className="flex flex-col gap-1 text-xs font-semibold" style={{ color: C.green }}>
+                  Novo vencimento
+                  <input type="date" value={newDue} onChange={(e) => setNewDue(e.target.value)} className="h-10 rounded-lg border px-3 text-sm" style={{ borderColor: C.line }} />
+                </label>
+                <label className="flex min-w-[220px] flex-1 flex-col gap-1 text-xs font-semibold" style={{ color: C.green }}>
+                  Motivo (obrigatório)
+                  <input value={dueReason} onChange={(e) => setDueReason(e.target.value)} className="h-10 rounded-lg border px-3 text-sm" style={{ borderColor: C.line }} />
+                </label>
+                <button disabled={!newDue || dueReason.trim().length < 5} onClick={() => void handleChangeDue()} className="h-10 rounded-lg px-4 text-xs font-bold text-white disabled:opacity-50" style={{ background: C.accent }}>
+                  Salvar alteração
+                </button>
+              </div>
+            )}
+            <p className="mt-2 text-[11px]" style={{ color: C.muted }}>Competência é o período econômico; vencimento é a data da obrigação; agendamento é previsão; pagamento só vale após confirmação. A alteração preserva a data anterior na auditoria.</p>
           </div>
 
           <div className="rounded-3xl border bg-white" style={{ borderColor: C.line }}>

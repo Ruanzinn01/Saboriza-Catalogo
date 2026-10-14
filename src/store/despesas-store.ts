@@ -68,6 +68,7 @@ export interface SalaryObligation {
   advancesPaid: number;
   remaining: number;
   dueDate: string | null;
+  dueDateSource: "payroll_calendar" | "competence_closing" | "legacy_convention" | "manual_adjustment" | null;
 }
 
 export interface SalaryAdvance {
@@ -131,10 +132,12 @@ interface DespesasState {
   createExpense: (input: NewExpenseInput) => Promise<string | null>;
   markExpensePaid: (id: string, paidAmount: number) => Promise<string | null>;
 
-  generateObligation: (employeeId: string, employeeName: string, competence: string, baseSalary: number) => Promise<string | null>;
+  /** Vencimento explícito e obrigatório: nenhuma data é presumida (PRD V4.1 §5.3). */
+  generateObligation: (employeeId: string, competence: string, dueDate: string, dueDateSource?: "payroll_calendar" | "competence_closing") => Promise<string | null>;
+  changeSalaryDueDate: (obligationId: string, newDueDate: string, reason: string) => Promise<string | null>;
   createAdvance: (obligationId: string, amount: number) => Promise<string | null>;
   payAdvance: (id: string) => Promise<string | null>;
-  reverseAdvance: (id: string) => Promise<string | null>;
+  reverseAdvance: (id: string, reason?: string) => Promise<string | null>;
 
   blockExpense: (id: string, blockType: BlockType, reason: string) => Promise<string | null>;
   createExpenseAdjustment: (
@@ -292,7 +295,7 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
         supabase.from("expenses").select("*").eq("company_id", companyId).order("created_at", { ascending: false }),
         supabase
           .from("salary_obligations")
-          .select("id, employee_id, competence, base_salary, status, due_date, employees(name)")
+          .select("id, employee_id, competence, base_salary, status, due_date, due_date_source, employees(name)")
           .eq("company_id", companyId)
           .order("competence", { ascending: false }),
         supabase.from("salary_advances").select("id, salary_obligation_id, amount, status, requested_at, paid_at, reversed_advance_id").eq("company_id", companyId),
@@ -339,6 +342,7 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
           advancesPaid: paid,
           remaining: o.base_salary - paid,
           dueDate: o.due_date,
+          dueDateSource: o.due_date_source as SalaryObligation["dueDateSource"],
         };
       }),
       advances,
@@ -400,25 +404,26 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
     return null;
   },
 
-  generateObligation: async (employeeId, _employeeName, competence, baseSalary) => {
-    const companyId = await resolveCurrentCompanyId();
-    if (!companyId) return "Não foi possível identificar a empresa";
-
-    // Salário-base resolvido pela vigência da competência — nunca redigitado (PRD §5.8 / RFC §15.1)
-    const { data: resolvedBase } = await supabase.rpc("resolve_salary_base", {
+  generateObligation: async (employeeId, competence, dueDate, dueDateSource = "competence_closing") => {
+    if (!dueDate) return "Informe o vencimento da folha desta competência";
+    const { error } = await supabase.rpc("generate_salary_obligation", {
       p_employee_id: employeeId,
       p_competence: competence,
+      p_due_date: dueDate,
+      p_due_date_source: dueDateSource,
     });
-    const effectiveBase = typeof resolvedBase === "number" ? resolvedBase : baseSalary;
+    if (error) return error.message.replace(/^VENCIMENTO_OBRIGATORIO: /, "");
+    await get().fetchAll();
+    return null;
+  },
 
-    // Vencimento padrão: 5º dia do mês seguinte à competência (convenção de folha), editável futuramente.
-    const [compYear, compMonth] = competence.split("-").map(Number);
-    const dueDate = new Date(compYear, compMonth, 5).toISOString().slice(0, 10);
-
-    const { error } = await supabase
-      .from("salary_obligations")
-      .insert({ employee_id: employeeId, competence, base_salary: effectiveBase, net_amount: effectiveBase, company_id: companyId, due_date: dueDate });
-    if (error) return error.code === "23505" ? "Já existe obrigação salarial para este colaborador nesta competência" : error.message;
+  changeSalaryDueDate: async (obligationId, newDueDate, reason) => {
+    const { error } = await supabase.rpc("change_salary_due_date", {
+      p_obligation_id: obligationId,
+      p_new_due_date: newDueDate,
+      p_reason: reason,
+    });
+    if (error) return error.message.replace(/^VENCIMENTO_OBRIGATORIO: /, "");
     await get().fetchAll();
     return null;
   },
@@ -435,31 +440,14 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
   },
 
   payAdvance: async (id) => {
-    const { error } = await supabase.from("salary_advances").update({ status: "PAGO", paid_at: new Date().toISOString() }).eq("id", id);
+    const { error } = await supabase.rpc("pay_salary_advance", { p_advance_id: id });
     if (error) return error.message;
     await get().fetchAll();
     return null;
   },
 
-  reverseAdvance: async (id) => {
-    const { data: original, error: fetchError } = await supabase
-      .from("salary_advances")
-      .select("salary_obligation_id, amount")
-      .eq("id", id)
-      .maybeSingle();
-    if (fetchError || !original) return fetchError?.message ?? "Vale original não encontrado";
-
-    const companyId = await resolveCurrentCompanyId();
-    if (!companyId) return "Não foi possível identificar a empresa";
-
-    const { error } = await supabase.from("salary_advances").insert({
-      company_id: companyId,
-      salary_obligation_id: original.salary_obligation_id,
-      amount: original.amount,
-      status: "ESTORNADO",
-      paid_at: new Date().toISOString(),
-      reversed_advance_id: id,
-    });
+  reverseAdvance: async (id, reason) => {
+    const { error } = await supabase.rpc("reverse_salary_advance", { p_advance_id: id, p_reason: reason });
     if (error) return error.message;
     await get().fetchAll();
     return null;
@@ -580,7 +568,7 @@ export const useDespesasStore = create<DespesasState>((set, get) => ({
   },
 
   getEvolution: (window, referenceDate = new Date()) => {
-    const { expenses } = get();
+    const expenses = get().getAllExpenses();
     const monthsCount = window === "3m" ? 3 : window === "6m" ? 6 : 12;
     const months: { month: string; label: string; total: number }[] = [];
 
