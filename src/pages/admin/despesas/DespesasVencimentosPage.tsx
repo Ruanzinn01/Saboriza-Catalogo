@@ -10,6 +10,9 @@ const C = DESPESAS_COLORS;
 export function DespesasVencimentosPage() {
   const { params } = useDespesasFilters();
   const expenses = useDespesasStore((s) => s.expenses);
+  const obligations = useDespesasStore((s) => s.obligations);
+  const advances = useDespesasStore((s) => s.advances);
+  const getAllExpenses = useDespesasStore((s) => s.getAllExpenses);
   const fetchAll = useDespesasStore((s) => s.fetchAll);
   const status = useDespesasStore((s) => s.status);
 
@@ -18,8 +21,9 @@ export function DespesasVencimentosPage() {
   }, [expenses.length, fetchAll]);
 
   const rows = useMemo(
-    () => expenses.filter((e) => e.status !== "PAGO" && e.dueDate).sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? "")),
-    [expenses]
+    () => getAllExpenses().filter((e) => e.status !== "PAGO" && e.dueDate).sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? "")),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [expenses, obligations, advances, getAllExpenses]
   );
 
   const abertoTotal = rows.filter((e) => e.status === "ABERTO").reduce((s, e) => s + (e.amount - (e.paidAmount ?? 0)), 0);
