@@ -1,0 +1,17 @@
+{
+  "id": "/operacao/produziu-registra/",
+  "name": "Produziu Registra",
+  "short_name": "Produziu",
+  "description": "Acesso operacional do Produziu Registra — Óris 360",
+  "lang": "pt-BR",
+  "start_url": "/operacao/produziu-registra/",
+  "scope": "/operacao/produziu-registra/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0047ab",
+  "icons": [
+    { "src": "/produziu-registra/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/produziu-registra/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/produziu-registra/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

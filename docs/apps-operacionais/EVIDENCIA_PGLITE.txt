@@ -1,0 +1,63 @@
+== APLICANDO A MIGRATION (em memória, schema sintético) ==
+migration aplicada sem erro
+
+== REGRESSÃO: visibilidade ANTES x DEPOIS (empresa A) ==
+separa: IDÊNTICA em 55 tabelas
+gestor: IDÊNTICA em 55 tabelas
+admin: IDÊNTICA em 55 tabelas
+
+== ROTEIRO PASSO 3 (T1 a T5) ==
+resumo: [{"situacao":"CONFERIR A OLHO","count":7},{"situacao":"OK","count":355}]
+não-OK: 7
+  [CONFERIR A OLHO] T3 my_app_access admin | esperado=apps=3 admin=true obtido=apps={separa_confere,producao,entrega} admin=t
+  [CONFERIR A OLHO] T3 my_app_access entrega | esperado=apps={entrega} admin=false obtido=apps={entrega} admin=f
+  [CONFERIR A OLHO] T3 my_app_access gestor | esperado=apps=3 admin=true obtido=apps={separa_confere,producao,entrega} admin=t
+  [CONFERIR A OLHO] T3 my_app_access multi | esperado=apps={producao,entrega} admin=false obtido=apps={producao,entrega} admin=f
+  [CONFERIR A OLHO] T3 my_app_access outra | esperado=apps=3 admin=true obtido=apps={producao} admin=f
+  [CONFERIR A OLHO] T3 my_app_access producao | esperado=apps={producao} admin=false obtido=apps={producao} admin=f
+  [CONFERIR A OLHO] T3 my_app_access separa | esperado=apps={separa_confere} admin=false obtido=apps={separa_confere} admin=f
+
+== T6 ESCRITAS DIRETAS (como o app faria pela API) ==
+OK      producao INSERT production_diaries (matriz: escrita) -> ok(1 linhas) (esperado permitir)
+OK      producao INSERT production_records direto (matriz: só leitura) -> 42501 (esperado negar)
+OK      producao UPDATE orders (producao não tem orders) -> ok(0 linhas) (esperado negar)
+OK      producao SELECT employees (CPF/salário) -> ok(0 linhas) (esperado negar)
+OK      entrega  UPDATE orders (matriz: escrita) -> ok(1 linhas) (esperado permitir)
+OK      entrega  UPDATE order_items (matriz: escrita) -> ok(1 linhas) (esperado permitir)
+OK      entrega  INSERT production_diaries (entrega não tem) -> 42501 (esperado negar)
+OK      entrega  SELECT billings direto (exige permissão financeira) -> ok(0 linhas) (esperado negar)
+OK      separa   UPDATE orders (como hoje) -> ok(1 linhas) (esperado permitir)
+OK      separa   INSERT production_diaries (bloqueado como hoje) -> 42501 (esperado negar)
+OK      multi    UPDATE orders (via entrega) -> ok(1 linhas) (esperado permitir)
+OK      multi    INSERT production_diaries (via producao) -> ok(1 linhas) (esperado permitir)
+OK      multi    SELECT employees direto -> ok(0 linhas) (esperado negar)
+OK      gestor   UPDATE orders -> ok(1 linhas) (esperado permitir)
+OK      gestor   INSERT production_records -> ok(1 linhas) (esperado permitir)
+OK      hibrido  SELECT employees (producao.operar + admin.acessar = não restrito) -> ok(0 linhas) (esperado permitir)
+
+== T7 RPCs DE LEITURA MÍNIMA E PERFIL ==
+producao  operator_list_production_employees -> 1 linha(s), colunas: id,code,name,status,can_operate_production,photo_url,unit_id
+entrega   operator_list_production_employees -> negado 42501
+entrega   operator_confirmed_billing_order_ids -> 0 pedido(s) confirmados (leitura direta de billings é negada)
+producao  operator_confirmed_billing_order_ids -> negado 42501
+perfil separa   -> {"apps":["separa_confere"],"admin_access":false,"restricted":true}
+perfil producao -> {"apps":["producao"],"admin_access":false,"restricted":true}
+perfil entrega  -> {"apps":["entrega"],"admin_access":false,"restricted":true}
+perfil multi    -> {"apps":["producao","entrega"],"admin_access":false,"restricted":true}
+perfil gestor   -> {"apps":["separa_confere","producao","entrega"],"admin_access":true,"restricted":false}
+perfil admin    -> {"apps":["separa_confere","producao","entrega"],"admin_access":true,"restricted":false}
+perfil outra    -> {"apps":["producao"],"admin_access":false,"restricted":true}
+perfil hibrido  -> {"apps":["separa_confere","producao","entrega"],"admin_access":true,"restricted":false}
+perfil LEGADO separa (clientes antigos) -> {"restricted":true}
+
+== GUARDA INJETADA (definição viva da RPC) ==
+ SECURITY DEFINER
+    begin
+  perform private.assert_app_access('entrega');
+anon pode executar? ["confirm_production_release(6):false","create_production(2):false","create_production(3):false","create_production(4):false","reverse_production(2):false"]
+
+== PASSO 4: políticas que mudaram ==
+NOVA: 35
+ALTERADA: 11
+ALTERADAS: diary_evaluations.diary_evaluations_no_restricted_operator, diary_occurrences.diary_occurrences_no_restricted_operator, diary_other_activities.diary_other_activities_no_restricted_operator, floor_executions.floor_executions_no_restricted_operator, production_diaries.production_diaries_no_restricted_operator, production_plans.production_plans_no_restricted_operator, production_records.production_records_no_restricted_operator, production_releases.production_releases_no_restricted_operator, production_routes.production_routes_no_restricted_operator, raw_materials.raw_materials_no_restricted_operator, urgent_demands.urgent_demands_no_restricted_operator
+REMOVIDAS: 

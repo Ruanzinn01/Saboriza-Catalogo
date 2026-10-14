@@ -2,7 +2,9 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { resolveCurrentCompanyId } from "@/lib/current-company";
-import { employeeDocumentFromRow, employeeFromRow } from "@/lib/mappers/employee-mapper";
+import { type OperatorEmployeeRow, employeeDocumentFromRow, employeeFromOperatorRow, employeeFromRow } from "@/lib/mappers/employee-mapper";
+import { isOperatorPath } from "@/lib/operator-apps";
+import { rpcUntyped } from "@/lib/supabase-rpc";
 import { normalizeCpfDigits } from "@/types/employee";
 import type { Employee, EmployeeDocument, EmployeeDocumentInput, EmployeeInput } from "@/types/employee";
 import type { Json } from "@/types/supabase";
@@ -137,6 +139,16 @@ export const useEmployeesStore = create<EmployeesState>()((set, get) => ({
 
   fetchEmployees: async () => {
     set({ status: "loading" });
+    if (isOperatorPath(window.location.pathname)) {
+      const { data: limited, error: limitedError } = await rpcUntyped("operator_list_production_employees");
+      if (limitedError) {
+        toast.error("Não foi possível carregar os colaboradores");
+        set({ status: "error" });
+        return;
+      }
+      set({ employees: ((limited as OperatorEmployeeRow[] | null) ?? []).map(employeeFromOperatorRow), status: "ready" });
+      return;
+    }
     const companyId = await resolveCurrentCompanyId();
     if (!companyId) {
       set({ status: "error" });

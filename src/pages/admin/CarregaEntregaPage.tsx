@@ -33,7 +33,7 @@ export function CarregaEntregaPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Carrega Entrega" description="Carregamento e entrega dos pedidos faturados." />
+      <PageHeader title="Entrega Registra" description="Carregamento e entrega dos pedidos faturados." />
 
       <div className="flex gap-2 rounded-2xl bg-ink-900/5 p-1">
         {(
@@ -91,7 +91,7 @@ export function CarregaEntregaPage() {
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-forest-950/10 text-forest-950">
             <Truck size={26} />
           </span>
-          <h2 className="text-lg font-extrabold text-forest-950">Carrega Entrega</h2>
+          <h2 className="text-lg font-extrabold text-forest-950">Entrega Registra</h2>
           <p className="font-mono text-xs text-ink-muted">v{packageJson.version}</p>
           <p className="max-w-sm text-sm text-ink-700/80">
             Ferramenta de carregamento e confirmação de entrega dos pedidos já faturados, integrada ao Óris360.

@@ -65,6 +65,8 @@ const FechamentoPage = lazy(() => import("@/pages/admin/FechamentoPage").then((m
 const SeparaConferePage = lazy(() => import("@/pages/admin/SeparaConferePage").then((m) => ({ default: m.SeparaConferePage })));
 const SeparaConfereInventoryItemPage = lazy(() => import("@/pages/admin/SeparaConfereInventoryItemPage").then((m) => ({ default: m.SeparaConfereInventoryItemPage })));
 const OperatorShell = lazy(() => import("@/pages/operator/OperatorShell").then((m) => ({ default: m.OperatorShell })));
+const OperatorAppShell = lazy(() => import("@/pages/operator/OperatorAppShell").then((m) => ({ default: m.OperatorAppShell })));
+const OperatorHubPage = lazy(() => import("@/pages/operator/OperatorHubPage").then((m) => ({ default: m.OperatorHubPage })));
 const OperatorLoginPage = lazy(() => import("@/pages/operator/OperatorLoginPage").then((m) => ({ default: m.OperatorLoginPage })));
 const OperatorOrdersPage = lazy(() => import("@/pages/operator/OperatorPages").then((m) => ({ default: m.OperatorOrdersPage })));
 const OperatorInventoryPage = lazy(() => import("@/pages/operator/OperatorPages").then((m) => ({ default: m.OperatorInventoryPage })));
@@ -111,7 +113,22 @@ export function App() {
             <Route path="/:companySlug/pedido-confirmado/:orderId" element={<OrderConfirmedPage />} />
           </Route>
 
+          <Route path="/operacao" element={<OperatorHubPage />} />
+          <Route path="/operacao/entrar" element={<OperatorLoginPage appId="hub" />} />
           <Route path="/operacao/separa-confere/entrar" element={<OperatorLoginPage />} />
+          <Route path="/operacao/produziu-registra/entrar" element={<OperatorLoginPage appId="producao" />} />
+          <Route path="/operacao/produziu-registra" element={<OperatorAppShell appId="producao" fullBleed />}>
+            <Route index element={<ProduzirRegistraPage />} />
+            <Route path="*" element={<Navigate to="/operacao/produziu-registra" replace />} />
+          </Route>
+          <Route path="/operacao/entrega-registra/entrar" element={<OperatorLoginPage appId="entrega" />} />
+          <Route path="/operacao/entrega-registra" element={<OperatorAppShell appId="entrega" />}>
+            <Route index element={<CarregaEntregaPage />} />
+            <Route path="carregar/:orderId" element={<CarregamentoOrderPage />} />
+            <Route path="entregar/:orderId" element={<EntregaConfirmacaoPage />} />
+            <Route path="*" element={<Navigate to="/operacao/entrega-registra" replace />} />
+          </Route>
+          <Route path="/operacao/*" element={<Navigate to="/operacao" replace />} />
           <Route path="/operacao/separa-confere" element={<OperatorShell />}>
             <Route index element={<OperatorOrdersPage />} />
             <Route path="pedido/:orderId" element={<SeparaConfereOrderPage />} />

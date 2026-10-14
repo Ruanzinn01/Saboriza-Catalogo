@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Save } from "lucide-react";
+import { OPERATOR_APPS, OPERATOR_APP_IDS } from "@/lib/operator-apps";
 import { useTeamStore } from "@/store/team-store";
 import { Button } from "@/components/ui/Button";
 
@@ -24,6 +25,9 @@ function groupLabel(prefix: string): string {
     patrimonio: "Patrimônio",
     customer_credit: "Crédito de clientes",
     separa_confere: "Separa Confere",
+    producao: "Produziu Registra",
+    entrega: "Entrega Registra",
+    admin: "Painel administrativo",
   };
   return labels[prefix] ?? prefix;
 }
@@ -100,27 +104,30 @@ export function RolesPermissionsPanel() {
     toast.success("Permissões salvas");
   }
 
-  const operatorLink = `${window.location.origin}/operacao/separa-confere`;
+  const operatorLinks = OPERATOR_APP_IDS.map((id) => ({ app: OPERATOR_APPS[id], url: `${window.location.origin}${OPERATOR_APPS[id].base}` }));
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2 rounded-2xl border border-forest-950/10 bg-white p-4 text-sm">
-        <p className="font-extrabold text-forest-950">Acesso do operador de separação e inventário</p>
+        <p className="font-extrabold text-forest-950">Acesso aos apps operacionais</p>
         <p className="text-xs text-ink-muted">
-          Papéis que recebem a permissão "Operador do Separa Confere (acesso restrito)" ficam confinados à área operacional (Pedidos, Inventário e Histórico) e o servidor bloqueia os módulos administrativos. Não conceda essa permissão a gestores. Envie o link abaixo ao colaborador; ele entra com o próprio e-mail e senha e pode adicionar à tela inicial do celular.
+          Cada colaborador usa a própria conta. Quem recebe apenas permissões de operador (Separa Confere, Produziu Registra, Entrega Registra) fica confinado aos apps autorizados, e o servidor bloqueia os módulos administrativos. Um colaborador pode ter mais de um app. Para quem também precisa do painel administrativo, conceda além disso "Acesso ao painel administrativo". Instalar o app no celular não concede permissão. Envie o link do app ao colaborador; ele pode adicionar à tela inicial.
         </p>
-        <div className="flex flex-wrap items-center gap-2">
-          <code className="min-w-0 flex-1 truncate rounded-lg bg-ink-900/5 px-3 py-2 text-xs">{operatorLink}</code>
-          <button
-            type="button"
-            onClick={() => {
-              void navigator.clipboard.writeText(operatorLink).then(() => toast.success("Link copiado"));
-            }}
-            className="min-h-11 rounded-lg border border-forest-950/15 px-3 text-xs font-bold text-forest-800 hover:bg-forest-950/5"
-          >
-            Copiar link
-          </button>
-        </div>
+        {operatorLinks.map(({ app, url }) => (
+          <div key={app.id} className="flex flex-wrap items-center gap-2">
+            <span className="w-full text-xs font-bold text-forest-950">{app.name}</span>
+            <code className="min-w-0 flex-1 truncate rounded-lg bg-ink-900/5 px-3 py-2 text-xs">{url}</code>
+            <button
+              type="button"
+              onClick={() => {
+                void navigator.clipboard.writeText(url).then(() => toast.success("Link copiado"));
+              }}
+              className="min-h-11 rounded-lg border border-forest-950/15 px-3 text-xs font-bold text-forest-800 hover:bg-forest-950/5"
+            >
+              Copiar link
+            </button>
+          </div>
+        ))}
       </div>
 
       <div className="flex flex-wrap items-end gap-2">

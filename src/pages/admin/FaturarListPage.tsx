@@ -22,7 +22,7 @@ export function FaturarListPage() {
       <div>
         <h1 className="text-2xl font-extrabold text-forest-950">Faturar</h1>
         <p className="text-sm text-ink-muted">
-          Pedidos com separação concluída, aguardando faturamento antes de seguir para Carrega Entrega.
+          Pedidos com separação concluída, aguardando faturamento antes de seguir para Entrega Registra.
         </p>
       </div>
 

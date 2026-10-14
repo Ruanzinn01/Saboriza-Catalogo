@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useEntregaBase } from "@/lib/entrega-base";
 import { MapPin } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { countInstallments, formatInstallments } from "@/lib/installments";
@@ -10,6 +11,7 @@ interface DeliveryOrderCardProps {
 
 export function DeliveryOrderCard({ order }: DeliveryOrderCardProps) {
   const navigate = useNavigate();
+  const base = useEntregaBase();
 
   const cityLine = [order.neighborhood, [order.city, order.state].filter(Boolean).join(" - ")].filter(Boolean).join(", ");
   const fullAddress = [order.address, cityLine].filter(Boolean).join(", ");
@@ -67,7 +69,7 @@ export function DeliveryOrderCard({ order }: DeliveryOrderCardProps) {
       <div className="px-4 pb-4 sm:px-5">
         <button
           type="button"
-          onClick={() => navigate(`/admin/carrega-entrega/entregar/${order.id}`)}
+          onClick={() => navigate(`${base}/entregar/${order.id}`)}
           className="inline-flex min-h-14 w-full items-center justify-center rounded-2xl bg-green-600 px-4 text-base font-extrabold tracking-wide text-white transition-colors hover:bg-green-700"
         >
           ENTREGAR
