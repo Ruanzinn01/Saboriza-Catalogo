@@ -156,8 +156,8 @@ export const useMeu360Store = create<Meu360State>()((set, get) => ({
     const { device, employeeId, pin } = get();
     if (!device || !employeeId) return;
     set({ busy: true });
-    await invoke({ action: "do", op: "assumir", device_id: device.deviceId, device_credential: device.deviceCredential, employee_id: employeeId, pin, floor_execution_id: execId });
-    set({ busy: false });
+    const { data, error } = await invoke({ action: "do", op: "assumir", device_id: device.deviceId, device_credential: device.deviceCredential, employee_id: employeeId, pin, floor_execution_id: execId });
+    set({ busy: false, error: error || data?.error ? (data?.error ?? "Não foi possível concluir a ação. Tente novamente.") : null });
     await get().refreshSession();
   },
 
@@ -165,8 +165,8 @@ export const useMeu360Store = create<Meu360State>()((set, get) => ({
     const { device, employeeId, pin } = get();
     if (!device || !employeeId) return;
     set({ busy: true });
-    await invoke({ action: "do", op: "avancar", device_id: device.deviceId, device_credential: device.deviceCredential, employee_id: employeeId, pin, floor_execution_id: execId, quantity_delta: delta });
-    set({ busy: false });
+    const { data, error } = await invoke({ action: "do", op: "avancar", device_id: device.deviceId, device_credential: device.deviceCredential, employee_id: employeeId, pin, floor_execution_id: execId, quantity_delta: delta });
+    set({ busy: false, error: error || data?.error ? (data?.error ?? "Não foi possível concluir a ação. Tente novamente.") : null });
     await get().refreshSession();
   },
 
@@ -174,8 +174,8 @@ export const useMeu360Store = create<Meu360State>()((set, get) => ({
     const { device, employeeId, pin } = get();
     if (!device || !employeeId) return;
     set({ busy: true });
-    await invoke({ action: "do", op: "concluir", device_id: device.deviceId, device_credential: device.deviceCredential, employee_id: employeeId, pin, floor_execution_id: execId });
-    set({ busy: false });
+    const { data, error } = await invoke({ action: "do", op: "concluir", device_id: device.deviceId, device_credential: device.deviceCredential, employee_id: employeeId, pin, floor_execution_id: execId });
+    set({ busy: false, error: error || data?.error ? (data?.error ?? "Não foi possível concluir a ação. Tente novamente.") : null });
     await get().refreshSession();
   },
 
