@@ -5,6 +5,7 @@
 // evento duplicado (retry do proprio Asaas) nunca repetir uma baixa (patch secao 4).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { outcomeFromSteps, recordFor, type ProcessOutcome } from "./outcome.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -21,43 +22,57 @@ function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...CORS_HEADERS } });
 }
 
-async function applyPaymentEvent(companyId: string, eventType: string, payment: Record<string, unknown> | undefined) {
-  if (!payment?.id) return null;
+async function applyPaymentEvent(companyId: string, eventType: string, payment: Record<string, unknown> | undefined): Promise<ProcessOutcome> {
+  if (!payment?.id) return { kind: "ignored", message: "evento sem id de pagamento" };
 
-  const { data: charge } = await serviceClient
+  const { data: charge, error: chargeError } = await serviceClient
     .from("charges")
     .select("id, installment_id")
     .eq("external_id", payment.id as string)
     .eq("company_id", companyId)
     .maybeSingle();
-  if (!charge) return "cobranca nao encontrada para este payment_id";
+  if (chargeError) return { kind: "retry", message: `consulta da cobranca: ${chargeError.message}` };
+  // Sem cobrança correspondente não há o que baixar: fica registrado para conferência manual, sem travar a fila do Asaas.
+  if (!charge) return { kind: "ignored", message: "REVISAR: cobranca nao encontrada para este payment_id" };
 
   if (eventType === "PAYMENT_RECEIVED" || eventType === "PAYMENT_CONFIRMED") {
-    await serviceClient.from("charges").update({ status: "PAGO", technical_state: "SINCRONIZADO" }).eq("id", charge.id);
-    await serviceClient.from("receivables").update({ status: "PAGO", paid_at: new Date().toISOString() }).eq("installment_id", charge.installment_id);
-  } else if (eventType === "PAYMENT_OVERDUE") {
-    await serviceClient.from("receivables").update({ status: "VENCIDO" }).eq("installment_id", charge.installment_id);
-  } else if (eventType === "PAYMENT_DELETED" || eventType === "PAYMENT_REFUNDED" || eventType === "PAYMENT_CHARGEBACK_REQUESTED") {
-    await serviceClient.from("charges").update({ technical_state: "RECONCILIAR" }).eq("id", charge.id);
+    const chargeUpdate = await serviceClient.from("charges").update({ status: "PAGO", technical_state: "SINCRONIZADO" }).eq("id", charge.id);
+    const receivableUpdate = await serviceClient
+      .from("receivables")
+      .update({ status: "PAGO", paid_at: new Date().toISOString() })
+      .eq("installment_id", charge.installment_id);
+    return outcomeFromSteps([
+      { label: "cobranca", error: chargeUpdate.error },
+      { label: "recebivel", error: receivableUpdate.error },
+    ]);
   }
-  return null;
+  if (eventType === "PAYMENT_OVERDUE") {
+    const receivableUpdate = await serviceClient.from("receivables").update({ status: "VENCIDO" }).eq("installment_id", charge.installment_id);
+    return outcomeFromSteps([{ label: "recebivel", error: receivableUpdate.error }]);
+  }
+  if (eventType === "PAYMENT_DELETED" || eventType === "PAYMENT_REFUNDED" || eventType === "PAYMENT_CHARGEBACK_REQUESTED") {
+    const chargeUpdate = await serviceClient.from("charges").update({ technical_state: "RECONCILIAR" }).eq("id", charge.id);
+    return outcomeFromSteps([{ label: "cobranca", error: chargeUpdate.error }]);
+  }
+  return { kind: "applied" };
 }
 
 // Eventos de nota fiscal (NFS-e via Asaas /invoices) chegam pelo MESMO webhook/token da empresa —
 // não é um endpoint separado, é o mesmo cadastro de webhook, só com eventos de invoice habilitados.
-async function applyInvoiceEvent(companyId: string, eventType: string, invoice: Record<string, unknown> | undefined) {
-  if (!invoice?.id) return null;
+async function applyInvoiceEvent(companyId: string, eventType: string, invoice: Record<string, unknown> | undefined): Promise<ProcessOutcome> {
+  if (!invoice?.id) return { kind: "ignored", message: "evento sem id de nota" };
 
-  const { data: fiscalDoc } = await serviceClient
+  const { data: fiscalDoc, error: docError } = await serviceClient
     .from("fiscal_documents")
     .select("id")
     .eq("external_id", invoice.id as string)
     .eq("company_id", companyId)
     .maybeSingle();
-  if (!fiscalDoc) return "nota fiscal nao encontrada para este invoice_id";
+  if (docError) return { kind: "retry", message: `consulta da nota: ${docError.message}` };
+  if (!fiscalDoc) return { kind: "ignored", message: "REVISAR: nota fiscal nao encontrada para este invoice_id" };
 
   if (eventType === "INVOICE_AUTHORIZED" || eventType === "INVOICE_SYNCHRONIZED") {
-    await serviceClient
+    const update = await serviceClient
       .from("fiscal_documents")
       .update({
         status: "AUTORIZADA",
@@ -66,13 +81,16 @@ async function applyInvoiceEvent(companyId: string, eventType: string, invoice: 
         xml_ref: (invoice.xmlUrl as string) ?? null,
       })
       .eq("id", fiscalDoc.id);
-  } else if (eventType === "INVOICE_ERROR" || eventType === "INVOICE_CANCELED" || eventType === "INVOICE_CANCELLED") {
-    await serviceClient
+    return outcomeFromSteps([{ label: "nota", error: update.error }]);
+  }
+  if (eventType === "INVOICE_ERROR" || eventType === "INVOICE_CANCELED" || eventType === "INVOICE_CANCELLED") {
+    const update = await serviceClient
       .from("fiscal_documents")
       .update({ status: eventType === "INVOICE_ERROR" ? "REJEITADA" : "CANCELADA" })
       .eq("id", fiscalDoc.id);
+    return outcomeFromSteps([{ label: "nota", error: update.error }]);
   }
-  return null;
+  return { kind: "applied" };
 }
 
 Deno.serve(async (req) => {
@@ -129,16 +147,21 @@ Deno.serve(async (req) => {
 
   // Evento de um ambiente que não é o ativo fica registrado, mas nunca altera cobrança/nota:
   // impede que um webhook de Sandbox mexa em dados de Produção (e vice-versa).
-  const processError = !credential.is_active
-    ? `IGNORADO: ambiente ${credential.environment} nao esta ativo nesta empresa`
+  const outcome: ProcessOutcome = !credential.is_active
+    ? { kind: "ignored", message: `IGNORADO: ambiente ${credential.environment} nao esta ativo nesta empresa` }
     : eventType.startsWith("INVOICE_")
       ? await applyInvoiceEvent(companyId, eventType, invoice)
       : await applyPaymentEvent(companyId, eventType, payment);
-  await serviceClient
+
+  // processed_at só existe depois de os efeitos terem sido persistidos; falha deixa o evento reprocessável.
+  const record = recordFor(outcome, new Date());
+  const { error: recordError } = await serviceClient
     .from("asaas_webhook_events")
-    .update({ processed_at: new Date().toISOString(), process_error: processError })
+    .update({ processed_at: record.processed_at, process_error: record.process_error })
     .eq("event_id", eventId)
     .eq("company_id", companyId);
+  if (recordError) return jsonResponse({ error: "falha ao registrar o resultado do evento" }, 500);
 
+  if (record.http_status !== 200) return jsonResponse({ error: "falha ao aplicar o evento; sera reenviado" }, record.http_status);
   return jsonResponse({ ok: true });
 });
