@@ -11,7 +11,7 @@ import { frequencyLabel, type CartLine } from "./types";
 
 const C = DESPESAS_COLORS;
 
-function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+export function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#092d237a] p-4" onClick={onClose}>
       <div className="max-h-[75vh] w-full max-w-[620px] overflow-auto rounded-[18px] bg-white" onClick={(e) => e.stopPropagation()}>

@@ -23,6 +23,7 @@ export const ITEM_TYPE_LABEL: Record<StockItemType, string> = {
 export const MOVEMENT_LABEL: Record<LedgerMovementType, string> = {
   ENTRY: "Entrada manual",
   PURCHASE_ENTRY: "Entrada de compra",
+  PURCHASE_RETURN: "Devolução ao fornecedor",
   SALE_OUT: "Saída de pedido",
   PRODUCTION_IN: "Entrada de produção",
   PRODUCTION_CONSUMPTION: "Consumo de produção",

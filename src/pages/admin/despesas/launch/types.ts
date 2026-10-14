@@ -5,6 +5,10 @@ export interface CartLine {
   kind: LaunchKind;
   categoryId?: string;
   rawMaterialId?: string;
+  productId?: string;
+  sku?: string;
+  gtin?: string;
+  brand?: string;
   catalogItemId?: string;
   employeeId?: string;
   name: string;

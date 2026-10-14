@@ -25,6 +25,9 @@ export interface LaunchDraft {
   recipientKey: string;
   recipientHolder: string;
   observations: string;
+  otherCosts?: string;
+  serverDraftId?: string | null;
+  serverVersion?: number;
 }
 
 export function loadDraft(): LaunchDraft | null {

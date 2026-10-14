@@ -23,6 +23,7 @@ export interface StockPositionItem {
 export type LedgerMovementType =
   | "ENTRY"
   | "PURCHASE_ENTRY"
+  | "PURCHASE_RETURN"
   | "SALE_OUT"
   | "PRODUCTION_IN"
   | "PRODUCTION_CONSUMPTION"

@@ -50,6 +50,8 @@ export interface LaunchItemInput {
   kind: LaunchKind;
   categoryId?: string;
   rawMaterialId?: string;
+  productId?: string;
+  controlUnitQuantity?: boolean;
   catalogItemId?: string;
   employeeId?: string;
   nameSnapshot: string;
@@ -87,6 +89,7 @@ export interface LaunchPayload {
   batch?: string;
   expiryDate?: string;
   freight: number;
+  otherCosts?: number;
   discount: number;
   received: boolean;
   paymentMethod?: string;
@@ -131,6 +134,7 @@ function toPayloadJson(p: LaunchPayload) {
     batch: p.batch ?? null,
     expiry_date: p.expiryDate ?? null,
     freight: p.freight,
+    other_costs: p.otherCosts ?? 0,
     discount: p.discount,
     received: p.received,
     payment_method: p.paymentMethod ?? null,
@@ -145,6 +149,8 @@ function toPayloadJson(p: LaunchPayload) {
       kind: i.kind,
       category_id: i.categoryId ?? null,
       raw_material_id: i.rawMaterialId ?? null,
+      product_id: i.productId ?? null,
+      control_unit_quantity: i.controlUnitQuantity ?? false,
       catalog_item_id: i.catalogItemId ?? null,
       employee_id: i.employeeId ?? null,
       name_snapshot: i.nameSnapshot,

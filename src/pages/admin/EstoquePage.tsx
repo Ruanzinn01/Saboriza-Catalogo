@@ -2,16 +2,18 @@ import { Link, useSearchParams } from "react-router-dom";
 import { BarChart3, PackagePlus } from "lucide-react";
 import { EstoqueGestaoGeral } from "@/components/admin/estoque/EstoqueGestaoGeral";
 import { EstoqueInventario } from "@/components/admin/estoque/EstoqueInventario";
+import { EstoqueItens } from "@/components/admin/estoque/EstoqueItens";
 import { EstoqueMovimentacoes } from "@/components/admin/estoque/EstoqueMovimentacoes";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 
-type Tab = "gestao" | "movimentacoes" | "inventario";
+type Tab = "gestao" | "movimentacoes" | "itens" | "inventario";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "gestao", label: "Gestão Geral" },
   { key: "movimentacoes", label: "Movimentações" },
+  { key: "itens", label: "Itens cadastrados" },
   { key: "inventario", label: "Inventário" },
 ];
 
@@ -61,6 +63,7 @@ export function EstoquePage() {
 
       {tab === "gestao" && <EstoqueGestaoGeral />}
       {tab === "movimentacoes" && <EstoqueMovimentacoes />}
+      {tab === "itens" && <EstoqueItens />}
       {tab === "inventario" && <EstoqueInventario />}
     </div>
   );

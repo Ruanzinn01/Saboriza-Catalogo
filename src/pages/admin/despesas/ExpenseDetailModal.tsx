@@ -5,6 +5,7 @@ import { useDespesasStore, type BlockType } from "@/store/despesas-store";
 import { Button } from "@/components/ui/Button";
 import { brDate, installmentLabel } from "@/pages/admin/despesas/shared";
 import { DESPESAS_COLORS } from "@/pages/admin/despesas/theme";
+import { PurchaseStockPanel } from "@/pages/admin/despesas/PurchaseStockPanel";
 
 const PAYMENT_METHOD_LABEL: Record<string, string> = {
   boleto: "Boleto",
@@ -169,6 +170,10 @@ export function ExpenseDetailModal({ expenseId, onClose }: { expenseId: string; 
             <p className="mt-2 rounded-[10px] p-3 text-xs leading-relaxed" style={{ background: "#edf5ee", color: "#356449" }}>
               <strong>Patrimônio:</strong> este lançamento alimenta o saldo em formação da categoria {expense.category}. Não cria outro valor patrimonial até a apropriação.
             </p>
+          )}
+
+          {expense.origin === "stock" && expense.sourceModule === "despesas" && expense.sourceEntityId && (
+            <PurchaseStockPanel launchId={expense.sourceEntityId} />
           )}
 
           {expense.status !== "PAGO" && (
