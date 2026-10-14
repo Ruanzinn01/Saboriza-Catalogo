@@ -97,3 +97,23 @@ Registrar vídeo ou captura de cada passo.
 4. Aprovação específica para: aplicar `…221500` (DEF-01), publicar o frontend e qualquer alteração no banco de produção.
 5. Central de PDFs: dependência indisponível, registrada.
 6. Fora desta etapa: uso duplo de item, correção de compras, lote na separação.
+
+## 9. Resultados em homologação com HTTP real (2026-10-14)
+
+Projeto Supabase Free `saboriza-homolog` (US$ 0), separado da produção. Login real no GoTrue, JWT real, PostgREST real, Realtime real (supabase-js). Esquema: réplica parcial das migrations de produção + V3 + núcleo dos apps operacionais + 221500 + 223000. Limites: módulos sem relação com Separa/Inventário omitidos e parte das políticas RLS ausente; não é fidelidade total.
+
+**Antes da fase B (só funções, sem bloqueio no banco):** operador lê 43 colunas de `orders` e 19 produtos direto e altera `total_amount` (200, 1 linha). Confirma a exposição medida em produção. O canal Realtime antigo de `orders` entrega 43 colunas, incluindo telefone.
+
+**Depois da fase B (políticas `*_no_separa_direct`):**
+- Operador só-Separa: `orders` direto 0 linhas, `products` 0, PATCH de `total_amount` 0 linhas, canal antigo de `orders` sem eventos.
+- Snapshot do operador: 13 colunas de pedido, 10 de item, 4 de produto, sem vazamento.
+- Owner, gestor, multi-app e só-Entrega mantêm leitura direta. Só-Entrega é negado no snapshot ("Sem acesso a este app"); multi-app (Separa+Entrega) passa.
+- Empresa B não vê nada da A (snapshot, faltas, Realtime).
+- Realtime `separation_signals`: operador recebe evento só com `company_id, order_id, responsible, separation_finished, status, updated_at, version`; empresa B e só-Entrega recebem 0.
+- Faltas por HTTP: 10 chamadas simultâneas com o mesmo comando geram 1 falta e 1 ajuste; comandos distintos deixam 1 aberta; conteúdos diferentes deixam 1 aberta com eventos CORRECTED; outro operador confinado não cancela; gestor cancela (CANCELLED, ajuste fechado, 3 eventos); cancelar de novo não duplica evento; nova falta após cancelar e após resolver cria nova ocorrência; operador não lê relatório nem eventos; empresa B não registra falta na A.
+
+**Defeito novo (DEF-06):** `private.is_app_scope_allowed` sem `GRANT EXECUTE` para `authenticated` na migration dos apps operacionais gera 403 para owner, gestor e operador. Corrigido só na homologação; precisa entrar na migration deles antes de aplicar.
+
+**DEF-01 em produção:** mitigado (execute revogado da `separation_report_shortage` antiga; migration `20261014230013`). Aplicar a 221500 depende de aprovação.
+
+**Não validado:** navegador e aparelho real (preview sem backend), câmera/leitor, modo avião, inventário completo por HTTP, perfis híbridos com `admin.acessar` por HTTP (cobertos só por SQL simulado).
