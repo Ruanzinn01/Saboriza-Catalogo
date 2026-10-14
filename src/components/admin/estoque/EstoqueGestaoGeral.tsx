@@ -88,7 +88,17 @@ export function EstoqueGestaoGeral({ goTo }: EstoqueGestaoGeralProps) {
   }, [position, typeFilter, categoryFilter, healthFilter, query]);
 
   const summary = useMemo(() => summarizePosition(filtered), [filtered]);
-  const policy = filtered[0] ? { min: filtered[0].policyMin, ideal: filtered[0].policyIdeal, max: filtered[0].policyMax } : { min: 30, ideal: 45, max: 60 };
+  const policy = (() => {
+    const counts = new Map<string, { n: number; min: number; ideal: number; max: number }>();
+    for (const item of filtered) {
+      const key = `${item.policyMin}|${item.policyIdeal}|${item.policyMax}`;
+      const entry = counts.get(key) ?? { n: 0, min: item.policyMin, ideal: item.policyIdeal, max: item.policyMax };
+      entry.n += 1;
+      counts.set(key, entry);
+    }
+    const top = [...counts.values()].sort((a, b) => b.n - a.n)[0];
+    return top ? { min: top.min, ideal: top.ideal, max: top.max } : { min: 30, ideal: 45, max: 60 };
+  })();
   const historyDays = filtered[0]?.historyDays ?? 0;
 
   if (status === "loading" || status === "idle") return <AdminState variant="loading" message="Carregando posição do estoque..." />;
