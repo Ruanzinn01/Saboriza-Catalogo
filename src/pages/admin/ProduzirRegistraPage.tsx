@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { isOperatorPath } from "@/lib/operator-apps";
 import { ArrowLeft, ImageOff, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 import { BarcodeScannerModal } from "@/components/admin/BarcodeScannerModal";
@@ -53,6 +54,7 @@ const fmt = (n: number) => Math.round(n).toLocaleString("pt-BR");
 type Page = "home" | "liberar" | "confirmar" | "urgent" | "diary" | "produced" | "results";
 
 export function ProduzirRegistraPage() {
+  const operatorMode = isOperatorPath(useLocation().pathname);
   const companyName = useAdminCompanyStore((s) => s.company?.display_name) || "Empresa";
   const products = useCatalogStore((s) => s.products);
   const categories = useCatalogStore((s) => s.categories);
@@ -211,14 +213,16 @@ export function ProduzirRegistraPage() {
   return (
     <div className="fixed inset-0 z-40 overflow-y-auto" style={{ background: c.bg, color: c.navy, fontFamily: "system-ui,-apple-system,Segoe UI,sans-serif" }}>
       <header className="bg-white border-b flex items-center gap-4 px-6 py-5" style={{ borderColor: c.line }}>
-        <Link
-          to="/admin"
-          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-semibold hover:bg-black/5"
-          style={{ color: c.navy }}
-          aria-label="Voltar ao painel administrativo"
-        >
-          <ArrowLeft size={18} /> Voltar
-        </Link>
+        {!operatorMode && (
+          <Link
+            to="/admin"
+            className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-semibold hover:bg-black/5"
+            style={{ color: c.navy }}
+            aria-label="Voltar ao painel administrativo"
+          >
+            <ArrowLeft size={18} /> Voltar
+          </Link>
+        )}
         <button type="button" onClick={() => go("home")} className="text-2xl font-extrabold tracking-tight" style={{ color: c.blue }}>
           Óris<span style={{ color: c.navy }}>360</span>
         </button>
@@ -273,12 +277,14 @@ export function ProduzirRegistraPage() {
                     Liberar Produção
                   </button>
                 </Card>
-                <div className={c.notice}>
-                  <Link to="/admin/chao-de-fabrica" className="font-bold hover:underline" style={{ color: c.blue }}>
-                    Ver Chão de Fábrica →
-                  </Link>{" "}
-                  Acompanhe quem assumiu, quanto já avançou e o que está pronto pra confirmar.
-                </div>
+                {!operatorMode && (
+                  <div className={c.notice}>
+                    <Link to="/admin/chao-de-fabrica" className="font-bold hover:underline" style={{ color: c.blue }}>
+                      Ver Chão de Fábrica →
+                    </Link>{" "}
+                    Acompanhe quem assumiu, quanto já avançou e o que está pronto pra confirmar.
+                  </div>
+                )}
               </div>
               <Card>
                 <div className="flex items-center justify-between">
@@ -576,12 +582,12 @@ export function ProduzirRegistraPage() {
               <h2 className="mb-3 text-lg font-bold">Produtos mais produzidos</h2>
               {productRanking.map(({ product, qty }) => (
                 <div key={product?.id} className="flex justify-between border-b py-2" style={{ borderColor: c.line }}>
-                  {product ? (
+                  {product && !operatorMode ? (
                     <Link to={`/admin/produtos/${product.id}`} className="hover:underline" style={{ color: c.blue }}>
                       {product.name}
                     </Link>
                   ) : (
-                    <span>-----</span>
+                    <span>{product ? product.name : "-----"}</span>
                   )}
                   <b>{fmt(qty)} un</b>
                 </div>

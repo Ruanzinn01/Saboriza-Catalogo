@@ -94,6 +94,41 @@ export function employeeFromRow(row: EmployeeRow): Employee {
   };
 }
 
+export interface OperatorEmployeeRow {
+  id: string;
+  code: string;
+  name: string;
+  status: string;
+  can_operate_production: boolean;
+  photo_url: string | null;
+  unit_id: string | null;
+}
+
+/** Colaborador visto pelo app operacional: só identificação. Nenhum dado pessoal, salarial ou de ponto chega ao aparelho. */
+export function employeeFromOperatorRow(row: OperatorEmployeeRow): Employee {
+  return employeeFromRow({
+    id: row.id,
+    code: row.code,
+    name: row.name,
+    status: row.status,
+    can_operate_production: row.can_operate_production,
+    photo_url: row.photo_url,
+    unit_id: row.unit_id,
+    timesheet_enabled: false,
+    timesheet_break_minutes: 0,
+    timesheet_tolerance_minutes: 0,
+    timesheet_overtime_percent: 0,
+    salary_base: 0,
+    monthly_divisor: 0,
+    salary_additions: 0,
+    overtime_minutes_sample: 0,
+    advances_sample: 0,
+    meu360_enabled: false,
+    admin_access_linked: false,
+    personal_access_state: "NOT_INVITED",
+  } as unknown as EmployeeRow);
+}
+
 export function employeeDocumentFromRow(row: EmployeeDocumentRow): EmployeeDocument {
   return {
     id: row.id,

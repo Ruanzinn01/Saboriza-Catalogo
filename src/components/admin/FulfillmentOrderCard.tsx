@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useEntregaBase } from "@/lib/entrega-base";
 import { Building2, Clock } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/currency";
@@ -14,6 +15,7 @@ interface FulfillmentOrderCardProps {
 
 export function FulfillmentOrderCard({ order }: FulfillmentOrderCardProps) {
   const navigate = useNavigate();
+  const base = useEntregaBase();
   const startLoading = useFulfillmentStore((state) => state.startLoading);
   const operatorName = useAdminAuthStore((state) => state.session?.user.user_metadata?.name || state.session?.user.email);
   const [starting, setStarting] = useState(false);
@@ -30,7 +32,7 @@ export function FulfillmentOrderCard({ order }: FulfillmentOrderCardProps) {
     setStarting(true);
     const ok = await startLoading(order.id);
     if (ok) {
-      navigate(`/admin/carrega-entrega/carregar/${order.id}`);
+      navigate(`${base}/carregar/${order.id}`);
       return;
     }
     setStarting(false);
@@ -76,7 +78,7 @@ export function FulfillmentOrderCard({ order }: FulfillmentOrderCardProps) {
     return (
       <button
         type="button"
-        onClick={() => navigate(`/admin/carrega-entrega/carregar/${order.id}`)}
+        onClick={() => navigate(`${base}/carregar/${order.id}`)}
         className="flex flex-col overflow-hidden rounded-3xl border border-forest-950/10 bg-white text-left transition-colors hover:border-forest-700/30 hover:bg-forest-950/[0.02]"
       >
         {cardBody}

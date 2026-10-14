@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useEntregaBase } from "@/lib/entrega-base";
 import { toast } from "sonner";
 import { CheckCircle2, ImageOff, ScanLine, Undo2 } from "lucide-react";
 import { AdminState } from "@/components/admin/AdminState";
@@ -14,6 +15,7 @@ import type { FulfillmentItem } from "@/types/fulfillment";
 
 export function CarregamentoOrderPage() {
   const { orderId } = useParams();
+  const base = useEntregaBase();
 
   const order = useFulfillmentStore((state) => state.currentOrder);
   const orderStatus = useFulfillmentStore((state) => state.currentOrderStatus);
@@ -68,7 +70,7 @@ export function CarregamentoOrderPage() {
       <PageHeader
         title={`Pedido ${order.number}`}
         description={description}
-        back={{ to: "/admin/carrega-entrega", label: "Voltar" }}
+        back={{ to: base, label: "Voltar" }}
         actions={
           isMine ? (
             <>

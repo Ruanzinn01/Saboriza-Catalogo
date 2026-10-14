@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useEntregaBase } from "@/lib/entrega-base";
 import { toast } from "sonner";
 import { Check, FileText, MapPin, PenLine, Plus, Trash2, Wallet } from "lucide-react";
 import { AdminState } from "@/components/admin/AdminState";
@@ -249,6 +250,7 @@ function DivergenceEditor({
 export function EntregaConfirmacaoPage() {
   const { orderId } = useParams();
   const navigate = useNavigate();
+  const base = useEntregaBase();
 
   const order = useFulfillmentStore((state) => state.currentOrder);
   const orderStatus = useFulfillmentStore((state) => state.currentOrderStatus);
@@ -329,7 +331,7 @@ export function EntregaConfirmacaoPage() {
         signature,
         erRef.current
       );
-      if (ok) navigate("/admin/carrega-entrega");
+      if (ok) navigate(base);
     } catch {
       toast.error("Não foi possível registrar a entrega");
     } finally {
@@ -339,7 +341,7 @@ export function EntregaConfirmacaoPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title="Confirmar entrega" description={`Pedido ${currentOrder.number}`} back={{ to: "/admin/carrega-entrega", label: "Voltar" }} />
+      <PageHeader title="Confirmar entrega" description={`Pedido ${currentOrder.number}`} back={{ to: base, label: "Voltar" }} />
 
       <OrderSummary order={currentOrder} />
 
@@ -484,7 +486,7 @@ export function EntregaConfirmacaoPage() {
         <Button size="lg" disabled={!canConfirm} onClick={() => void handleConfirm()}>
           {confirming ? "Registrando..." : "CONFIRMAR ENTREGA"}
         </Button>
-        <Button size="lg" variant="outline" disabled={confirming} onClick={() => navigate("/admin/carrega-entrega")}>
+        <Button size="lg" variant="outline" disabled={confirming} onClick={() => navigate(base)}>
           Voltar
         </Button>
       </div>

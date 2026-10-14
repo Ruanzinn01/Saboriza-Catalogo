@@ -1,11 +1,14 @@
 import { useEffect } from "react";
 import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
-import { ClipboardList, History, LogOut, ScanBarcode, WifiOff } from "lucide-react";
+import { ClipboardList, History, LayoutGrid, LogOut, ScanBarcode, WifiOff } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useOnline } from "@/lib/use-online";
+import { OPERATOR_APPS, OPERATOR_HUB } from "@/lib/operator-apps";
 import { OPERATOR_SEPARA_BASE } from "@/lib/separa-base";
 import { useAccessStore } from "@/store/access-store";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
+import { OperatorNoAccess } from "./OperatorAppShell";
+import { useInstallableIdentity } from "./use-installable-identity";
 
 const TABS = [
   {
@@ -28,36 +31,6 @@ const TABS = [
   },
 ];
 
-/** Troca nome, ícone e manifest da página enquanto o operador está nela, para instalar como "Separa Confere". */
-function useInstallableIdentity() {
-  useEffect(() => {
-    const previousTitle = document.title;
-    const added: HTMLElement[] = [];
-    const add = (tag: "link" | "meta", attrs: Record<string, string>) => {
-      const element = document.createElement(tag);
-      Object.entries(attrs).forEach(([key, value]) => element.setAttribute(key, value));
-      document.head.appendChild(element);
-      added.push(element);
-    };
-    const replaced = Array.from(document.head.querySelectorAll<HTMLLinkElement>('link[rel="apple-touch-icon"], link[rel="icon"]'));
-    replaced.forEach((link) => link.remove());
-
-    document.title = "Separa Confere";
-    add("link", { rel: "manifest", href: "/separa-confere/manifest.webmanifest" });
-    add("link", { rel: "apple-touch-icon", href: "/separa-confere/apple-touch-icon.png" });
-    add("link", { rel: "icon", type: "image/png", href: "/separa-confere/icon-192.png" });
-    add("meta", { name: "apple-mobile-web-app-title", content: "Separa Confere" });
-    add("meta", { name: "apple-mobile-web-app-capable", content: "yes" });
-    add("meta", { name: "mobile-web-app-capable", content: "yes" });
-
-    return () => {
-      document.title = previousTitle;
-      added.forEach((element) => element.remove());
-      replaced.forEach((link) => document.head.appendChild(link));
-    };
-  }, []);
-}
-
 /** Área operacional: sem menu global, sem Produzir/Estoque/Mais e sem caminho de volta ao portal. */
 export function OperatorShell() {
   const { pathname } = useLocation();
@@ -67,8 +40,9 @@ export function OperatorShell() {
   const operatorName = useAdminAuthStore((state) => state.session?.user.user_metadata?.name || state.session?.user.email || "");
   const logout = useAdminAuthStore((state) => state.logout);
   const accessStatus = useAccessStore((state) => state.status);
+  const apps = useAccessStore((state) => state.apps);
   const fetchAccess = useAccessStore((state) => state.fetch);
-  useInstallableIdentity();
+  useInstallableIdentity(OPERATOR_APPS.separa_confere);
 
   useEffect(() => {
     if (isAuthenticated && accessStatus === "idle") void fetchAccess();
@@ -77,6 +51,7 @@ export function OperatorShell() {
   if (isLoading) return null;
   if (!isAuthenticated) return <Navigate to={`${OPERATOR_SEPARA_BASE}/entrar`} replace />;
   if (accessStatus === "idle" || accessStatus === "loading") return null;
+  if (accessStatus === "error" || !apps.includes("separa_confere")) return <OperatorNoAccess appName={OPERATOR_APPS.separa_confere.name} />;
 
   return (
     <div className="flex h-dvh flex-col bg-cream-100">
@@ -87,6 +62,11 @@ export function OperatorShell() {
         </div>
         <div className="flex min-w-0 items-center gap-2">
           <span className="hidden max-w-[10rem] truncate text-xs text-cream-100/80 sm:block">{operatorName}</span>
+          {apps.length > 1 && (
+            <Link to={OPERATOR_HUB} aria-label="Trocar de app" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-cream-50/10">
+              <LayoutGrid size={18} />
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => void logout()}

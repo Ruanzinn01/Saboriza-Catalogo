@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { resolveCurrentCompanyId } from "@/lib/current-company";
+import { isOperatorPath } from "@/lib/operator-apps";
+import { rpcUntyped } from "@/lib/supabase-rpc";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
 import type { AdjustmentRequest } from "@/types/separation";
 import { generateDeliveryReceiptPdf } from "@/lib/delivery-receipt-pdf";
@@ -149,6 +151,12 @@ function buildOrders(
 // Faturar (Onda 5) e etapa obrigatoria antes de Carrega Entrega: so aparece aqui pedido com faturamento CONFIRMADO.
 async function filterBilledOrders(orderRows: OrderRow[]): Promise<OrderRow[]> {
   if (orderRows.length === 0) return orderRows;
+  if (isOperatorPath(window.location.pathname)) {
+    const { data, error } = await rpcUntyped("operator_confirmed_billing_order_ids", { p_order_ids: orderRows.map((row) => row.id) });
+    if (error) throw new Error(error.message);
+    const confirmed = new Set(((data as { order_id: string }[] | null) ?? []).map((row) => row.order_id));
+    return orderRows.filter((row) => confirmed.has(row.id));
+  }
   const { data: billingRows } = await supabase
     .from("billings")
     .select("order_id, status")

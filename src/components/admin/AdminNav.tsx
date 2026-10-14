@@ -125,7 +125,7 @@ export const NAV_GROUPS: NavGroup[] = [
 
 export const STANDALONE_NAV_ITEMS: NavItem[] = [
   { to: "/admin/separa-confere", label: "Separa Confere", icon: PackageSearch, badge: "pendingSeparation" },
-  { to: "/admin/carrega-entrega", label: "Carrega Entrega", icon: PackageCheck, badge: "pendingFulfillment" },
+  { to: "/admin/carrega-entrega", label: "Entrega Registra", icon: PackageCheck, badge: "pendingFulfillment" },
   { to: "/admin/ponto-oris", label: "Terminal de Ponto", icon: Clock },
   { to: "/admin/meu360", label: "Meu 360", icon: Gauge },
 ];
