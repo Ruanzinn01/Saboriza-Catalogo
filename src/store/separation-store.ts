@@ -175,7 +175,7 @@ interface SeparationState {
   confirmItem: (orderId: string, itemId: string) => Promise<void>;
   undoItem: (orderId: string, itemId: string) => Promise<void>;
   requestAdjustment: (orderId: string, itemId: string | null, message: string) => Promise<void>;
-  reportShortage: (orderId: string, itemId: string, separatedUnits: number, reason: string) => Promise<boolean>;
+  reportShortage: (orderId: string, itemId: string, separatedUnits: number, reason: string, commandId: string) => Promise<boolean>;
   resolveAdjustment: (adjustmentId: string) => Promise<void>;
 }
 
@@ -386,14 +386,32 @@ export const useSeparationStore = create<SeparationState>()((set, get) => ({
     if (get().currentOrder?.id === orderId) await get().fetchOrder(orderId);
   },
 
-  reportShortage: async (orderId, itemId, separatedUnits, reason) => {
-    const { error } = await rpcUntyped("separation_report_shortage", {
+  reportShortage: async (orderId, itemId, separatedUnits, reason, commandId) => {
+    // Versão nova: o servidor grava a falta e o pedido de ajuste juntos e ignora o reenvio do mesmo comando.
+    const current = await rpcUntyped("separation_report_shortage", {
+      p_order_item_id: itemId,
+      p_separated_units: separatedUnits,
+      p_reason: reason,
+      p_command_id: commandId,
+    });
+    if (!current.error) {
+      toast.success("Falta registrada e enviada ao gestor");
+      await get().fetchQueue();
+      if (get().currentOrder?.id === orderId) await get().fetchOrder(orderId);
+      return true;
+    }
+    if (!/p_command_id|PGRST202|schema cache/i.test(current.error.message)) {
+      toast.error(current.error.message || "Não foi possível registrar a falta");
+      return false;
+    }
+    // Banco ainda na versão anterior (sem comando idempotente): mantém o comportamento antigo.
+    const legacy = await rpcUntyped("separation_report_shortage", {
       p_order_item_id: itemId,
       p_separated_units: separatedUnits,
       p_reason: reason,
     });
-    if (error) {
-      toast.error(error.message || "Não foi possível registrar a falta");
+    if (legacy.error) {
+      toast.error(legacy.error.message || "Não foi possível registrar a falta");
       return false;
     }
     await get().requestAdjustment(orderId, itemId, `Falta na separação: ${separatedUnits} separadas. ${reason}`.trim());
