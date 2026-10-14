@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
 import { CatalogPage } from "@/pages/CatalogPage";
@@ -64,6 +64,11 @@ const DREPage = lazy(() => import("@/pages/admin/DREPage").then((m) => ({ defaul
 const FechamentoPage = lazy(() => import("@/pages/admin/FechamentoPage").then((m) => ({ default: m.FechamentoPage })));
 const SeparaConferePage = lazy(() => import("@/pages/admin/SeparaConferePage").then((m) => ({ default: m.SeparaConferePage })));
 const SeparaConfereInventoryItemPage = lazy(() => import("@/pages/admin/SeparaConfereInventoryItemPage").then((m) => ({ default: m.SeparaConfereInventoryItemPage })));
+const OperatorShell = lazy(() => import("@/pages/operator/OperatorShell").then((m) => ({ default: m.OperatorShell })));
+const OperatorLoginPage = lazy(() => import("@/pages/operator/OperatorLoginPage").then((m) => ({ default: m.OperatorLoginPage })));
+const OperatorOrdersPage = lazy(() => import("@/pages/operator/OperatorPages").then((m) => ({ default: m.OperatorOrdersPage })));
+const OperatorInventoryPage = lazy(() => import("@/pages/operator/OperatorPages").then((m) => ({ default: m.OperatorInventoryPage })));
+const OperatorHistoryPage = lazy(() => import("@/pages/operator/OperatorPages").then((m) => ({ default: m.OperatorHistoryPage })));
 const SeparaConfereOrderPage = lazy(() => import("@/pages/admin/SeparaConfereOrderPage").then((m) => ({ default: m.SeparaConfereOrderPage })));
 const CarregaEntregaPage = lazy(() => import("@/pages/admin/CarregaEntregaPage").then((m) => ({ default: m.CarregaEntregaPage })));
 const CarregamentoOrderPage = lazy(() => import("@/pages/admin/CarregamentoOrderPage").then((m) => ({ default: m.CarregamentoOrderPage })));
@@ -84,7 +89,7 @@ function RouteFallback() {
 
 export function App() {
   const { pathname } = useLocation();
-  const isCustomerFacing = !pathname.startsWith("/admin") && !pathname.startsWith("/platform");
+  const isCustomerFacing = !pathname.startsWith("/admin") && !pathname.startsWith("/platform") && !pathname.startsWith("/operacao");
 
   useEffect(() => {
     useAdminAuthStore.getState().init();
@@ -104,6 +109,16 @@ export function App() {
             <Route path="/:companySlug" element={<CatalogPage />} />
             <Route path="/:companySlug/checkout" element={<CheckoutPage />} />
             <Route path="/:companySlug/pedido-confirmado/:orderId" element={<OrderConfirmedPage />} />
+          </Route>
+
+          <Route path="/operacao/separa-confere/entrar" element={<OperatorLoginPage />} />
+          <Route path="/operacao/separa-confere" element={<OperatorShell />}>
+            <Route index element={<OperatorOrdersPage />} />
+            <Route path="pedido/:orderId" element={<SeparaConfereOrderPage />} />
+            <Route path="inventario" element={<OperatorInventoryPage />} />
+            <Route path="inventario/:itemId" element={<SeparaConfereInventoryItemPage />} />
+            <Route path="historico" element={<OperatorHistoryPage />} />
+            <Route path="*" element={<Navigate to="/operacao/separa-confere" replace />} />
           </Route>
 
           <Route path="/admin/login" element={<AdminLoginPage />} />

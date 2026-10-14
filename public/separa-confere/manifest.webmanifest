@@ -1,0 +1,16 @@
+{
+  "id": "/operacao/separa-confere/",
+  "name": "Separa Confere",
+  "short_name": "Separa Confere",
+  "description": "Acesso operacional do Separa Confere — Óris 360",
+  "lang": "pt-BR",
+  "start_url": "/operacao/separa-confere/",
+  "scope": "/operacao/separa-confere/",
+  "display": "standalone",
+  "background_color": "#f5f0df",
+  "theme_color": "#063d2b",
+  "icons": [
+    { "src": "/separa-confere/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/separa-confere/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

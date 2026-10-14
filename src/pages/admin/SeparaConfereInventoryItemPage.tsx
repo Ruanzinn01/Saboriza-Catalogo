@@ -6,10 +6,9 @@ import { PageHeader } from "@/components/admin/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { formatQuantity, sessionLabel } from "@/lib/inventory";
+import { inventoryListPath, useSeparaBase } from "@/lib/separa-base";
 import { useInventoryStore } from "@/store/inventory-store";
 import type { InventoryCountResult, InventoryCountSession } from "@/types/inventory";
-
-const LIST_PATH = "/admin/separa-confere?aba=inventario";
 
 type UnitMode = "BASE" | "PACK";
 
@@ -23,6 +22,7 @@ function parseQuantity(raw: string): number | null {
 export function SeparaConfereInventoryItemPage() {
   const { itemId } = useParams();
   const navigate = useNavigate();
+  const LIST_PATH = inventoryListPath(useSeparaBase());
   const beginCount = useInventoryStore((state) => state.beginCount);
   const releaseItem = useInventoryStore((state) => state.releaseItem);
   const registerCount = useInventoryStore((state) => state.registerCount);

@@ -37,6 +37,7 @@ export interface InventoryItem {
   presentation: string;
   kindLabel: string;
   sku: string;
+  barcode: string;
   imageUrl: string;
   baseUnit: string;
   packLabel: string | null;

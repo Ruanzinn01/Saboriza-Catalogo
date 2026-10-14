@@ -55,6 +55,7 @@ interface ItemRow {
   base_unit: string;
   pack_label: string | null;
   state: InventoryState;
+  barcode: string | null;
 }
 
 interface BeginRow {
@@ -127,6 +128,7 @@ function toItem(row: ItemRow): InventoryItem {
     presentation: row.presentation,
     kindLabel: row.kind_label,
     sku: row.sku ?? "",
+    barcode: row.barcode ?? "",
     imageUrl: row.image_url ?? "",
     baseUnit: row.base_unit,
     packLabel: row.pack_label,

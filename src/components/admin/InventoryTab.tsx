@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ImageOff, Search } from "lucide-react";
+import { ImageOff, ScanLine, Search } from "lucide-react";
+import { BarcodeScannerModal } from "@/components/admin/BarcodeScannerModal";
+import { inventoryItemPath, isOperatorBase, useSeparaBase } from "@/lib/separa-base";
 import { AdminState } from "@/components/admin/AdminState";
 import { InventoryStartSheet } from "@/components/admin/InventoryStartSheet";
 import { Button } from "@/components/ui/Button";
@@ -11,6 +13,7 @@ import {
   GROUP_TITLES,
   STATE_META,
   formatDateTime,
+  lookupItemByCode,
   matchesFilter,
   matchesQuery,
   percent,
@@ -110,6 +113,8 @@ function SessionHeader({ session }: { session: InventorySession }) {
 
 export function InventoryTab() {
   const navigate = useNavigate();
+  const base = useSeparaBase();
+  const operatorView = isOperatorBase(base);
   const sessions = useInventoryStore((state) => state.sessions);
   const sessionsStatus = useInventoryStore((state) => state.sessionsStatus);
   const selectedSessionId = useInventoryStore((state) => state.selectedSessionId);
@@ -133,6 +138,8 @@ export function InventoryTab() {
 
   const [startOpen, setStartOpen] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [choices, setChoices] = useState<InventoryItem[] | null>(null);
   const scrollRestored = useRef(false);
 
   useEffect(() => {
@@ -168,7 +175,33 @@ export function InventoryTab() {
 
   function handleOpen(item: InventoryItem) {
     saveScroll(window.scrollY);
-    navigate(`/admin/separa-confere/inventario/${item.id}`);
+    navigate(inventoryItemPath(base, item.id));
+  }
+
+  function openFromCode(rawCode: string): boolean {
+    const result = lookupItemByCode(items, rawCode);
+    if (result.kind === "empty") return false;
+    if (result.kind === "none") {
+      toast.error("Código não encontrado neste inventário. Use a busca manual.");
+      return false;
+    }
+    if (result.kind === "multiple") {
+      setChoices(result.items);
+      toast.error("Este código pertence a mais de um item. Escolha o correto.");
+      return true;
+    }
+    const target = result.item;
+    if (target.state !== "PENDING" && target.state !== "RECOUNT") {
+      toast.error("Este item já foi contado.");
+      return true;
+    }
+    handleOpen(target);
+    return true;
+  }
+
+  function handleScan(code: string) {
+    setScannerOpen(false);
+    openFromCode(code);
   }
 
   async function handleRecount(item: InventoryItem) {
@@ -198,7 +231,10 @@ export function InventoryTab() {
   if (!session) {
     return (
       <div className="flex flex-col gap-4">
-        <AdminState variant="empty" message="Nenhum inventário disponível." />
+        <AdminState
+          variant="empty"
+          message={canManage || !operatorView ? "Nenhum inventário disponível." : "Nenhum inventário disponível para você agora. Aguarde a liberação do gestor."}
+        />
         {upcoming.map((candidate) => (
           <div key={candidate.id} className="rounded-2xl border border-forest-950/10 bg-white p-4 text-sm">
             <p className="font-bold text-forest-950">Programado: {sessionLabel(candidate)}</p>
@@ -287,10 +323,18 @@ export function InventoryTab() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && workable && openFromCode(query)) setQuery("");
+                }}
                 placeholder="Buscar por nome, apresentação ou SKU"
                 className="min-h-11 w-full rounded-2xl border border-ink-900/15 bg-white pl-10 pr-4 text-sm text-ink-900 outline-none focus:border-forest-700"
               />
             </label>
+            {workable && (
+              <Button variant="outline" className="w-full" onClick={() => setScannerOpen(true)}>
+                <ScanLine size={16} /> Ler código
+              </Button>
+            )}
             <div className="flex gap-2 overflow-x-auto pb-1">
               {FILTER_OPTIONS.map((option) => (
                 <button
@@ -358,6 +402,28 @@ export function InventoryTab() {
           {session.status !== "SCHEDULED" && <InventoryResults sessionId={session.id} refreshKey={session.counted + session.recount} />}
         </div>
       )}
+      {choices && (
+        <div role="alert" className="flex flex-col gap-2 rounded-3xl border border-amber-300 bg-amber-50 p-4">
+          <p className="text-sm font-bold text-amber-900">Código ligado a mais de um item. Escolha pelo cadastro:</p>
+          {choices.map((choice) => (
+            <button
+              key={choice.id}
+              type="button"
+              onClick={() => {
+                setChoices(null);
+                handleOpen(choice);
+              }}
+              className="min-h-11 rounded-xl border border-amber-300 bg-white px-3 text-left text-sm font-bold text-ink-900"
+            >
+              {choice.name} <span className="font-mono text-xs text-ink-muted">{choice.sku}</span>
+            </button>
+          ))}
+          <Button variant="outline" size="sm" onClick={() => setChoices(null)}>
+            Cancelar
+          </Button>
+        </div>
+      )}
+      <BarcodeScannerModal open={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleScan} />
       {startSheet}
     </div>
   );

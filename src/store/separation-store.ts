@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { rpcUntyped } from "@/lib/supabase-rpc";
 import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { useAdminAuthStore } from "@/store/admin-auth-store";
 import type { AdjustmentRequest, SeparationItem, SeparationOrder } from "@/types/separation";
@@ -174,6 +175,7 @@ interface SeparationState {
   confirmItem: (orderId: string, itemId: string) => Promise<void>;
   undoItem: (orderId: string, itemId: string) => Promise<void>;
   requestAdjustment: (orderId: string, itemId: string | null, message: string) => Promise<void>;
+  reportShortage: (orderId: string, itemId: string, separatedUnits: number, reason: string) => Promise<boolean>;
   resolveAdjustment: (adjustmentId: string) => Promise<void>;
 }
 
@@ -382,6 +384,21 @@ export const useSeparationStore = create<SeparationState>()((set, get) => ({
     toast.success("Ajuste solicitado");
     await get().fetchQueue();
     if (get().currentOrder?.id === orderId) await get().fetchOrder(orderId);
+  },
+
+  reportShortage: async (orderId, itemId, separatedUnits, reason) => {
+    const { error } = await rpcUntyped("separation_report_shortage", {
+      p_order_item_id: itemId,
+      p_separated_units: separatedUnits,
+      p_reason: reason,
+    });
+    if (error) {
+      toast.error(error.message || "Não foi possível registrar a falta");
+      return false;
+    }
+    await get().requestAdjustment(orderId, itemId, `Falta na separação: ${separatedUnits} separadas. ${reason}`.trim());
+    toast.success("Falta registrada e enviada ao gestor");
+    return true;
   },
 
   resolveAdjustment: async (adjustmentId) => {

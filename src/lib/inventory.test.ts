@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchesFilter, matchesQuery, percent } from "@/lib/inventory";
+import { lookupItemByCode, matchesFilter, matchesQuery, percent } from "@/lib/inventory";
 import type { InventoryItem, InventoryState } from "@/types/inventory";
 
 function item(state: InventoryState, overrides: Partial<InventoryItem> = {}): InventoryItem {
@@ -12,6 +12,7 @@ function item(state: InventoryState, overrides: Partial<InventoryItem> = {}): In
     presentation: "Pote 100g",
     kindLabel: "Produto",
     sku: "TMP-001",
+    barcode: "7891234567895",
     imageUrl: "",
     baseUnit: "unidade",
     packLabel: null,
@@ -55,5 +56,37 @@ describe("percent", () => {
 
   it("sem itens previstos não divide por zero", () => {
     expect(percent(0, 0)).toBe(0);
+  });
+});
+
+describe("lookupItemByCode", () => {
+  const items = [
+    item("PENDING", { id: "a", barcode: "7891234567895", sku: "TMP-001" }),
+    item("PENDING", { id: "b", barcode: "", sku: "MP-002" }),
+    item("COUNTED", { id: "c", barcode: "0012345678905", sku: "TMP-003" }),
+  ];
+
+  it("ignora leitura vazia", () => {
+    expect(lookupItemByCode(items, "   ")).toEqual({ kind: "empty" });
+  });
+
+  it("localiza item único por código de barras ou SKU", () => {
+    expect(lookupItemByCode(items, "7891234567895")).toMatchObject({ kind: "single", item: { id: "a" } });
+    expect(lookupItemByCode(items, "mp-002")).toMatchObject({ kind: "single", item: { id: "b" } });
+  });
+
+  it("trata zeros à esquerda (EAN/UPC) como o mesmo código", () => {
+    expect(lookupItemByCode(items, "12345678905")).toMatchObject({ kind: "single", item: { id: "c" } });
+  });
+
+  it("código fora da sessão não abre nenhum item", () => {
+    expect(lookupItemByCode(items, "999")).toEqual({ kind: "none" });
+  });
+
+  it("código ligado a mais de um item exige escolha, nunca sorteia", () => {
+    const duplicated = [...items, item("PENDING", { id: "d", barcode: "7891234567895", sku: "TMP-004" })];
+    const result = lookupItemByCode(duplicated, "7891234567895");
+    expect(result.kind).toBe("multiple");
+    if (result.kind === "multiple") expect(result.items.map((row) => row.id)).toEqual(["a", "d"]);
   });
 });
