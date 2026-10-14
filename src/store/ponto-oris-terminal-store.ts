@@ -25,6 +25,8 @@ interface PontoOrisTerminalState {
   pin: string;
   punchType: PunchType | null;
   photoBase64: string | null;
+  /** Chave da intenção atual: fica estável entre tentativas até haver sucesso ou a intenção mudar. */
+  intentKey: string | null;
 
   errorMessage: string | null;
   isBusy: boolean;
@@ -67,6 +69,7 @@ export const usePontoOrisTerminalStore = create<PontoOrisTerminalState>((set, ge
   pin: "",
   punchType: null,
   photoBase64: null,
+  intentKey: null,
 
   errorMessage: null,
   isBusy: false,
@@ -103,7 +106,7 @@ export const usePontoOrisTerminalStore = create<PontoOrisTerminalState>((set, ge
       device_credential?: string;
       error?: string;
     }>("ponto-oris-terminal", {
-      body: { action: "register-device", label },
+      body: { action: "register-device", label, company_id: company?.id },
     });
 
     set({ isRegisteringDevice: false });
@@ -169,11 +172,11 @@ export const usePontoOrisTerminalStore = create<PontoOrisTerminalState>((set, ge
     set({ step: "tipo" });
   },
 
-  selectPunchType: (type) => set({ punchType: type, step: "foto" }),
+  selectPunchType: (type) => set({ punchType: type, step: "foto", intentKey: null }),
 
-  setPhoto: (base64) => set({ photoBase64: base64 }),
+  setPhoto: (base64) => set({ photoBase64: base64, intentKey: null }),
 
-  retakePhoto: () => set({ photoBase64: null }),
+  retakePhoto: () => set({ photoBase64: null, intentKey: null }),
 
   confirmPunch: async () => {
     const { device, employeeId, pin, punchType, photoBase64 } = get();
@@ -181,7 +184,8 @@ export const usePontoOrisTerminalStore = create<PontoOrisTerminalState>((set, ge
 
     set({ step: "enviando", errorMessage: null });
 
-    const idempotencyKey = generateIdempotencyKey();
+    const idempotencyKey = get().intentKey ?? generateIdempotencyKey();
+    set({ intentKey: idempotencyKey });
 
     const { data, error } = await supabase.functions.invoke<{
       punch_id?: string;
@@ -209,7 +213,7 @@ export const usePontoOrisTerminalStore = create<PontoOrisTerminalState>((set, ge
       return;
     }
 
-    set({ step: "sucesso", lastConfirmedType: data.type ?? punchType });
+    set({ step: "sucesso", lastConfirmedType: data.type ?? punchType, intentKey: null });
   },
 
   dismissError: () => set({ errorMessage: null }),
@@ -223,6 +227,7 @@ export const usePontoOrisTerminalStore = create<PontoOrisTerminalState>((set, ge
       pin: "",
       punchType: null,
       photoBase64: null,
+      intentKey: null,
       errorMessage: null,
       isBusy: false,
     }),

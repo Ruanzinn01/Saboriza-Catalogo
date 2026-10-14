@@ -149,8 +149,17 @@ async function handleAction(body: Record<string, unknown>) {
   if (employee === "RATE_LIMITED") return jsonResponse({ error: "muitas tentativas de PIN erradas — aguarde alguns minutos" }, 429);
   if (!employee || !employee.can_operate_production) return jsonResponse({ error: "PIN invalido ou colaborador sem producao" }, 401);
 
-  const { data: exec } = await serviceClient.from("floor_executions").select("id, company_id").eq("id", floorExecutionId).maybeSingle();
+  const { data: exec } = await serviceClient
+    .from("floor_executions")
+    .select("id, company_id, assumed_by_employee_id")
+    .eq("id", floorExecutionId)
+    .maybeSingle();
   if (!exec || exec.company_id !== device.company_id) return jsonResponse({ error: "execucao nao encontrada" }, 404);
+
+  // Avançar e concluir só pelo responsável que assumiu: a RPC via service role não conhece o ator, então a regra fica aqui.
+  if ((op === "avancar" || op === "concluir") && exec.assumed_by_employee_id !== employee.id) {
+    return jsonResponse({ error: "somente quem assumiu esta execucao pode avancar ou concluir" }, 403);
+  }
 
   if (op === "assumir") {
     const { data, error } = await serviceClient.rpc("floor_assume_execution", {

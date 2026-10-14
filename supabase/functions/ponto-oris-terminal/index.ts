@@ -70,21 +70,30 @@ async function handleRegisterDevice(req: Request, body: Record<string, unknown>)
     global: { headers: { Authorization: authHeader } },
   });
 
-  // company_id nunca vem do payload — resolvido a partir da membership ativa de quem chama.
   const { data: userData } = await callerClient.auth.getUser();
   if (!userData?.user) return jsonResponse({ error: "não autenticado" }, 401);
 
-  const { data: membership } = await serviceClient
+  // A empresa escolhida na tela é só intenção: o servidor confirma que o usuário tem membership ativa nela.
+  // Sem empresa informada, só segue se houver exatamente uma — nunca "a primeira" quando há mais de uma.
+  const requestedCompanyId = (body.company_id as string | undefined) ?? null;
+  const { data: memberships } = await serviceClient
     .from("memberships")
     .select("company_id")
     .eq("user_id", userData.user.id)
-    .eq("status", "ACTIVE")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .eq("status", "ACTIVE");
 
-  if (!membership) return jsonResponse({ error: "sem empresa ativa" }, 403);
-  const companyId = membership.company_id;
+  const activeCompanyIds = new Set((memberships ?? []).map((m) => m.company_id as string));
+  if (activeCompanyIds.size === 0) return jsonResponse({ error: "sem empresa ativa" }, 403);
+
+  let companyId: string;
+  if (requestedCompanyId) {
+    if (!activeCompanyIds.has(requestedCompanyId)) return jsonResponse({ error: "sem acesso à empresa informada" }, 403);
+    companyId = requestedCompanyId;
+  } else if (activeCompanyIds.size === 1) {
+    companyId = [...activeCompanyIds][0];
+  } else {
+    return jsonResponse({ error: "informe a empresa do dispositivo" }, 400);
+  }
 
   const { data: allowed } = await callerClient.rpc("oris360_has_permission", {
     p_company_id: companyId,
@@ -205,28 +214,20 @@ async function handlePunch(body: Record<string, unknown>) {
   const device = await resolveDevice(deviceId, deviceCredential);
   if (!device) return jsonResponse({ error: "dispositivo inválido ou revogado" }, 401);
 
-  // Retry com a mesma chave: devolve a batida já confirmada, nunca duplica.
-  const { data: existing } = await serviceClient
-    .from("time_punches")
-    .select("id, server_time, type")
-    .eq("idempotency_key", idempotencyKey)
-    .maybeSingle();
-
-  if (existing) {
-    return jsonResponse({ punch_id: existing.id, server_time: existing.server_time, type: existing.type });
-  }
-
   const { data: allowedAttempt } = await serviceClient.rpc("check_pin_rate_limit", { p_device_id: device.id });
   if (allowedAttempt === false) {
     return jsonResponse({ error: "muitas tentativas de PIN erradas — aguarde alguns minutos" }, 429);
   }
 
-  const { data: employee } = await serviceClient
+  // Elegibilidade revalidada no ato: colaborador ativo, da empresa (e da unidade, quando o dispositivo tem) do aparelho.
+  let employeeQuery = serviceClient
     .from("employees")
     .select("id, company_id, timesheet_pin_hash")
     .eq("id", employeeId)
     .eq("company_id", device.company_id)
-    .maybeSingle();
+    .eq("status", "ATIVO");
+  if (device.unit_id) employeeQuery = employeeQuery.eq("unit_id", device.unit_id);
+  const { data: employee } = await employeeQuery.maybeSingle();
 
   if (!employee || !employee.timesheet_pin_hash) {
     return jsonResponse({ error: "colaborador inválido" }, 404);
@@ -239,12 +240,33 @@ async function handlePunch(body: Record<string, unknown>) {
   }
   await serviceClient.rpc("record_pin_attempt", { p_device_id: device.id, p_employee_id: employee.id, p_success: true });
 
+  // Retry com a mesma chave: só devolve a batida se ela for desta mesma intenção (colaborador, dispositivo,
+  // empresa e tipo). Chave igual com outro escopo é conflito, nunca o fato de outra pessoa.
+  const { data: existing } = await serviceClient
+    .from("time_punches")
+    .select("id, server_time, type, employee_id, device_id, company_id")
+    .eq("idempotency_key", idempotencyKey)
+    .maybeSingle();
+
+  if (existing) {
+    const sameIntent =
+      existing.employee_id === employee.id &&
+      existing.device_id === device.id &&
+      existing.company_id === device.company_id &&
+      existing.type === type;
+    if (!sameIntent) return jsonResponse({ error: "IDEMPOTENCY_CONFLICT: chave já usada por outra batida" }, 409);
+    return jsonResponse({ punch_id: existing.id, server_time: existing.server_time, type: existing.type });
+  }
+
   const photoPath = `${employee.company_id}/ponto-oris/${employee.id}/${idempotencyKey}.jpg`;
   const { error: uploadError } = await serviceClient.storage
     .from("oris360-private")
     .upload(photoPath, base64ToBytes(photoBase64), { contentType: "image/jpeg" });
 
-  if (uploadError) {
+  // Foto já enviada numa tentativa anterior desta mesma intenção (caminho = empresa/colaborador/chave) é reaproveitada,
+  // nunca sobrescrita. Qualquer outra falha de upload continua sendo erro.
+  const photoAlreadyUploaded = !!uploadError && /already exists|duplicate/i.test(uploadError.message ?? "");
+  if (uploadError && !photoAlreadyUploaded) {
     return jsonResponse({ error: "falha ao salvar a foto — tente novamente" }, 502);
   }
 
@@ -266,11 +288,16 @@ async function handlePunch(body: Record<string, unknown>) {
     // Corrida rara: outra requisição com a mesma chave venceu primeiro.
     const { data: race } = await serviceClient
       .from("time_punches")
-      .select("id, server_time, type")
+      .select("id, server_time, type, employee_id, device_id")
       .eq("idempotency_key", idempotencyKey)
       .maybeSingle();
 
-    if (race) return jsonResponse({ punch_id: race.id, server_time: race.server_time, type: race.type });
+    if (race) {
+      if (race.employee_id !== employee.id || race.device_id !== device.id) {
+        return jsonResponse({ error: "IDEMPOTENCY_CONFLICT: chave já usada por outra batida" }, 409);
+      }
+      return jsonResponse({ punch_id: race.id, server_time: race.server_time, type: race.type });
+    }
     return jsonResponse({ error: insertError.message }, 400);
   }
 

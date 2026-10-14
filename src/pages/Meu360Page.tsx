@@ -124,6 +124,7 @@ function Sessao() {
   const concluir = useMeu360Store((s) => s.concluir);
   const logout = useMeu360Store((s) => s.logout);
   const busy = useMeu360Store((s) => s.busy);
+  const error = useMeu360Store((s) => s.error);
   const [qty, setQty] = useState<Record<string, number>>({});
 
   const productById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
@@ -139,6 +140,7 @@ function Sessao() {
           Sair
         </button>
       </div>
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
       {mine.length > 0 && (
         <div>
