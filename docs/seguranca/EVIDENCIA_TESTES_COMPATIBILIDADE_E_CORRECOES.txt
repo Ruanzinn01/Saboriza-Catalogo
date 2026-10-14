@@ -1,0 +1,47 @@
+# Reconstruindo o banco a partir de supabase/migrations
+[OK]    185 migrações reaplicadas sem falha
+
+# A. COMPATIBILIDADE: app e funções ANTIGOS contra o banco NOVO (schema atual de produção reconstruído)
+[OK]    generateObligation antigo (insert direto com vencimento dia 5) continua funcionando
+[OK]       a origem do vencimento é preenchida pelo gatilho e a obrigação aponta para o período de contratação  → origem=competence_closing
+[OK]       repetir a geração devolve 23505 (o app antigo já traduz para 'Já existe obrigação')  → 23505
+[OK]       obrigação SEM vencimento é recusada (o app antigo sempre enviava o dia 5, então não é afetado)  → VENCIMENTO_OBRIGATORIO: informe a data de vencimento da folha desta competência
+[OK]    createAdvance antigo (insert de vale SOLICITADO) continua funcionando
+[OK]    payAdvance antigo (update de status direto) continua funcionando
+[OK]       duplo clique no app antigo não gera dois eventos de 'vale pago'  → 1 evento(s)
+[OK]    reverseAdvance antigo (insert do estorno) continua funcionando
+[OK]       estorno duplicado agora é barrado (23505) em vez de gravar duas reversões
+[ACHADO] gravar batida como service_role (papel da função de borda) FALHA hoje: permission denied for schema private
+[OK]       confirmado: o defeito é pré-existente — sync_occurrence_after_punch (anterior às minhas migrações) já exige USAGE em private
+[OK]       para colaborador sem ponto habilitado o banco recusa com mensagem clara (a função antiga devolve 400 com o texto)  → PONTO_NAO_HABILITADO: o colaborador não está habilitado para registrar jornada
+[OK]       para colaborador desligado a gravação também é recusada  → PONTO_NAO_HABILITADO: o colaborador não está habilitado para registrar jornada
+[OK]    apuração antiga (oris360_apurar_mes) mantém as 7 colunas esperadas pelo app
+[OK]       oris360_apurar_dia_detalhado devolve minutos e batidas
+[OK]       saldo do banco de horas responde
+[OK]       fechamento da competência (função antiga) continua respondendo
+[OK]    ficha do colaborador antiga (UPDATE de todas as colunas, inclusive remuneração) continua funcionando ANTES da fase de segurança
+[OK]    Financeiro Geral (RPC antiga) responde com a folha somada
+[OK]    MUDANÇA DE COMPORTAMENTO (documentada): insert direto em time_adjustments agora é negado; o app antigo nunca o usava  → permission denied for table time_adjustments
+[OK]    leitura de time_period_states continua permitida
+
+# B1. EVENTOS SEM PERDA: duas alterações legítimas do mesmo campo na mesma transação
+[OK]    ANTES da correção: 4 mudanças de vencimento e 2 de valor na mesma transação perdem eventos em silêncio  → vencimento 3/4, valor 1/2
+[OK]    DEPOIS da correção: a função de borda grava a batida do colaborador elegível
+[OK]       e continua recusando o colaborador sem ponto habilitado/vínculo  → PONTO_NAO_HABILITADO: o colaborador não está habilitado para
+[OK]    DEPOIS da correção: nenhum evento se perde (4 de vencimento e 2 de valor)  → vencimento 4/4, valor 2/2
+[OK]       todas as chaves de idempotência dos eventos de alteração são distintas  → 6/6
+[OK]       eventos de fato único (vale criado/pago/estornado) continuam deduplicados por id  → [{"event_type":"salary_advance.created","n":1},{"event_type":"salary_advance.paid","n":1},{"event_type":"salary_advance.reversed","n":1}]
+
+# B2. COMPETÊNCIA AMBÍGUA: duas contratações no mesmo mês
+[OK]    pré-condição: o colaborador tem 2 períodos que tocam setembro/2026  → [{"sequence":1,"s":"2026-01-02","e":"2026-09-10"},{"sequence":2,"s":"2026-09-20","e":null}]
+[OK]    comando de geração RECUSA a competência ambígua (nenhuma obrigação formada)  → COMPETENCIA_AMBIGUA: o colaborador teve mais de um período d
+[OK]    inserção direta (caminho de create_expense_launch) também é recusada
+[OK]       nenhuma obrigação ambígua foi criada
+[OK]    competência só do 1º período (agosto) segue normal e atribuída ao 1º vínculo
+[OK]    competência só do 2º período (outubro) segue normal e atribuída ao 2º vínculo
+[OK]    compatibilidade: o insert do app antigo em mês sem ambiguidade continua funcionando
+
+# B3. REVERSÃO das correções
+[OK]    reverter as correções devolve os corpos de função IDÊNTICOS (hash) e remove o USAGE concedido
+
+Resultado: TODOS OS TESTES PASSARAM
