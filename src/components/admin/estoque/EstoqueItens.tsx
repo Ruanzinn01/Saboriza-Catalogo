@@ -10,6 +10,7 @@ import { formatCurrency } from "@/lib/currency";
 import { formatDateTime, normalizeText } from "@/lib/inventory";
 import { formatNumber } from "@/lib/number";
 import { supabase } from "@/lib/supabase";
+import { useEstoqueStore } from "@/store/estoque-store";
 import { usePurchaseStore, type PurchaseCatalogItem } from "@/store/purchase-store";
 import { useSuppliersStore } from "@/store/suppliers-store";
 
@@ -22,6 +23,7 @@ export function EstoqueItens() {
   const fetchCatalog = usePurchaseStore((s) => s.fetchCatalog);
   const saveSupplierCode = usePurchaseStore((s) => s.saveSupplierCode);
   const setLotTracking = usePurchaseStore((s) => s.setLotTracking);
+  const registerOpeningBalance = useEstoqueStore((s) => s.registerOpeningBalance);
   const suppliers = useSuppliersStore((s) => s.suppliers);
   const fetchSuppliers = useSuppliersStore((s) => s.fetchSuppliers);
   const [movementCount, setMovementCount] = useState<number | null>(null);
@@ -32,6 +34,11 @@ export function EstoqueItens() {
   const [supplierId, setSupplierId] = useState("");
   const [code, setCode] = useState("");
   const [saving, setSaving] = useState(false);
+  const [opening, setOpening] = useState<PurchaseCatalogItem | null>(null);
+  const [openingQty, setOpeningQty] = useState("");
+  const [openingCost, setOpeningCost] = useState("");
+  const [openingWhy, setOpeningWhy] = useState("");
+  const [openingError, setOpeningError] = useState<string | null>(null);
 
   useEffect(() => {
     void fetchCatalog(null);
@@ -71,6 +78,27 @@ export function EstoqueItens() {
     setEditing(null);
     setCode("");
     setSupplierId("");
+  }
+
+  async function handleOpening() {
+    if (!opening || saving) return;
+    setSaving(true);
+    setOpeningError(null);
+    const message = await registerOpeningBalance({
+      itemType: opening.itemType,
+      itemId: opening.itemId,
+      quantity: Number(openingQty || 0),
+      unitCost: openingCost.trim() === "" ? null : Number(openingCost),
+      justification: openingWhy.trim(),
+    });
+    setSaving(false);
+    if (message) {
+      setOpeningError(message);
+      return;
+    }
+    toast.success("Saldo inicial registrado com origem e justificativa.");
+    setOpening(null);
+    void fetchCatalog(null);
   }
 
   if (status === "loading" || status === "idle") return <AdminState variant="loading" message="Carregando itens..." />;
@@ -139,6 +167,9 @@ export function EstoqueItens() {
                 <Button size="sm" variant="outline" className="min-h-11" onClick={() => { setEditing(item); setSupplierId(""); setCode(""); }}>
                   Código do fornecedor
                 </Button>
+                <Button size="sm" variant="outline" className="min-h-11" onClick={() => { setOpening(item); setOpeningQty(""); setOpeningCost(""); setOpeningWhy(""); setOpeningError(null); }}>
+                  Saldo inicial
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
@@ -161,6 +192,41 @@ export function EstoqueItens() {
         O valor do estoque usa custo médio ponderado. A margem de revenda usa o custo líquido da compra válida mais recente. São indicadores diferentes.
         {lastPurchase ? ` Última atualização de custo em ${formatDateTime(`${lastPurchase}T00:00:00`)}.` : ""}
       </p>
+
+      <Sheet
+        open={opening !== null}
+        onClose={() => setOpening(null)}
+        title="Saldo inicial"
+        footer={
+          <div className="flex flex-col gap-2">
+            {openingError && <p role="alert" className="text-sm font-semibold text-red-600">{openingError}</p>}
+            <Button className="w-full" disabled={saving || openingWhy.trim() === ""} onClick={() => void handleOpening()}>
+              {saving ? "Registrando..." : "Registrar saldo inicial"}
+            </Button>
+          </div>
+        }
+      >
+        {opening && (
+          <div className="flex flex-col gap-3">
+            <p className="font-bold text-ink-900">{opening.name}</p>
+            <p className="text-xs text-ink-muted">
+              O saldo atual não é editável no cadastro. O saldo inicial gera movimento com origem e justificativa; o custo informado inicia a avaliação média e a referência de margem enquanto não houver compra. Custo desconhecido fica em branco, nunca zero.
+            </p>
+            <label className="flex flex-col gap-1 text-xs font-bold uppercase tracking-wide text-ink-muted">
+              Quantidade ({opening.unit})
+              <input type="number" min={0} step="any" value={openingQty} onChange={(e) => setOpeningQty(e.target.value)} className="min-h-11 rounded-xl border border-ink-900/15 bg-white px-4 text-sm normal-case tracking-normal text-ink-900 outline-none focus:border-forest-700" />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-bold uppercase tracking-wide text-ink-muted">
+              Custo unitário (R$) — opcional
+              <input type="number" min={0} step="0.01" value={openingCost} onChange={(e) => setOpeningCost(e.target.value)} className="min-h-11 rounded-xl border border-ink-900/15 bg-white px-4 text-sm normal-case tracking-normal text-ink-900 outline-none focus:border-forest-700" />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-bold uppercase tracking-wide text-ink-muted">
+              Origem / justificativa (obrigatória)
+              <textarea value={openingWhy} onChange={(e) => setOpeningWhy(e.target.value)} rows={3} className="rounded-xl border border-ink-900/15 bg-white px-4 py-3 text-sm normal-case tracking-normal text-ink-900 outline-none focus:border-forest-700" />
+            </label>
+          </div>
+        )}
+      </Sheet>
 
       <Sheet
         open={editing !== null}

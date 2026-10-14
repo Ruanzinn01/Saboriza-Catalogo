@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminState } from "@/components/admin/AdminState";
+import { EstoqueHistorico } from "@/components/admin/estoque/EstoqueHistorico";
 import { Card, Donut, ItemDetailDialog, KpiButton, PositionTable, Section } from "@/components/admin/estoque/EstoquePrimitives";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -218,12 +219,7 @@ export function EstoqueGestaoGeral({ goTo }: EstoqueGestaoGeralProps) {
         </Card>
       </div>
 
-      <Card title="Como o estoque evoluiu" note="O histórico mensal (valor do estoque e entradas × saídas) vem das fotografias de fechamento e aparece a partir do primeiro fechamento, na aba Relatórios mensais.">
-        <div className="flex items-center justify-between gap-3 p-4">
-          <p className="text-sm text-ink-700">A posição atual acima é sempre a de hoje; os gráficos históricos nunca recalculam períodos fechados.</p>
-          <Button variant="outline" onClick={() => goTo("relatorios")}>Ir para Relatórios</Button>
-        </div>
-      </Card>
+      <EstoqueHistorico goTo={goTo} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card title="Central de Atenção do Estoque" note="Cada alerta abre a origem e a ação pertinente.">

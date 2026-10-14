@@ -2,7 +2,9 @@ import { create } from "zustand";
 import { fromUntyped, rpcUntyped } from "@/lib/supabase-rpc";
 import type {
   AdjustmentStatus,
+  ClosingRow,
   DivergenceRow,
+  IntegrationStatusRow,
   LedgerMovementType,
   LedgerRow,
   LossKind,
@@ -69,6 +71,25 @@ interface LossDbRow {
   unit_cost: number | null;
   total_cost: number | null;
   source: LossRow["source"];
+}
+
+interface ClosingDbRow {
+  id: string;
+  competence: string;
+  partial: boolean;
+  items_count: number;
+  total_value: number;
+  entries_value: number;
+  exits_value: number;
+  closed_at: string;
+  snapshot: Record<string, unknown>;
+}
+
+interface IntegrationDbRow {
+  origin_key: string;
+  last_event_at: string | null;
+  events_30d: number;
+  pending: number;
 }
 
 interface PolicyDbRow {
@@ -198,7 +219,13 @@ interface EstoqueState {
   policies: StockPolicyRow[];
   returns: StockReturnRow[];
   losses: LossRow[];
+  closings: ClosingRow[];
+  integrations: IntegrationStatusRow[];
 
+  fetchClosings: () => Promise<void>;
+  closePeriod: (competence: string) => Promise<string | null>;
+  fetchIntegrations: () => Promise<void>;
+  registerOpeningBalance: (input: { itemType: StockItemType; itemId: string; quantity: number; unitCost: number | null; justification: string }) => Promise<string | null>;
   fetchReturns: () => Promise<void>;
   fetchLosses: () => Promise<void>;
   confirmReturn: (input: { returnId: string; goodUnits: number; notes: string; received: boolean }) => Promise<string | null>;
@@ -223,6 +250,57 @@ export const useEstoqueStore = create<EstoqueState>()((set, get) => ({
   policies: [],
   returns: [],
   losses: [],
+  closings: [],
+  integrations: [],
+
+  fetchClosings: async () => {
+    const { data } = await fromUntyped("stock_period_closings").select("*").order("competence", { ascending: false }).limit(36);
+    set({
+      closings: ((data ?? []) as ClosingDbRow[]).map((row) => ({
+        id: row.id,
+        competence: row.competence,
+        partial: row.partial,
+        itemsCount: Number(row.items_count),
+        totalValue: Number(row.total_value),
+        entriesValue: Number(row.entries_value),
+        exitsValue: Number(row.exits_value),
+        closedAt: row.closed_at,
+        snapshot: row.snapshot,
+      })),
+    });
+  },
+
+  closePeriod: async (competence) => {
+    const { error } = await rpcUntyped("close_stock_period", { p_competence: competence });
+    if (error) return error.message;
+    await get().fetchClosings();
+    return null;
+  },
+
+  fetchIntegrations: async () => {
+    const { data } = await rpcUntyped("stock_integration_status");
+    set({
+      integrations: ((data ?? []) as IntegrationDbRow[]).map((row) => ({
+        originKey: row.origin_key,
+        lastEventAt: row.last_event_at,
+        events30d: Number(row.events_30d),
+        pending: Number(row.pending),
+      })),
+    });
+  },
+
+  registerOpeningBalance: async ({ itemType, itemId, quantity, unitCost, justification }) => {
+    const { error } = await rpcUntyped("register_opening_balance", {
+      p_item_type: itemType,
+      p_item_id: itemId,
+      p_quantity: quantity,
+      p_unit_cost: unitCost,
+      p_justification: justification,
+    });
+    if (error) return error.message;
+    await get().fetchPosition();
+    return null;
+  },
 
   fetchReturns: async () => {
     const [{ data }, productsResult] = await Promise.all([

@@ -57,6 +57,7 @@ export type LedgerMovementType =
   | "PURCHASE_ENTRY"
   | "PURCHASE_RETURN"
   | "CUSTOMER_RETURN"
+  | "INITIAL_BALANCE"
   | "LOSS"
   | "SALE_OUT"
   | "PRODUCTION_IN"
@@ -108,6 +109,63 @@ export interface LossRow {
   unitCost: number | null;
   totalCost: number | null;
   source: "MANUAL" | "RETURN";
+}
+
+export interface ReportItem {
+  item_type: StockItemType;
+  sku: string;
+  name: string;
+  category: string;
+  base_unit: string;
+  physical: number;
+  reserved: number;
+  available: number;
+  incoming: number;
+  in_production: number;
+  unit_cost: number | null;
+  stock_value: number | null;
+  coverage_days: number | null;
+  net_need: number | null;
+  health: StockHealth;
+}
+
+export interface ReportPolicy {
+  min_days: number;
+  ideal_days: number;
+  max_days: number;
+}
+
+export interface ReportData {
+  title: string;
+  company: string;
+  unit: string;
+  periodLabel: string;
+  generatedAt: string;
+  closed: boolean;
+  items: ReportItem[];
+  movements: { type: string; count: number; quantity: number }[];
+  inventory: { items: number; counted: number; divergences: number }[];
+  losses: { count: number; total_cost: number; unknown_cost: number; awaiting_returns: number } | null;
+  policy: { product?: ReportPolicy; raw_material?: ReportPolicy } | null;
+}
+
+export interface ClosingRow {
+  id: string;
+  competence: string;
+  partial: boolean;
+  itemsCount: number;
+  totalValue: number;
+  entriesValue: number;
+  exitsValue: number;
+  closedAt: string;
+  snapshot: Record<string, unknown>;
+}
+
+export interface IntegrationStatusRow {
+  originKey: string;
+  lastEventAt: string | null;
+  events30d: number;
+  pending: number;
 }
 
 export type AdjustmentStatus = "NONE" | "APPROVED" | "DISMISSED";

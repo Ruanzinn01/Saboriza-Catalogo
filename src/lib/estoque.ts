@@ -60,6 +60,7 @@ export const MOVEMENT_LABEL: Record<LedgerMovementType, string> = {
   PURCHASE_ENTRY: "Entrada de compra",
   PURCHASE_RETURN: "Devolução ao fornecedor",
   CUSTOMER_RETURN: "Retorno de cliente",
+  INITIAL_BALANCE: "Saldo inicial",
   LOSS: "Perda / avaria",
   SALE_OUT: "Saída de pedido",
   PRODUCTION_IN: "Entrada de produção",
