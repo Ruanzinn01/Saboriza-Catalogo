@@ -1,5 +1,7 @@
 # Integrações Mestre V2 — contrato de identificadores, eventos e estado das interfaces
 
+> Atualizado em 15/10/2026 (etapas 1 a 5). Os documentos `ETAPA_*` e `RECONCILIACAO_*` desta pasta prevalecem sobre este quando divergirem. Este arquivo mantém o mapeamento de identificadores e o histórico do Pacote 0.
+
 Base: pacote ORIS360_Integracoes_Mestre_V2 (10/10/2026) cruzado com o código deste repositório e com o banco `saboriza` (inspeção somente leitura em 15/10/2026). Este documento é o mapeamento físico dos contratos semânticos; não substitui o PRD/RFC do pacote.
 
 ## 1. Identificadores (nome do contrato → coluna real)
@@ -8,7 +10,7 @@ Base: pacote ORIS360_Integracoes_Mestre_V2 (10/10/2026) cruzado com o código de
 |---|---|---|
 | `company_id` / `tenant_id` / `empresa_id` | `company_id` | Mesma identidade; `unit_id` pertence à empresa e não a substitui. |
 | `employee_id` / `colaborador_id` | `employees.id` | |
-| `employment_id` / `vinculo_id` | `employees.id` | Hoje o colaborador **é** o vínculo: `employment_*` ficam na própria linha. Não existe tabela de histórico de vínculo. Recontratação ainda sobrescreve esses campos (lacuna B1). Eventos já enviam `employment_id` = `employees.id` para o consumidor não depender dessa troca futura. |
+| `employment_id` / `vinculo_id` | `employee_employments.id` | Cada período de contratação é uma linha própria e imutável depois de encerrada (etapa 1). Recontratar abre o período seguinte; o anterior permanece íntegro. `salary_obligations.employment_id` e `time_punches.employment_id` apontam para o período; os eventos levam o `employment_id` real. |
 | `competence` | `date` (1º dia do mês) | `salary_obligations.competence`, `time_period_states.competencia`. |
 | chave da obrigação salarial | `UNIQUE (employee_id, competence)` | `company_id` é derivado do colaborador (trigger). |
 | vencimento | `salary_obligations.due_date` + `due_date_source` | Obrigatório (NOT NULL). Origem: `competence_closing`, `payroll_calendar`, `manual_adjustment`, `legacy_convention`. |
@@ -31,7 +33,7 @@ Caminho único: `private.emit_event(...)` grava em `transactional_outbox` dentro
 | `ParticipationChanged` | Chão | — | **aguarda** participação por pessoa/papel |
 | `FinishedProductionConfirmed`, `InventoryAdjustmentApproved` | Produziu / Estoque | — | já há registro e movimento; evento a ligar na etapa B5 |
 
-Sem worker: a outbox só acumula (`status = PENDING`). Publicação, retry e quarentena são trabalho da etapa B5; nenhum consumidor deve ler a outbox como fonte de verdade antes disso.
+O worker existe (etapa 5) mas **não está agendado**: a outbox só acumula (`PENDING`) até a ativação. Consumidores, tentativas, ordenação e monitoramento estão em `ETAPA_5_OUTBOX_EVENTOS_CONSUMIDORES_E_INTERFACES.md`; nenhum módulo de negócio consome a outbox.
 
 ## 3. Estado das interfaces (I01–I32)
 
@@ -46,7 +48,7 @@ Legenda: **OK** existente e verificada · **PARCIAL** existe com lacuna · **AUS
 | Apuração → Meu Ponto/Espelho | I09 | **AUSENTE** | Sem tabela/rotina de Espelho; `time_period_states` existe e está sem uso (0 linhas). |
 | Jornada → Chão | I10 | **AUSENTE** | `floor_assume_execution` não consulta jornada. |
 | Salarial | I11–I13 | **PARCIAL** | Obrigação única, vencimento explícito, vales sem duplicidade. Sem composição por horas, conferência ou autorização. Duas portas (`generate_salary_obligation` e `create_expense_launch`) com unicidade garantida no banco, mas sem comando único. |
-| Contas a Pagar / Financeiro | I14, I19 | **OK** | Folha entra em Despesas, Financeiro Geral, Painel do Proprietário e DRE (migração 20261015120000). |
+| Contas a Pagar / Financeiro | I14, I19 | **OK** | Folha entra em Despesas, Financeiro Geral, Painel do Proprietário e DRE (migração 20261014164335). |
 | Vale (Meu Dinheiro) | I15, I16 | **PARCIAL** | Vale pago/estorno único e aplicado à obrigação. Sem reserva atômica, limite de 30% e mínimo de 50. |
 | Gateway / liquidação | I17, I18, I20 | **AUSENTE** | Sem tabela de liquidações. Webhook Asaas só trata cobranças e notas e marca `processed_at` mesmo com falha de atualização. |
 | Chão / Missões / Relatório | I21–I23 | **AUSENTE** | `floor_executions` guarda um único responsável; sem intervalos, papel de apoio, ranking ou relatório individual. Missões = `employee_tasks` simples. |
@@ -56,7 +58,7 @@ Legenda: **OK** existente e verificada · **PARCIAL** existe com lacuna · **AUS
 
 ## 4. Mudanças aplicadas nesta etapa
 
-- **Banco (aplicado):** emissão de eventos (`20261015150000`). Aditivo, sem tabela nova. Testado com rollback: 1 evento por fato, retry e duplo clique não duplicam, payload sem valor/salário/PIN/foto.
+- **Banco (aplicado):** emissão de eventos (`20261014164932`). Aditivo, sem tabela nova. Testado com rollback: 1 evento por fato, retry e duplo clique não duplicam, payload sem valor/salário/PIN/foto.
 - **Código local, não publicado:** `ponto-oris-terminal` (C03–C07) e `meu360-terminal` (C10). As funções de borda em produção continuam na versão anterior até serem publicadas e testadas com um dispositivo real.
 - **Front:** chave de idempotência estável por intenção no terminal de ponto; Meu360 mostra o erro em vez de descartá-lo (C11).
 
