@@ -332,9 +332,9 @@ export function NovaDespesaPage() {
     async (query: string): Promise<ComboboxOption[]> => {
       const text = query.trim().toLowerCase();
       return suppliers
-        .filter((s) => !text || (s.tradeName || "").toLowerCase().includes(text) || s.companyName.toLowerCase().includes(text))
+        .filter((s) => !text || [s.name, s.companyName, s.tradeName, s.cnpj, s.phone].some((field) => (field || "").toLowerCase().includes(text)))
         .slice(0, 20)
-        .map((s) => ({ value: s.id, label: s.tradeName || s.companyName, sublabel: s.cnpj || undefined }));
+        .map((s) => ({ value: s.id, label: s.tradeName || s.companyName, sublabel: [s.name, s.cnpj].filter(Boolean).join(" · ") || undefined }));
     },
     [suppliers]
   );

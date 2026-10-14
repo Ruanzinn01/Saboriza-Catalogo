@@ -9,6 +9,7 @@ import { useDespesasFilters } from "@/pages/admin/despesas/useDespesasFilters";
 import { DESPESAS_COLORS, ORIGIN_COLOR_HEX, KPI_DOT_COLOR } from "@/pages/admin/despesas/theme";
 import { ReportModal } from "@/pages/admin/despesas/ReportModal";
 import { ExpenseDetailModal } from "@/pages/admin/despesas/ExpenseDetailModal";
+import { PaidCategoryCard, PaidFunnelCard, PaidQuarterCard, PaidSubcategoryCard } from "@/pages/admin/despesas/PaidAnalysis";
 import { KIND_LABEL } from "@/pages/admin/despesas/launch/types";
 import type { LaunchKind } from "@/store/expense-launch-store";
 
@@ -362,6 +363,55 @@ export function DespesasPage() {
     { key: "ATRASADO", label: "Atrasado", value: kpis.atrasado, sub: kpis.atrasado ? "Exige atenção" : "Nenhum vencido", dot: "#c45e54" },
   ];
 
+  const periodLabel = `${PERIOD_OPTIONS.find((p) => p.value === period)?.label ?? period} · ${monthLabel(referenceDate)}`;
+  const allExpenses = useMemo(
+    () => getAllExpenses(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [expenses, obligations, advances, getAllExpenses]
+  );
+
+  const dueCard = (
+    <div className="rounded-3xl border bg-white" style={{ borderColor: C.line }}>
+      <div className="flex items-center justify-between gap-2 border-b p-4" style={{ borderColor: C.line }}>
+        <div>
+          <h2 className="text-[19px] font-bold" style={{ color: C.green }}>Próximos vencimentos</h2>
+          <p className="text-[11px]" style={{ color: C.muted }}>Prioridade por data e situação</p>
+        </div>
+        <button onClick={() => navigate(withContext("/admin/despesas/vencimentos", params))} className="rounded-[10px] border px-2.5 py-1.5 text-xs font-bold" style={{ borderColor: "#d8dfd7", color: C.green }}>
+          Ver todos
+        </button>
+      </div>
+      {due.length === 0 ? (
+        <p className="p-4 text-sm" style={{ color: C.muted }}>Nada pendente.</p>
+      ) : (
+        <div className="px-4">
+          {due.map((e) => (
+            <button
+              key={e.id}
+              onClick={() => navigate(withContext(expenseDetailPath(e), params))}
+              className="grid w-full grid-cols-[12px_1fr_auto_auto] items-start gap-2.5 border-b py-2.5 text-left last:border-none"
+              style={{ borderColor: "#eff0eb" }}
+            >
+              <span className="mt-1 inline-block h-2 w-2 rounded-full" style={{ background: e.status === "ATRASADO" ? "#c45e54" : e.status === "AGENDADO" ? "#4885bd" : e.status === "BLOQUEADO" ? C.orange : C.gray }} />
+              <span>
+                <b style={{ color: C.green }}>{e.description}</b>
+                <small className="block" style={{ color: C.muted }}>
+                  {e.status === "BLOQUEADO" ? "Bloqueado" : e.status}
+                  {installmentLabel(e) && ` · ${installmentLabel(e)}`}
+                </small>
+              </span>
+              <span className="text-right text-[15px] font-extrabold leading-tight whitespace-nowrap" style={{ color: C.red }}>{brDate(e.dueDate).slice(0, 5)}</span>
+              <span className="whitespace-nowrap font-bold" style={{ color: C.green }}>{brl(e.amount - (e.paidAmount ?? 0))}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      <button onClick={() => navigate(withContext("/admin/despesas/vencimentos", params))} className="block w-full rounded-b-3xl border-t p-2.5 text-sm font-semibold" style={{ borderColor: C.line, background: "#fbfcf8", color: "#2c7650" }}>
+        Abrir lista completa de vencimentos ›
+      </button>
+    </div>
+  );
+
   return (
     <div className="flex flex-col gap-4">
       <div className="text-xs" style={{ color: C.muted }}>Início › Despesas › Visão Geral</div>
@@ -431,6 +481,21 @@ export function DespesasPage() {
       <OriginValueCards list={periodExpenses} />
       <CompositionCards list={periodExpenses} />
 
+      <section className="flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-[22px] font-extrabold" style={{ color: C.green }}>Para onde foi o dinheiro</h2>
+          <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: "#faf0d7", color: "#977021" }}>{periodLabel}</span>
+        </div>
+        <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(430px,.85fr)]">
+          <PaidFunnelCard rows={periodExpenses} periodLabel={periodLabel} />
+          {dueCard}
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <PaidCategoryCard rows={periodExpenses} periodLabel={periodLabel} />
+          <PaidSubcategoryCard rows={periodExpenses} periodLabel={periodLabel} />
+        </div>
+      </section>
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-3xl border bg-white" style={{ borderColor: C.line }}>
           <div className="flex items-center justify-between gap-2 border-b p-4" style={{ borderColor: C.line }}>
@@ -457,42 +522,7 @@ export function DespesasPage() {
           </div>
         </div>
 
-        <div className="rounded-3xl border bg-white" style={{ borderColor: C.line }}>
-          <div className="flex items-center justify-between gap-2 border-b p-4" style={{ borderColor: C.line }}>
-            <div>
-              <h2 className="text-[19px] font-bold" style={{ color: C.green }}>Próximos vencimentos</h2>
-              <p className="text-[11px]" style={{ color: C.muted }}>Prioridade por data e situação</p>
-            </div>
-            <button onClick={() => navigate(withContext("/admin/despesas/vencimentos", params))} className="rounded-[10px] border px-2.5 py-1.5 text-xs font-bold" style={{ borderColor: "#d8dfd7", color: C.green }}>
-              Ver todos
-            </button>
-          </div>
-          {due.length === 0 ? (
-            <p className="p-4 text-sm" style={{ color: C.muted }}>Nada pendente.</p>
-          ) : (
-            <div className="px-4">
-              {due.map((e) => (
-                <button
-                  key={e.id}
-                  onClick={() => navigate(withContext(expenseDetailPath(e), params))}
-                  className="grid w-full grid-cols-[12px_1fr_58px_auto] items-start gap-2.5 border-b py-2.5 text-left last:border-none"
-                  style={{ borderColor: "#eff0eb" }}
-                >
-                  <span className="mt-1 inline-block h-2 w-2 rounded-full" style={{ background: e.status === "ATRASADO" ? "#c45e54" : e.status === "AGENDADO" ? "#4885bd" : e.status === "BLOQUEADO" ? C.orange : C.gray }} />
-                  <span>
-                    <b style={{ color: C.green }}>{e.description}</b>
-                    <small className="block" style={{ color: C.muted }}>
-                      {e.status === "BLOQUEADO" ? "Bloqueado" : e.status}
-                      {installmentLabel(e) && ` · ${installmentLabel(e)}`}
-                    </small>
-                  </span>
-                  <span className="text-center text-[13px] font-extrabold leading-tight whitespace-nowrap" style={{ color: C.red }}>{brDate(e.dueDate)}</span>
-                  <span className="whitespace-nowrap font-bold" style={{ color: C.green }}>{brl(e.amount - (e.paidAmount ?? 0))}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <PaidQuarterCard all={allExpenses} referenceDate={referenceDate} />
       </div>
 
       <div className="rounded-3xl border bg-white" style={{ borderColor: C.line }}>
@@ -555,7 +585,7 @@ export function DespesasPage() {
       {showReport && (
         <ReportModal
           onClose={() => setShowReport(false)}
-          periodLabel={`${PERIOD_OPTIONS.find((p) => p.value === period)?.label ?? period} · ${monthLabel(referenceDate)}`}
+          periodLabel={periodLabel}
           periodExpenses={filtered}
           kpis={kpis}
           byOrigin={getByOrigin(periodExpenses)}
