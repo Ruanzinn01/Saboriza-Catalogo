@@ -398,6 +398,7 @@ export function QuickMaterialModal({
       costBasis: "avg_cost",
       manualCost: 0,
       primarySupplierId: supplierId || null,
+      gtin: "",
       isActive: true,
     });
     setSaving(false);

@@ -33,13 +33,16 @@ export interface RawMaterial {
   primarySupplierId: string | null;
   isActive: boolean;
   unitLocked: boolean;
+  gtin: string;
+  lastPurchaseCost: number | null;
+  lastPurchaseDate: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export type RawMaterialInput = Omit<
   RawMaterial,
-  "id" | "code" | "currentStock" | "avgCost" | "unitLocked" | "createdAt" | "updatedAt"
+  "id" | "code" | "currentStock" | "avgCost" | "unitLocked" | "lastPurchaseCost" | "lastPurchaseDate" | "createdAt" | "updatedAt"
 >;
 
 export type StockStatus = "ok" | "low" | "out";

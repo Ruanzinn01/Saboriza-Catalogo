@@ -21,9 +21,15 @@ export interface Product {
   currentStock: number;
   minStock: number;
   maxStock: number;
-  targetMarginPct: number;
+  targetMarginPct: number | null;
   gtin: string;
   brand: string;
   ncm: string;
   saleUnit: string;
+  nature: ProductNature;
+  avgCost: number;
+  lastPurchaseCost: number | null;
+  lastPurchaseDate: string | null;
 }
+
+export type ProductNature = "MANUFACTURED" | "RESALE";

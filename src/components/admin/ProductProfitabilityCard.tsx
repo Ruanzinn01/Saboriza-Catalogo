@@ -3,15 +3,19 @@ import { CheckCircle2, CircleDollarSign, Coins, FileText, Info, PieChart, Tag, T
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { formatCurrency } from "@/lib/currency";
-import { computeProfitability, computeUnitCost, formatPercent, formatPoints } from "@/lib/product-profitability";
+import { computeProfitability, computeUnitCost, formatPercent, formatPoints, resaleUnitCost } from "@/lib/product-profitability";
+import type { ProductNature } from "@/types/product";
 import { useProductRecipeStore } from "@/store/product-recipe-store";
 import { useRawMaterialsStore } from "@/store/raw-materials-store";
 
 interface ProductProfitabilityCardProps {
   productId: string | null;
   price: number;
-  targetPct: number;
-  onTargetChange: (value: number) => void;
+  targetPct: number | null;
+  onTargetChange: (value: number | null) => void;
+  nature?: ProductNature;
+  lastPurchaseCost?: number | null;
+  avgCost?: number;
 }
 
 type Tone = "white" | "green" | "blue" | "amber" | "red";
@@ -65,30 +69,47 @@ export function MetricTile({
 
 const valueClasses = "text-xl font-extrabold leading-tight text-ink-900";
 
-export function ProductProfitabilityCard({ productId, price, targetPct, onTargetChange }: ProductProfitabilityCardProps) {
+export function ProductProfitabilityCard({
+  productId,
+  price,
+  targetPct,
+  onTargetChange,
+  nature = "MANUFACTURED",
+  lastPurchaseCost = null,
+  avgCost = 0,
+}: ProductProfitabilityCardProps) {
+  const isResale = nature === "RESALE";
   const infoId = useId();
   const [infoOpen, setInfoOpen] = useState(false);
   const recipeLines = useProductRecipeStore((state) => (productId ? state.linesByProduct[productId] : undefined));
   const materials = useRawMaterialsStore((state) => state.materials);
 
-  const unitCost = useMemo(() => computeUnitCost(recipeLines ?? [], materials), [recipeLines, materials]);
+  const unitCost = useMemo(
+    () => (isResale ? resaleUnitCost(lastPurchaseCost) : computeUnitCost(recipeLines ?? [], materials)),
+    [isResale, lastPurchaseCost, recipeLines, materials]
+  );
   const result = useMemo(() => computeProfitability(price, unitCost, targetPct), [price, unitCost, targetPct]);
 
   const hasMargin = result.marginPct !== null;
   const margin = result.marginPct ?? 0;
   const fillPct = Math.min(100, Math.max(0, margin));
-  const markerPct = Math.min(100, Math.max(0, targetPct));
+  const markerPct = Math.min(100, Math.max(0, targetPct ?? 0));
 
-  const statusTone: Tone = result.status === "on-target" ? "green" : result.status === "below-target" ? "red" : "amber";
+  const statusTone: Tone =
+    result.status === "on-target" ? "green" : result.status === "below-target" ? "red" : result.status === "no-target" ? "blue" : "amber";
   const statusLabel =
     result.status === "on-target"
       ? "Dentro da meta"
       : result.status === "below-target"
         ? "Abaixo da meta"
-        : result.status === "no-recipe"
-          ? "Sem ficha técnica"
-          : "Sem preço";
-  const StatusIcon = result.status === "on-target" ? CheckCircle2 : TriangleAlert;
+        : result.status === "no-target"
+          ? "Sem meta definida"
+          : result.status === "no-recipe"
+            ? "Sem ficha técnica"
+            : result.status === "no-cost"
+              ? "Aguardando primeira compra"
+              : "Sem preço";
+  const StatusIcon = result.status === "on-target" || result.status === "no-target" ? CheckCircle2 : TriangleAlert;
 
   function scrollToRecipe() {
     document.getElementById("ficha-tecnica")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -112,19 +133,23 @@ export function ProductProfitabilityCard({ productId, price, targetPct, onTarget
             <Info size={18} />
           </button>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={scrollToRecipe}>
-          <FileText size={15} /> Ver ficha técnica
-        </Button>
+        {!isResale && (
+          <Button type="button" variant="outline" size="sm" onClick={scrollToRecipe}>
+            <FileText size={15} /> Ver ficha técnica
+          </Button>
+        )}
       </div>
 
       <p id={infoId} hidden={!infoOpen} className="mt-2 rounded-xl bg-forest-950/5 p-3 text-xs text-ink-700">
-        Custo atual = soma da ficha técnica (quantidade × custo médio de cada insumo). Lucro real = preço − custo. Margem real = lucro ÷ preço.
-        A margem desejada é a meta do produto.
+        {isResale
+          ? "Custo atual = custo líquido unitário da compra válida mais recente pela data do documento, com frete, outras despesas e desconto rateados. Não é o custo médio do estoque, que avalia o saldo. O preço praticado é manual e não muda com novas compras."
+          : "Custo atual = soma da ficha técnica (quantidade × custo médio de cada insumo). Lucro real = preço − custo. Margem real = lucro ÷ preço. A margem desejada é a meta do produto."}
       </p>
 
       <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <MetricTile icon={<CircleDollarSign size={22} />} label="Custo atual (por unidade)">
-          <p className={valueClasses}>{unitCost.hasRecipe ? formatCurrency(result.cost) : "—"}</p>
+        <MetricTile icon={<CircleDollarSign size={22} />} label={isResale ? "Custo da última compra válida" : "Custo atual (por unidade)"}>
+          <p className={valueClasses}>{unitCost.hasRecipe ? formatCurrency(result.cost) : isResale ? "Aguardando primeira compra" : "—"}</p>
+          {isResale && <p className="text-[11px] text-ink-muted">Custo médio do estoque: {avgCost > 0 ? formatCurrency(avgCost) : "—"}</p>}
         </MetricTile>
 
         <MetricTile icon={<Tag size={20} />} label="Preço praticado" iconTone="text-gold-600">
@@ -132,7 +157,7 @@ export function ProductProfitabilityCard({ productId, price, targetPct, onTarget
           <p className="text-[11px] text-ink-muted">(Preço unitário)</p>
         </MetricTile>
 
-        <MetricTile icon={<Target size={22} />} label="Margem de lucro desejada (%)" iconTone="text-forest-700">
+        <MetricTile icon={<Target size={22} />} label="Margem de lucro desejada (%) — opcional" iconTone="text-forest-700">
           <div className="mt-1 flex items-center gap-2">
             <input
               type="number"
@@ -140,8 +165,9 @@ export function ProductProfitabilityCard({ productId, price, targetPct, onTarget
               min={0}
               max={100}
               step="0.1"
-              value={targetPct}
-              onChange={(e) => onTargetChange(Math.min(100, Math.max(0, Number(e.target.value))))}
+              value={targetPct ?? ""}
+              placeholder="Sem meta"
+              onChange={(e) => onTargetChange(e.target.value === "" ? null : Math.min(100, Math.max(0, Number(e.target.value))))}
               aria-label="Margem de lucro desejada em porcentagem"
               className="h-11 w-full min-w-0 rounded-xl border border-ink-900/15 bg-white px-3 text-sm font-semibold text-ink-900 outline-none focus:border-forest-700"
             />
@@ -168,7 +194,14 @@ export function ProductProfitabilityCard({ productId, price, targetPct, onTarget
         </MetricTile>
       </div>
 
-      {(unitCost.materialsWithoutCost > 0 || result.status === "no-recipe") && (
+      {result.status === "no-cost" && (
+        <p role="status" className="mt-3 flex items-start gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-800">
+          <TriangleAlert size={14} className="mt-0.5 shrink-0" />
+          Sem custo conhecido. Lance uma compra em Compras e Despesas ou informe o saldo inicial com custo no Inventário; nenhuma margem é calculada antes disso.
+        </p>
+      )}
+
+      {!isResale && (unitCost.materialsWithoutCost > 0 || result.status === "no-recipe") && (
         <p role="status" className="mt-3 flex items-start gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-800">
           <TriangleAlert size={14} className="mt-0.5 shrink-0" />
           {result.status === "no-recipe"
@@ -184,7 +217,7 @@ export function ProductProfitabilityCard({ productId, price, targetPct, onTarget
           role="img"
           aria-label={
             hasMargin
-              ? `Margem real ${formatPercent(margin)}, meta ${formatPercent(targetPct)}`
+              ? `Margem real ${formatPercent(margin)}${targetPct === null ? "" : `, meta ${formatPercent(targetPct)}`}`
               : "Margem real indisponível"
           }
           className="relative h-6 rounded-full bg-ink-900/10"
@@ -212,7 +245,7 @@ export function ProductProfitabilityCard({ productId, price, targetPct, onTarget
             className="absolute -translate-x-1/2 whitespace-nowrap text-xs font-semibold text-ink-900"
             style={{ left: `${Math.min(92, Math.max(8, markerPct))}%` }}
           >
-            Meta: {formatPercent(targetPct, 0)}
+            {targetPct === null ? "" : `Meta: ${formatPercent(targetPct, 0)}`}
           </span>
         </div>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-700">
@@ -222,7 +255,7 @@ export function ProductProfitabilityCard({ productId, price, targetPct, onTarget
           </span>
           <span className="flex items-center gap-1.5">
             <span aria-hidden className="h-3 w-3 rounded-full bg-ink-900/25" />
-            Falta para a meta ({formatPercent(result.missingToTargetPct)})
+            {targetPct === null ? "Sem meta para comparar" : `Falta para a meta (${formatPercent(result.missingToTargetPct)})`}
           </span>
         </div>
       </div>

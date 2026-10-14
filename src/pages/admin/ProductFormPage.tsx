@@ -20,7 +20,7 @@ import { buildDuplicateDraft, type ProductDraft } from "@/lib/product-duplicate"
 import { formatNumber } from "@/lib/number";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useSuppliersStore } from "@/store/suppliers-store";
-import type { PackagingType, Product, ProductBadge } from "@/types/product";
+import type { PackagingType, Product, ProductBadge, ProductNature } from "@/types/product";
 
 const packagingOptions: PackagingType[] = ["Fardo", "Caixa", "Pacote", "Kit", "Outro"];
 const badgeOptions: { value: ProductBadge | ""; label: string }[] = [
@@ -54,11 +54,15 @@ function createEmptyForm(categoryId: string): ProductForm {
     currentStock: 0,
     minStock: 0,
     maxStock: 0,
-    targetMarginPct: 40,
+    targetMarginPct: null,
     gtin: "",
     brand: "",
     ncm: "",
     saleUnit: "",
+    nature: "MANUFACTURED",
+    avgCost: 0,
+    lastPurchaseCost: null,
+    lastPurchaseDate: null,
   };
 }
 
@@ -265,6 +269,20 @@ export function ProductFormPage() {
                 onChange={(e) => handleChange("packQuantity", Number(e.target.value))}
               />
               <label className="flex flex-col gap-1.5 sm:col-span-2">
+                <span className="text-sm font-semibold text-ink-900">Natureza do item</span>
+                <select
+                  value={form.nature}
+                  onChange={(e) => handleChange("nature", e.target.value as ProductNature)}
+                  className={selectClasses}
+                >
+                  <option value="MANUFACTURED">Produto fabricado — custo vem da Ficha Técnica</option>
+                  <option value="RESALE">Comprado pronto para revenda — custo vem da última compra válida</option>
+                </select>
+                <span className="text-xs text-ink-muted">
+                  O custo é calculado pela origem e não é editável aqui. Produto de revenda é lançado em Compras e entra no Estoque pela compra confirmada.
+                </span>
+              </label>
+              <label className="flex flex-col gap-1.5 sm:col-span-2">
                 <span className="text-sm font-semibold text-ink-900">Tipo de embalagem interno</span>
                 <select
                   value={form.packagingType}
@@ -347,6 +365,9 @@ export function ProductFormPage() {
             price={form.unitPrice}
             targetPct={form.targetMarginPct}
             onTargetChange={(value) => handleChange("targetMarginPct", value)}
+            nature={form.nature}
+            lastPurchaseCost={form.lastPurchaseCost}
+            avgCost={form.avgCost}
           />
 
           {isEditing && existingProduct && <ProductRecipeEditor productId={existingProduct.id} />}

@@ -23,6 +23,7 @@ function toRow(input: RawMaterialInput) {
     cost_basis: input.costBasis,
     manual_cost: input.manualCost,
     primary_supplier_id: input.primarySupplierId,
+    gtin: input.gtin,
     is_active: input.isActive,
   };
 }

@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -1988,14 +1988,18 @@ export type Database = {
           expense_id: string | null
           id: string
           kind: string
+          landed_unit_cost: number | null
           launch_id: string
           name_snapshot: string
           payroll_type: string | null
+          product_id: string | null
           quantity: number
           rateable: boolean
           raw_material_id: string | null
+          received_at: string | null
           recurrence_id: string | null
           reference_expense_id: string | null
+          returned_quantity: number
           unit: string
           unit_price: number
         }
@@ -2010,14 +2014,18 @@ export type Database = {
           expense_id?: string | null
           id?: string
           kind: string
+          landed_unit_cost?: number | null
           launch_id: string
           name_snapshot: string
           payroll_type?: string | null
+          product_id?: string | null
           quantity?: number
           rateable?: boolean
           raw_material_id?: string | null
+          received_at?: string | null
           recurrence_id?: string | null
           reference_expense_id?: string | null
+          returned_quantity?: number
           unit?: string
           unit_price?: number
         }
@@ -2032,14 +2040,18 @@ export type Database = {
           expense_id?: string | null
           id?: string
           kind?: string
+          landed_unit_cost?: number | null
           launch_id?: string
           name_snapshot?: string
           payroll_type?: string | null
+          product_id?: string | null
           quantity?: number
           rateable?: boolean
           raw_material_id?: string | null
+          received_at?: string | null
           recurrence_id?: string | null
           reference_expense_id?: string | null
+          returned_quantity?: number
           unit?: string
           unit_price?: number
         }
@@ -2077,6 +2089,13 @@ export type Database = {
             columns: ["launch_id"]
             isOneToOne: false
             referencedRelation: "expense_launches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_launch_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
           {
@@ -2121,6 +2140,7 @@ export type Database = {
           idempotency_key: string | null
           kind: string
           observations: string | null
+          other_costs: number
           partner_id: string | null
           party_name: string
           party_type: string
@@ -2152,6 +2172,7 @@ export type Database = {
           idempotency_key?: string | null
           kind: string
           observations?: string | null
+          other_costs?: number
           partner_id?: string | null
           party_name: string
           party_type: string
@@ -2183,6 +2204,7 @@ export type Database = {
           idempotency_key?: string | null
           kind?: string
           observations?: string | null
+          other_costs?: number
           partner_id?: string | null
           party_name?: string
           party_type?: string
@@ -3037,6 +3059,260 @@ export type Database = {
           },
         ]
       }
+      inventory_counts: {
+        Row: {
+          adjustment_status: string
+          base_quantity: number
+          command_id: string
+          company_id: string
+          conversion_factor: number
+          counted_at: string
+          counted_by: string
+          counted_by_name: string
+          difference: number
+          entered_quantity: number
+          entered_unit: string
+          expected_balance: number
+          id: string
+          recount_of: string | null
+          resolution_justification: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          round: number
+          session_id: string
+          session_item_id: string
+          snapshot_id: string
+          unit_id: string
+          zero_confirmed: boolean
+        }
+        Insert: {
+          adjustment_status?: string
+          base_quantity: number
+          command_id: string
+          company_id: string
+          conversion_factor: number
+          counted_at?: string
+          counted_by: string
+          counted_by_name?: string
+          difference: number
+          entered_quantity: number
+          entered_unit: string
+          expected_balance: number
+          id?: string
+          recount_of?: string | null
+          resolution_justification?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          round?: number
+          session_id: string
+          session_item_id: string
+          snapshot_id: string
+          unit_id: string
+          zero_confirmed?: boolean
+        }
+        Update: {
+          adjustment_status?: string
+          base_quantity?: number
+          command_id?: string
+          company_id?: string
+          conversion_factor?: number
+          counted_at?: string
+          counted_by?: string
+          counted_by_name?: string
+          difference?: number
+          entered_quantity?: number
+          entered_unit?: string
+          expected_balance?: number
+          id?: string
+          recount_of?: string | null
+          resolution_justification?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          round?: number
+          session_id?: string
+          session_item_id?: string
+          snapshot_id?: string
+          unit_id?: string
+          zero_confirmed?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_counts_recount_of_fkey"
+            columns: ["recount_of"]
+            isOneToOne: false
+            referencedRelation: "inventory_counts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_counts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_counts_session_item_id_fkey"
+            columns: ["session_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_session_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_counts_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_session_items: {
+        Row: {
+          assigned_to: string | null
+          assigned_until: string | null
+          company_id: string
+          created_at: string
+          group_no: number
+          id: string
+          item_id: string
+          item_type: string
+          recount_requested: boolean
+          session_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          assigned_until?: string | null
+          company_id: string
+          created_at?: string
+          group_no: number
+          id?: string
+          item_id: string
+          item_type: string
+          recount_requested?: boolean
+          session_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          assigned_until?: string | null
+          company_id?: string
+          created_at?: string
+          group_no?: number
+          id?: string
+          item_id?: string
+          item_type?: string
+          recount_requested?: boolean
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_session_items_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_sessions: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          company_id: string
+          competence: string
+          created_at: string
+          ends_at: string
+          id: string
+          location_label: string
+          modality: string
+          opened_by: string | null
+          reason: string
+          scope_kind: string
+          starts_at: string
+          status: string
+          unit_id: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          company_id?: string
+          competence: string
+          created_at?: string
+          ends_at: string
+          id?: string
+          location_label?: string
+          modality: string
+          opened_by?: string | null
+          reason?: string
+          scope_kind?: string
+          starts_at: string
+          status?: string
+          unit_id: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          company_id?: string
+          competence?: string
+          created_at?: string
+          ends_at?: string
+          id?: string
+          location_label?: string
+          modality?: string
+          opened_by?: string | null
+          reason?: string
+          scope_kind?: string
+          starts_at?: string
+          status?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_sessions_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_snapshots: {
+        Row: {
+          balance: number
+          company_id: string
+          consumed_at: string | null
+          id: string
+          session_item_id: string
+          taken_at: string
+          taken_by: string
+        }
+        Insert: {
+          balance: number
+          company_id: string
+          consumed_at?: string | null
+          id?: string
+          session_item_id: string
+          taken_at?: string
+          taken_by?: string
+        }
+        Update: {
+          balance?: number
+          company_id?: string
+          consumed_at?: string | null
+          id?: string
+          session_item_id?: string
+          taken_at?: string
+          taken_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_snapshots_session_item_id_fkey"
+            columns: ["session_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_session_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       investment_formation_ledger: {
         Row: {
           actor_id: string | null
@@ -3103,6 +3379,44 @@ export type Database = {
             columns: ["source_expense_id"]
             isOneToOne: false
             referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      item_supplier_codes: {
+        Row: {
+          code: string
+          company_id: string
+          created_at: string
+          id: string
+          item_id: string
+          item_type: string
+          supplier_id: string
+        }
+        Insert: {
+          code: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          item_id: string
+          item_type: string
+          supplier_id: string
+        }
+        Update: {
+          code?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_supplier_codes_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -4693,6 +5007,7 @@ export type Database = {
       }
       products: {
         Row: {
+          avg_cost: number
           badge: string | null
           base_product_id: string | null
           brand: string
@@ -4706,22 +5021,26 @@ export type Database = {
           id: string
           image_url: string
           is_active: boolean
+          last_purchase_cost: number | null
+          last_purchase_date: string | null
           max_stock: number
           min_stock: number
           name: string
+          nature: string
           ncm: string
           pack_quantity: number
           packaging_type: string
           presentation: string
           sale_unit: string | null
           supplier_id: string | null
-          target_margin_pct: number
+          target_margin_pct: number | null
           unit_price: number
           unit_weight_grams: number | null
           updated_at: string
           weight_volume: string
         }
         Insert: {
+          avg_cost?: number
           badge?: string | null
           base_product_id?: string | null
           brand?: string
@@ -4735,22 +5054,26 @@ export type Database = {
           id?: string
           image_url?: string
           is_active?: boolean
+          last_purchase_cost?: number | null
+          last_purchase_date?: string | null
           max_stock?: number
           min_stock?: number
           name: string
+          nature?: string
           ncm?: string
           pack_quantity: number
           packaging_type: string
           presentation: string
           sale_unit?: string | null
           supplier_id?: string | null
-          target_margin_pct?: number
+          target_margin_pct?: number | null
           unit_price: number
           unit_weight_grams?: number | null
           updated_at?: string
           weight_volume: string
         }
         Update: {
+          avg_cost?: number
           badge?: string | null
           base_product_id?: string | null
           brand?: string
@@ -4764,16 +5087,19 @@ export type Database = {
           id?: string
           image_url?: string
           is_active?: boolean
+          last_purchase_cost?: number | null
+          last_purchase_date?: string | null
           max_stock?: number
           min_stock?: number
           name?: string
+          nature?: string
           ncm?: string
           pack_quantity?: number
           packaging_type?: string
           presentation?: string
           sale_unit?: string | null
           supplier_id?: string | null
-          target_margin_pct?: number
+          target_margin_pct?: number | null
           unit_price?: number
           unit_weight_grams?: number | null
           updated_at?: string
@@ -4816,6 +5142,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      purchase_drafts: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          document_ref: string
+          id: string
+          payload: Json
+          status: string
+          supplier_label: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          document_ref?: string
+          id?: string
+          payload?: Json
+          status?: string
+          supplier_label?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          document_ref?: string
+          id?: string
+          payload?: Json
+          status?: string
+          supplier_label?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
       }
       raw_material_categories: {
         Row: {
@@ -4860,6 +5225,8 @@ export type Database = {
           invoice_issue_date: string | null
           invoice_number: string
           invoice_series: string
+          launch_id: string | null
+          launch_item_id: string | null
           new_balance: number | null
           packages_quantity: number
           previous_balance: number | null
@@ -4888,6 +5255,8 @@ export type Database = {
           invoice_issue_date?: string | null
           invoice_number?: string
           invoice_series?: string
+          launch_id?: string | null
+          launch_item_id?: string | null
           new_balance?: number | null
           packages_quantity: number
           previous_balance?: number | null
@@ -4916,6 +5285,8 @@ export type Database = {
           invoice_issue_date?: string | null
           invoice_number?: string
           invoice_series?: string
+          launch_id?: string | null
+          launch_item_id?: string | null
           new_balance?: number | null
           packages_quantity?: number
           previous_balance?: number | null
@@ -4937,6 +5308,20 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raw_material_entries_launch_id_fkey"
+            columns: ["launch_id"]
+            isOneToOne: false
+            referencedRelation: "expense_launches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raw_material_entries_launch_item_id_fkey"
+            columns: ["launch_item_id"]
+            isOneToOne: false
+            referencedRelation: "expense_launch_items"
             referencedColumns: ["id"]
           },
           {
@@ -4983,6 +5368,59 @@ export type Database = {
           },
         ]
       }
+      raw_material_movements: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          new_balance: number
+          observation: string
+          origin: string
+          previous_balance: number
+          raw_material_id: string
+          reference_id: string | null
+          responsible_id: string | null
+          unit_id: string
+          variation: number
+        }
+        Insert: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          new_balance: number
+          observation?: string
+          origin: string
+          previous_balance: number
+          raw_material_id: string
+          reference_id?: string | null
+          responsible_id?: string | null
+          unit_id?: string
+          variation: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          new_balance?: number
+          observation?: string
+          origin?: string
+          previous_balance?: number
+          raw_material_id?: string
+          reference_id?: string | null
+          responsible_id?: string | null
+          unit_id?: string
+          variation?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raw_material_movements_raw_material_id_fkey"
+            columns: ["raw_material_id"]
+            isOneToOne: false
+            referencedRelation: "raw_materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       raw_materials: {
         Row: {
           avg_cost: number
@@ -4995,9 +5433,12 @@ export type Database = {
           current_stock: number
           default_reorder_qty: number
           description: string
+          gtin: string
           id: string
           image_url: string
           is_active: boolean
+          last_purchase_cost: number | null
+          last_purchase_date: string | null
           lead_time_days: number
           manual_cost: number
           max_stock: number
@@ -5022,9 +5463,12 @@ export type Database = {
           current_stock?: number
           default_reorder_qty?: number
           description?: string
+          gtin?: string
           id?: string
           image_url?: string
           is_active?: boolean
+          last_purchase_cost?: number | null
+          last_purchase_date?: string | null
           lead_time_days?: number
           manual_cost?: number
           max_stock?: number
@@ -5049,9 +5493,12 @@ export type Database = {
           current_stock?: number
           default_reorder_qty?: number
           description?: string
+          gtin?: string
           id?: string
           image_url?: string
           is_active?: boolean
+          last_purchase_cost?: number | null
+          last_purchase_date?: string | null
           lead_time_days?: number
           manual_cost?: number
           max_stock?: number
@@ -5962,6 +6409,57 @@ export type Database = {
           },
         ]
       }
+      supplier_credits: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          launch_id: string
+          reason: string
+          status: string
+          supplier_id: string | null
+        }
+        Insert: {
+          amount: number
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          launch_id: string
+          reason: string
+          status?: string
+          supplier_id?: string | null
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          launch_id?: string
+          reason?: string
+          status?: string
+          supplier_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_credits_launch_id_fkey"
+            columns: ["launch_id"]
+            isOneToOne: false
+            referencedRelation: "expense_launches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_credits_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           address: string
@@ -6544,7 +7042,26 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      stock_ledger: {
+        Row: {
+          actor_id: string | null
+          company_id: string | null
+          item_id: string | null
+          item_type: string | null
+          ledger_id: string | null
+          movement_type: string | null
+          new_balance: number | null
+          note: string | null
+          occurred_at: string | null
+          previous_balance: number | null
+          quantity: number | null
+          source_id: string | null
+          source_kind: string | null
+          unit_cost: number | null
+          unit_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       adjust_stock: {
@@ -6590,6 +7107,11 @@ export type Database = {
         Returns: undefined
       }
       check_pin_rate_limit: { Args: { p_device_id: string }; Returns: boolean }
+      close_purchase_draft: {
+        Args: { p_draft_id: string; p_status: string }
+        Returns: undefined
+      }
+      confirm_launch_receipt: { Args: { p_launch_id: string }; Returns: number }
       confirm_production_release: {
         Args: {
           p_floor_execution_id?: string
@@ -6638,6 +7160,8 @@ export type Database = {
           invoice_issue_date: string | null
           invoice_number: string
           invoice_series: string
+          launch_id: string | null
+          launch_item_id: string | null
           new_balance: number | null
           packages_quantity: number
           previous_balance: number | null
@@ -7060,6 +7584,132 @@ export type Database = {
           status: string
         }[]
       }
+      inventory_begin_count: {
+        Args: { p_session_item_id: string }
+        Returns: {
+          base_unit: string
+          divisible: boolean
+          image_url: string
+          kind_label: string
+          name: string
+          pack_factor: number
+          pack_label: string
+          presentation: string
+          sku: string
+          token: string
+        }[]
+      }
+      inventory_close_session: {
+        Args: { p_session_id: string }
+        Returns: string
+      }
+      inventory_create_session: {
+        Args: {
+          p_ends_at: string
+          p_location_label?: string
+          p_modality: string
+          p_reason: string
+          p_scope_kind: string
+          p_starts_at: string
+          p_unit_id: string
+        }
+        Returns: string
+      }
+      inventory_list_sessions: {
+        Args: never
+        Returns: {
+          can_manage: boolean
+          competence: string
+          counted: number
+          divergences: number
+          ends_at: string
+          group1_counted: number
+          group1_total: number
+          group2_counted: number
+          group2_total: number
+          id: string
+          location_label: string
+          modality: string
+          pending: number
+          reason: string
+          recount: number
+          scope_kind: string
+          starts_at: string
+          status: string
+          total: number
+          unit_id: string
+          unit_name: string
+        }[]
+      }
+      inventory_register_count: {
+        Args: {
+          p_command_id: string
+          p_quantity: number
+          p_token: string
+          p_unit_mode: string
+          p_zero_confirmed?: boolean
+        }
+        Returns: {
+          base_quantity: number
+          count_id: string
+          difference: number
+          expected_balance: number
+          replayed: boolean
+          round_no: number
+        }[]
+      }
+      inventory_release_item: {
+        Args: { p_session_item_id: string }
+        Returns: undefined
+      }
+      inventory_request_recount: {
+        Args: { p_session_item_id: string }
+        Returns: undefined
+      }
+      inventory_resolve_divergence: {
+        Args: { p_action: string; p_count_id: string; p_justification: string }
+        Returns: {
+          applied: number
+          new_balance: number
+          previous_balance: number
+        }[]
+      }
+      inventory_session_items: {
+        Args: { p_session_id: string }
+        Returns: {
+          base_unit: string
+          group_no: number
+          id: string
+          image_url: string
+          item_id: string
+          item_type: string
+          kind_label: string
+          name: string
+          pack_label: string
+          presentation: string
+          sku: string
+          state: string
+        }[]
+      }
+      inventory_session_results: {
+        Args: { p_session_id: string }
+        Returns: {
+          adjustment_status: string
+          base_quantity: number
+          count_id: string
+          counted_at: string
+          counted_by_name: string
+          difference: number
+          expected_balance: number
+          is_latest: boolean
+          item_type: string
+          name: string
+          resolution_justification: string
+          round_no: number
+          session_item_id: string
+          sku: string
+        }[]
+      }
       is_valid_cpf: { Args: { p_cpf: string }; Returns: boolean }
       list_integration_credentials: {
         Args: { p_company_id: string }
@@ -7165,6 +7815,30 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      purchase_catalog: {
+        Args: { p_supplier_id?: string }
+        Returns: {
+          avg_cost: number
+          brand: string
+          category_id: string
+          category_name: string
+          current_stock: number
+          gtin: string
+          image_url: string
+          is_active: boolean
+          item_id: string
+          item_type: string
+          last_purchase_cost: number
+          last_purchase_date: string
+          name: string
+          sale_price: number
+          sku: string
+          supplier_code: string
+          target_margin_pct: number | null
+          unit: string
+          usage: string
+        }[]
+      }
       read_vault_secret: { Args: { p_secret_id: string }; Returns: string }
       record_pin_attempt: {
         Args: { p_device_id: string; p_employee_id: string; p_success: boolean }
@@ -7192,6 +7866,14 @@ export type Database = {
       resolve_salary_base: {
         Args: { p_competence: string; p_employee_id: string }
         Returns: number
+      }
+      return_launch_items: {
+        Args: { p_launch_id: string; p_lines: Json; p_reason: string }
+        Returns: {
+          applied_to_open: number
+          credit_created: number
+          returned_value: number
+        }[]
       }
       reverse_production: {
         Args: { p_production_id: string; p_reason: string }
@@ -7234,6 +7916,8 @@ export type Database = {
           invoice_issue_date: string | null
           invoice_number: string
           invoice_series: string
+          launch_id: string | null
+          launch_item_id: string | null
           new_balance: number | null
           packages_quantity: number
           previous_balance: number | null
@@ -7276,6 +7960,20 @@ export type Database = {
         }
         Returns: Json
       }
+      save_purchase_draft: {
+        Args: {
+          p_document_ref: string
+          p_draft_id: string
+          p_expected_version: number
+          p_payload: Json
+          p_supplier_label: string
+        }
+        Returns: {
+          draft_id: string
+          updated_at: string
+          version: number
+        }[]
+      }
       set_active_integration_credential: {
         Args: {
           p_company_id: string
@@ -7299,6 +7997,26 @@ export type Database = {
       set_platform_company_status: {
         Args: { p_company_id: string; p_status: string }
         Returns: undefined
+      }
+      stock_position: {
+        Args: never
+        Returns: {
+          available: number
+          avg_cost: number
+          base_unit: string
+          category: string
+          is_active: boolean
+          item_id: string
+          item_type: string
+          max_stock: number
+          min_stock: number
+          name: string
+          physical: number
+          reserved: number
+          situation: string
+          sku: string
+          stock_value: number
+        }[]
       }
       update_employee_salary: {
         Args: {

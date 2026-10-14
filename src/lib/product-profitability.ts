@@ -5,9 +5,15 @@ export interface UnitCost {
   cost: number;
   hasRecipe: boolean;
   materialsWithoutCost: number;
+  source?: "recipe" | "purchase";
 }
 
-export type ProfitabilityStatus = "no-recipe" | "no-price" | "on-target" | "below-target";
+export type ProfitabilityStatus = "no-recipe" | "no-cost" | "no-price" | "no-target" | "on-target" | "below-target";
+
+// Produto comprado pronto: custo de referência = compra válida mais recente pela data do documento (não o custo médio).
+export function resaleUnitCost(lastPurchaseCost: number | null): UnitCost {
+  return { cost: lastPurchaseCost ?? 0, hasRecipe: lastPurchaseCost !== null, materialsWithoutCost: 0, source: "purchase" };
+}
 
 export interface Profitability {
   status: ProfitabilityStatus;
@@ -15,7 +21,7 @@ export interface Profitability {
   price: number;
   profit: number | null;
   marginPct: number | null;
-  targetPct: number;
+  targetPct: number | null;
   gapPp: number | null;
   missingToTargetPct: number;
 }
@@ -37,11 +43,11 @@ export function computeUnitCost(lines: ProductRecipeLine[], materials: RawMateri
   return { cost, hasRecipe: lines.length > 0, materialsWithoutCost };
 }
 
-export function computeProfitability(price: number, unitCost: UnitCost, targetPct: number): Profitability {
+export function computeProfitability(price: number, unitCost: UnitCost, targetPct: number | null): Profitability {
   const base = { cost: unitCost.cost, price, targetPct };
 
   if (!unitCost.hasRecipe) {
-    return { ...base, status: "no-recipe", profit: null, marginPct: null, gapPp: null, missingToTargetPct: 0 };
+    return { ...base, status: unitCost.source === "purchase" ? "no-cost" : "no-recipe", profit: null, marginPct: null, gapPp: null, missingToTargetPct: 0 };
   }
   if (price <= 0) {
     return { ...base, status: "no-price", profit: null, marginPct: null, gapPp: null, missingToTargetPct: 0 };
@@ -49,6 +55,9 @@ export function computeProfitability(price: number, unitCost: UnitCost, targetPc
 
   const profit = price - unitCost.cost;
   const marginPct = (profit / price) * 100;
+  if (targetPct === null) {
+    return { ...base, status: "no-target", profit, marginPct, gapPp: null, missingToTargetPct: 0 };
+  }
   const gapPp = marginPct - targetPct;
 
   return {

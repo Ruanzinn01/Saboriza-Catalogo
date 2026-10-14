@@ -23,11 +23,15 @@ export function productFromRow(row: ProductRow): Product {
     currentStock: row.current_stock,
     minStock: row.min_stock,
     maxStock: row.max_stock,
-    targetMarginPct: row.target_margin_pct,
+    targetMarginPct: row.target_margin_pct === null ? null : Number(row.target_margin_pct),
     gtin: row.gtin,
     brand: row.brand,
     ncm: row.ncm,
     saleUnit: row.sale_unit ?? "",
+    nature: row.nature as Product["nature"],
+    avgCost: Number(row.avg_cost),
+    lastPurchaseCost: row.last_purchase_cost === null ? null : Number(row.last_purchase_cost),
+    lastPurchaseDate: row.last_purchase_date,
   };
 }
 
@@ -54,5 +58,6 @@ export function productToRow(product: Product) {
     brand: product.brand,
     ncm: product.ncm,
     sale_unit: product.saleUnit || null,
+    nature: product.nature,
   };
 }

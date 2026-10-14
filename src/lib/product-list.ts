@@ -3,7 +3,7 @@ import type { Product } from "@/types/product";
 import type { ProductRecipeLine } from "@/types/production";
 import type { RawMaterial } from "@/types/raw-material";
 import type { Supplier } from "@/types/supplier";
-import { computeProfitability, computeUnitCost } from "@/lib/product-profitability";
+import { computeProfitability, computeUnitCost, resaleUnitCost } from "@/lib/product-profitability";
 import { situationTone } from "@/lib/stock-insights";
 
 export type StockBucket = "ok" | "low" | "out";
@@ -105,9 +105,12 @@ export function buildProductRows(
 
   return products.map((product): ProductRow => {
     const lines = recipesByProduct[product.id];
-    const profitability = lines
-      ? computeProfitability(product.unitPrice, computeUnitCost(lines, materials), product.targetMarginPct)
-      : null;
+    const profitability =
+      product.nature === "RESALE"
+        ? computeProfitability(product.unitPrice, resaleUnitCost(product.lastPurchaseCost), product.targetMarginPct)
+        : lines
+          ? computeProfitability(product.unitPrice, computeUnitCost(lines, materials), product.targetMarginPct)
+          : null;
     const marginState: MarginState =
       profitability?.status === "on-target" ? "on-target" : profitability?.status === "below-target" ? "below-target" : "none";
 

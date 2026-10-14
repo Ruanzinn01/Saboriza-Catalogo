@@ -27,6 +27,9 @@ export function rawMaterialFromRow(row: RawMaterialRow): RawMaterial {
     primarySupplierId: row.primary_supplier_id,
     isActive: row.is_active,
     unitLocked: row.unit_locked,
+    gtin: row.gtin,
+    lastPurchaseCost: row.last_purchase_cost === null ? null : Number(row.last_purchase_cost),
+    lastPurchaseDate: row.last_purchase_date,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
