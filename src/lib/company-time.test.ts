@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/supabase-rpc", () => ({ rpcUntyped: vi.fn(), fromUntyped: vi.fn() }));
+
 import { formatTimeInZone, zonedDateTimeToIso } from "@/lib/company-time";
 import { compensationChanges, EMPTY_COMPENSATION } from "@/lib/employee-compensation";
 
