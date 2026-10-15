@@ -2,6 +2,8 @@
 
 Derivada da **leitura estática do código** (stores e páginas de cada app) e do **catálogo de produção lido em modo somente leitura**. Não foi confirmada por execução no schema real: depende da homologação (ver `README.md`).
 
+Validação: as regras abaixo foram exercitadas em `supabase/pendentes/testes_apps_operacionais_replay.mjs` sobre o schema reconstruído (ver `EVIDENCIA_REPLAY_SCHEMA_REAL.txt`); continuam sem homologação real.
+
 Legenda: **L** leitura, **E** escrita direta pela API, **RPC** só por função, **—** sem acesso.
 Escopo atual das políticas: **empresa** (`is_active_company_member(company_id)`). **Unidade** e **atribuição do colaborador não são aplicadas** nessas tabelas hoje (ver "Lacunas").
 
@@ -39,6 +41,7 @@ Escopo atual das políticas: **empresa** (`is_active_company_member(company_id)`
 | create_production_release, confirm_production_release, create_production (3 sobrecargas), reverse_production, floor_* (3) | negado | permitido | negado | permitido |
 | finalize_delivery, reserve_delivery_er | negado | negado | permitido | permitido |
 | publish_production_route | negado | negado | negado | permitido |
+| adjust_stock, create_stock_entry, confirm_raw_material_entry, reverse_raw_material_entry, update_order_items | negado | negado | negado | permitido |
 | operator_list_production_employees | negado | permitido | negado | permitido |
 | operator_confirmed_billing_order_ids | negado | negado | permitido | permitido |
 | my_app_access | permitido | permitido | permitido | permitido |
@@ -46,14 +49,14 @@ Escopo atual das políticas: **empresa** (`is_active_company_member(company_id)`
 
 "Negado" = `42501` vindo de `private.assert_app_access`. Anônimo perde `EXECUTE` em todas.
 
-## Storage (fora da migration, não corrigido)
+## Storage (fora desta migration: tratado por `supabase/pendentes/seguranca_storage_multiempresa.sql`)
 
 | Bucket | Política atual | Risco |
 |---|---|---|
 | delivery-receipts, delivery-signatures | `bucket_id = '...'` apenas, para leitura e inserção | Qualquer usuário autenticado, de qualquer empresa, lê comprovantes e assinaturas |
 | employee-documents | idem | Qualquer autenticado lê documentos de colaboradores de qualquer empresa |
 
-A correção depende do padrão de caminho dos arquivos (não confirmado) e de decisão sua. Ver "Achados" no `README.md`.
+Corrigido pelo patch da outra frente (escopo por empresa deduzido do 1º segmento do caminho: `<order_id>/` e `<employee_id>/`). Testei a convivência com esta migration. Decisão pendente sobre quem lê comprovantes: ver `README.md §5.5`.
 
 ## Perfis
 

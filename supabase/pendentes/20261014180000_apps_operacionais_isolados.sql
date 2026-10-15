@@ -1,9 +1,11 @@
 -- ============================================================================================
 -- APPS OPERACIONAIS ISOLADOS (Produziu Registra, Entrega Registra, Separa Confere)
 --
--- STATUS: RASCUNHO VERSIONADO. NÃO APLICADO EM NENHUM BANCO. NÃO VALIDADO.
--- NÃO aplicar em produção. Aplicar primeiro em homologação (branch/projeto isolado), rodar
--- supabase/pendentes/testes_homologacao.sql e anexar as evidências. Ver docs/apps-operacionais/.
+-- STATUS: VERSIONADA, NÃO APLICADA EM NENHUM BANCO REAL. Testada só no banco reconstruído em memória (PGlite, 191 verificações:
+-- supabase/pendentes/testes_apps_operacionais_replay.mjs). NÃO foi validada em homologação real, que não existe.
+-- NÃO aplicar em produção. Aplicar primeiro em homologação (projeto isolado), rodar supabase/pendentes/testes_homologacao.sql
+-- e anexar as evidências. Ver docs/apps-operacionais/.
+-- Ordem: antes de seguranca_storage_multiempresa.sql (que usa private.is_restricted_operator, redefinida aqui).
 --
 -- Fica em supabase/pendentes/ (e não em supabase/migrations/) de propósito: nenhum `db push` o pega.
 --
@@ -143,6 +145,9 @@ end;
 $$;
 
 revoke all on function private.is_app_scope_allowed(uuid, text, boolean, boolean) from public, anon;
+-- As políticas chamam esta função como o próprio usuário: sem EXECUTE para authenticated toda leitura das tabelas cobertas
+-- falha com 42501 (inclusive para admin). Mesmo motivo da migração 20261014150436 (grant de is_restricted_operator).
+grant execute on function private.is_app_scope_allowed(uuid, text, boolean, boolean) to authenticated;
 
 -- 4a) Tabelas JÁ bloqueadas ao restrito (lista do V3) e que algum app novo usa: política passa a consultar a matriz.
 --     Para quem só tem separa_confere.operar continua negado, como hoje (não há linha de separa_confere na matriz).
@@ -234,7 +239,11 @@ declare
     ['create_production_release', 'producao'], ['confirm_production_release', 'producao'], ['create_production', 'producao'],
     ['reverse_production', 'producao'], ['floor_advance_quantity', 'producao'], ['floor_assume_execution', 'producao'],
     ['floor_complete_execution', 'producao'], ['finalize_delivery', 'entrega'], ['reserve_delivery_er', 'entrega'],
-    ['publish_production_route', 'admin']
+    ['publish_production_route', 'admin'],
+    -- Funções administrativas hoje abertas a qualquer membro da empresa (inclusive o operador confinado). Só confinado é barrado; quem não é restrito segue como hoje.
+    -- update_employee_salary e resolve_salary_base ficam de fora de propósito: a fase 2 de seguranca_salario_pix_*.sql as trata por permissão.
+    ['adjust_stock', 'admin'], ['create_stock_entry', 'admin'],
+    ['confirm_raw_material_entry', 'admin'], ['reverse_raw_material_entry', 'admin'], ['update_order_items', 'admin']
   ];
   i int;
 begin
@@ -256,8 +265,10 @@ begin
   end loop;
 end $$;
 
--- 5b) Anônimo não executa RPC de produção/entrega. Estavam abertas a anon: confirm_production_release, create_production
---     (2 sobrecargas), reverse_production. A guarda acima já exige auth.uid(), mas o grant não deve existir.
+-- 5b) Anônimo não executa essas RPCs. Estavam abertas a anon: confirm_production_release, create_production (2 sobrecargas),
+--     reverse_production e update_order_items (esta só é chamada pelo editor administrativo, que é autenticado).
+--     A guarda acima já exige auth.uid(), mas o grant não deve existir.
+--     NÃO mexe em create_order (catálogo público) nem nas funções da plataforma (já exigem platform_admins).
 do $$
 declare r record;
 begin
@@ -267,7 +278,8 @@ begin
     where n.nspname = 'public'
       and p.proname in ('confirm_production_release', 'create_production', 'reverse_production', 'create_production_release',
                         'floor_advance_quantity', 'floor_assume_execution', 'floor_complete_execution', 'finalize_delivery',
-                        'reserve_delivery_er', 'publish_production_route')
+                        'reserve_delivery_er', 'publish_production_route',
+                        'adjust_stock', 'create_stock_entry', 'confirm_raw_material_entry', 'reverse_raw_material_entry', 'update_order_items')
   loop
     execute format('revoke execute on function %s from public, anon', r.oid::regprocedure);
     execute format('grant execute on function %s to authenticated', r.oid::regprocedure);
