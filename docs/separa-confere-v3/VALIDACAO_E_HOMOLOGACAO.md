@@ -117,3 +117,19 @@ Projeto Supabase Free `saboriza-homolog` (US$ 0), separado da produção. Login 
 **DEF-01 em produção:** mitigado (execute revogado da `separation_report_shortage` antiga; migration `20261014230013`). Aplicar a 221500 depende de aprovação.
 
 **Não validado:** navegador e aparelho real (preview sem backend), câmera/leitor, modo avião, inventário completo por HTTP, perfis híbridos com `admin.acessar` por HTTP (cobertos só por SQL simulado).
+
+## 10. Inventário e perfis híbridos por HTTP real (homologação, 2026-10-14)
+
+**Inventário (JWT real):** gestor cria sessão; operador não cria ("Sem permissão para gerenciar inventário"); operador lista 19 itens, inicia contagem (recebe só token, nome, apresentação, unidade, sem saldo), registra contagem (diferença calculada no servidor), repete o mesmo comando sem duplicar (`replayed: true`), reusar a fotografia com outro comando é negado; segundo operador no mesmo item é negado ("sendo contado por outro operador"); operador não lê resultados nem histórico; gestor lê resultados; empresa B não vê a sessão da A.
+
+**DEF-07 (novo):** o inventário não respeitava o escopo de app: usuário confinado só ao Entrega listava os itens e emitia token de contagem. Corrigido em homologação e versionado em `supabase/pendentes/20261014224500_separa_confere_v3_inventario_escopo_de_app.sql` (helper `can_access_inventory_unit`, aplicado a begin_count, register_count, session_items e list_sessions). Depois da correção o usuário só-Entrega recebe "Sessão não encontrada"/"Item não encontrado". Não aplicado em produção.
+
+**Perfis híbridos (trocando permissões do papel na homologação):**
+| Papel | restrito | apps | leitura direta de pedidos | snapshot |
+|---|---|---|---|---|
+| Separa + Entrega + auxiliar (`iam.memberships.read`) | sim | separa, entrega | sim (precisa para Entrega) | sim |
+| Separa + `estoque.inventario.gerenciar` | sim | separa | 0 linhas | sim; gerencia inventário |
+| Separa + `admin.acessar` | não | separa, produção, entrega | sim | sim |
+Permissão auxiliar não retira confinamento nem libera administração; `admin.acessar` explícito libera tudo. Papéis restaurados ao estado original depois do teste.
+
+**Lacuna da réplica:** `raw_materials.gtin` ausente (existe em produção); adicionada só na homologação.

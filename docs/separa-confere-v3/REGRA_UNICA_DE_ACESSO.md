@@ -82,5 +82,5 @@ Ordem de aplicação (somente em homologação primeiro, depois produção com a
 ## Reconciliação (2026-10-14)
 
 - Definição única de `private.is_restricted_operator`: a da migration `20261014180000_apps_operacionais_isolados.sql` (qualquer `*.operar` e sem `admin.acessar`). O Separa Confere V3 usa a mesma; `can_use_app` (221500) só acrescenta o app ao teste.
-- Ordem de aplicação em produção: `180000` → `181000` (grants, DEF-06) → `221500` → `223000` fase A → frontend dos 3 apps → fase B.
+- Ordem de aplicação em produção: `180000` → `181000` (grants, DEF-06) → `221500` → `224500` (inventário, DEF-07) → `223000` fase A → frontend dos 3 apps → fase B.
 - Nada da migration dos apps operacionais foi editado; a correção está em arquivo separado `20261014181000_apps_operacionais_reconciliacao_grants.sql`. Pendente de aprovação para aplicar.
