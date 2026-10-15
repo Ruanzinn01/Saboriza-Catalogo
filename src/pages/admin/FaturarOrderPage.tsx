@@ -78,7 +78,7 @@ export function FaturarOrderPage() {
   const fiscalOk = fiscalChoice === "EMITIR_NFE" || noFiscalReason.trim().length >= 5;
   const hasOverdue = (creditSnapshot?.overdue_amount ?? 0) > 0;
   const overLimit = (creditSnapshot?.available_after ?? 0) < 0;
-  const creditOk = (!hasOverdue && !overLimit) || creditReleased;
+  const creditOk = creditSnapshot !== null && (creditSnapshot.uncovered ? creditSnapshot.uncovered.length === 0 : !hasOverdue && !overLimit);
   const allOk = paymentsOk && fiscalOk && creditOk && paymentMethods.length > 0;
 
   const checks = useMemo(
@@ -622,8 +622,12 @@ export function FaturarOrderPage() {
               <button onClick={() => setShowRelease(false)} className="rounded-lg border border-ink-900/15 px-4 py-2 text-sm font-semibold">Cancelar</button>
               <Button
                 disabled={releaseInput.trim().length < 5}
-                onClick={() => {
-                  authorizeException(releaseInput.trim());
+                onClick={async () => {
+                  const error = await authorizeException(releaseInput.trim());
+                  if (error) {
+                    toast.error(error);
+                    return;
+                  }
                   setShowRelease(false);
                   setReleaseInput("");
                 }}

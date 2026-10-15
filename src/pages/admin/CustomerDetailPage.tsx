@@ -7,6 +7,7 @@ import { AdminState } from "@/components/admin/AdminState";
 import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
+import { CustomerCreditPanel } from "@/components/admin/CustomerCreditPanel";
 import { formatCurrency } from "@/lib/currency";
 import { getCustomerDisplayName } from "@/lib/customer-display";
 
@@ -87,6 +88,8 @@ export function CustomerDetailPage() {
           </Button>
         </div>
       </div>
+
+      <CustomerCreditPanel customerId={customer.id} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-forest-950/10 bg-white p-4">

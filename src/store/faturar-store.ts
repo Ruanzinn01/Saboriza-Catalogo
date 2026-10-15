@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "@/lib/supabase";
+import { rpcUntyped } from "@/lib/supabase-rpc";
 import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { orderFromRow } from "@/lib/mappers/order-mapper";
 import type { Order } from "@/types/order";
@@ -85,7 +86,17 @@ export interface CreditSnapshot {
   projected_exposure: number;
   available_after: number;
   excess: number;
+  available?: number;
+  current_excess?: number;
+  has_policy?: boolean;
+  own_commitment?: number;
+  max_overdue_days?: number;
+  blockers?: CreditBlocker[];
+  uncovered?: CreditBlocker[];
 }
+
+export type CreditBlocker = "OVERDUE" | "OVER_LIMIT";
+
 
 const CASH_TYPES: PaymentType[] = ["DINHEIRO"];
 
@@ -147,7 +158,7 @@ interface FaturarState {
   creditReleased: boolean;
   releaseReason: string;
   refreshQuote: () => Promise<void>;
-  authorizeException: (reason: string) => void;
+  authorizeException: (reason: string) => Promise<string | null>;
 
   isConfirming: boolean;
   confirmBilling: () => Promise<{ billingId: string | null; error: string | null }>;
@@ -318,10 +329,31 @@ export const useFaturarStore = create<FaturarState>((set, get) => ({
       p_order_id: currentOrder.id,
       p_financed_part: financedPart,
     });
-    if (data) set({ creditSnapshot: data as unknown as CreditSnapshot });
+    if (data) {
+      const snapshot = data as unknown as CreditSnapshot;
+      set({
+        creditSnapshot: snapshot,
+        creditReleased: (snapshot.blockers?.length ?? 0) > 0 && (snapshot.uncovered?.length ?? 0) === 0,
+      });
+    } else {
+      set({ creditSnapshot: null, creditReleased: false });
+    }
   },
 
-  authorizeException: (reason) => set({ creditReleased: true, releaseReason: reason }),
+  authorizeException: async (reason) => {
+    const { currentOrder, creditSnapshot } = get();
+    const restrictions = creditSnapshot?.blockers ?? [];
+    if (!currentOrder || restrictions.length === 0) return "Sem impedimento de crédito para liberar";
+    const { error } = await rpcUntyped("oris360_credit_authorize", {
+      p_order_id: currentOrder.id,
+      p_restrictions: restrictions,
+      p_reason: reason,
+    });
+    if (error) return error.message;
+    set({ releaseReason: reason });
+    await get().refreshQuote();
+    return null;
+  },
 
   isConfirming: false,
 
