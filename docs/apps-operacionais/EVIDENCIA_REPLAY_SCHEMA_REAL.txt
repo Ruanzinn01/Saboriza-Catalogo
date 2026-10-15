@@ -1,0 +1,234 @@
+# Reconstruindo o banco a partir de supabase/migrations
+[OK]    trilha reaplicada sem falha
+semeadura genérica: 61 de 104 tabelas com linhas nas duas empresas (as demais ficam INCONCLUSIVAS na visibilidade)
+
+# ESTADO ATUAL: funções executáveis por anon entre as 4 alvo: 5
+[OK]    estado atual reproduz o achado: anon executa RPCs de produção/pedido  → update_order_items(uuid,jsonb,text) | create_production(uuid,integer,uuid[]) | create_production(uuid,integer,uuid[],uuid) | reverse_production(uuid,text) | confirm_production_release(uuid,integer,uuid,uuid,text,jsonb)
+[OK]    estado atual reproduz o achado: operador do Separa NÃO é barrado por permissão em finalize_delivery  → P0001 Informe o nome completo do recebedor
+
+# APLICANDO a migration sobre o schema reconstruído
+[OK]    migration aplicada sem erro (injeção de guarda nos corpos REAIS das RPCs)
+
+# REGRESSÃO: quem não pode mudar (visibilidade em TODAS as tabelas com company_id, empresa A)
+[OK]    separa: visibilidade idêntica antes e depois em 110 tabelas
+[OK]    gestor: visibilidade idêntica antes e depois em 110 tabelas
+[OK]    owner: visibilidade idêntica antes e depois em 110 tabelas
+[OK]    nenhuma política removida
+       políticas alteradas: 11 | novas: 35
+       alteradas: raw_materials.raw_materials_no_restricted_operator, urgent_demands.urgent_demands_no_restricted_operator, production_diaries.production_diaries_no_restricted_operator, diary_evaluations.diary_evaluations_no_restricted_operator, diary_occurrences.diary_occurrences_no_restricted_operator, diary_other_activities.diary_other_activities_no_restricted_operator, production_routes.production_routes_no_restricted_operator, floor_executions.floor_executions_no_restricted_operator, production_plans.production_plans_no_restricted_operator, production_releases.production_releases_no_restricted_operator, production_records.production_records_no_restricted_operator
+[OK]    só as políticas *_no_restricted_operator das tabelas usadas pelos apps foram alteradas
+
+# VISIBILIDADE por app (leitura direta, empresa A)
+[OK]    producao: não enxerga nenhuma tabela fora da matriz
+[OK]    producao: enxerga as tabelas da matriz que têm linhas
+[OK]    entrega: não enxerga nenhuma tabela fora da matriz
+[OK]    entrega: enxerga as tabelas da matriz que têm linhas
+[OK]    multi: não enxerga nenhuma tabela fora da matriz
+[OK]    multi: enxerga as tabelas da matriz que têm linhas
+
+# ESCRITAS DIRETAS
+[OK]    producao: UPDATE orders (fora da matriz) -> negar  → ok(0)
+[OK]    producao: SELECT employees (CPF/salário) -> negar  → ok(0)
+[OK]    entrega: UPDATE orders (matriz: escrita) -> permitir  → ok(1)
+[OK]    entrega: SELECT billings direto (permissão financeira) -> negar  → ok(0)
+[OK]    multi: SELECT employees direto -> negar  → ok(0)
+[OK]    hibrido: SELECT employees (producao.operar + admin.acessar = não restrito) -> permitir  → ok(0)
+[OK]    gestor: UPDATE orders -> permitir  → ok(1)
+
+# GUARDA PRESENTE em cada sobrecarga das funções-alvo (definição viva)
+[OK]    guarda injetada em todas as 17 sobrecargas das 15 funções-alvo
+[OK]    a guarda está dentro do corpo (depois de $function$), nunca no cabeçalho
+
+# RPCs com guarda (corpos reais). Bloqueado = 42501; permitido = qualquer outro resultado
+[OK]    create_production_release(7) como separa: negado  → 42501 Sem acesso a este app
+[OK]    create_production_release(7) como producao: permitido  → P0001 Produto nao encontrado ou inativo
+[OK]    create_production_release(7) como entrega: negado  → 42501 Sem acesso a este app
+[OK]    create_production_release(7) como multi: permitido  → P0001 Produto nao encontrado ou inativo
+[OK]    create_production_release(7) como gestor: permitido  → P0001 Produto nao encontrado ou inativo
+[OK]    create_production_release(7) como owner: permitido  → P0001 Produto nao encontrado ou inativo
+[OK]    create_production_release(7) como hibrido: permitido  → P0001 Produto nao encontrado ou inativo
+[OK]    create_production_release(7) como anon: sem EXECUTE  → sem privilégio
+[OK]    confirm_production_release(6) como separa: negado  → 42501 Sem acesso a este app
+[OK]    confirm_production_release(6) como producao: permitido  → P0001 Quantidade de packs deve ser maior que zero
+[OK]    confirm_production_release(6) como entrega: negado  → 42501 Sem acesso a este app
+[OK]    confirm_production_release(6) como multi: permitido  → P0001 Quantidade de packs deve ser maior que zero
+[OK]    confirm_production_release(6) como gestor: permitido  → P0001 Quantidade de packs deve ser maior que zero
+[OK]    confirm_production_release(6) como owner: permitido  → P0001 Quantidade de packs deve ser maior que zero
+[OK]    confirm_production_release(6) como hibrido: permitido  → P0001 Quantidade de packs deve ser maior que zero
+[OK]    confirm_production_release(6) como anon: sem EXECUTE  → sem privilégio
+       (sobrecarga ambígua com argumentos nulos: create_production(2) como separa não testável por chamada; coberta pela variante de maior aridade)
+       (sobrecarga ambígua com argumentos nulos: create_production(2) como producao não testável por chamada; coberta pela variante de maior aridade)
+       (sobrecarga ambígua com argumentos nulos: create_production(2) como entrega não testável por chamada; coberta pela variante de maior aridade)
+       (sobrecarga ambígua com argumentos nulos: create_production(2) como multi não testável por chamada; coberta pela variante de maior aridade)
+       (sobrecarga ambígua com argumentos nulos: create_production(2) como gestor não testável por chamada; coberta pela variante de maior aridade)
+       (sobrecarga ambígua com argumentos nulos: create_production(2) como owner não testável por chamada; coberta pela variante de maior aridade)
+       (sobrecarga ambígua com argumentos nulos: create_production(2) como hibrido não testável por chamada; coberta pela variante de maior aridade)
+[OK]    create_production(2) como anon: sem EXECUTE  → sem privilégio
+       (sobrecarga ambígua com argumentos nulos: create_production(3) como separa não testável por chamada; coberta pela variante de maior aridade)
+       (sobrecarga ambígua com argumentos nulos: create_production(3) como producao não testável por chamada; coberta pela variante de maior aridade)
+       (sobrecarga ambígua com argumentos nulos: create_production(3) como entrega não testável por chamada; coberta pela variante de maior aridade)
+       (sobrecarga ambígua com argumentos nulos: create_production(3) como multi não testável por chamada; coberta pela variante de maior aridade)
+       (sobrecarga ambígua com argumentos nulos: create_production(3) como gestor não testável por chamada; coberta pela variante de maior aridade)
+       (sobrecarga ambígua com argumentos nulos: create_production(3) como owner não testável por chamada; coberta pela variante de maior aridade)
+       (sobrecarga ambígua com argumentos nulos: create_production(3) como hibrido não testável por chamada; coberta pela variante de maior aridade)
+[OK]    create_production(3) como anon: sem EXECUTE  → sem privilégio
+[OK]    create_production(4) como separa: negado  → 42501 Sem acesso a este app
+[OK]    create_production(4) como producao: permitido  → P0001 Quantidade de packs deve ser maior que zero
+[OK]    create_production(4) como entrega: negado  → 42501 Sem acesso a este app
+[OK]    create_production(4) como multi: permitido  → P0001 Quantidade de packs deve ser maior que zero
+[OK]    create_production(4) como gestor: permitido  → P0001 Quantidade de packs deve ser maior que zero
+[OK]    create_production(4) como owner: permitido  → P0001 Quantidade de packs deve ser maior que zero
+[OK]    create_production(4) como hibrido: permitido  → P0001 Quantidade de packs deve ser maior que zero
+[OK]    create_production(4) como anon: sem EXECUTE  → sem privilégio
+[OK]    reverse_production(2) como separa: negado  → 42501 Sem acesso a este app
+[OK]    reverse_production(2) como producao: permitido  → P0001 Motivo do estorno é obrigatório
+[OK]    reverse_production(2) como entrega: negado  → 42501 Sem acesso a este app
+[OK]    reverse_production(2) como multi: permitido  → P0001 Motivo do estorno é obrigatório
+[OK]    reverse_production(2) como gestor: permitido  → P0001 Motivo do estorno é obrigatório
+[OK]    reverse_production(2) como owner: permitido  → P0001 Motivo do estorno é obrigatório
+[OK]    reverse_production(2) como hibrido: permitido  → P0001 Motivo do estorno é obrigatório
+[OK]    reverse_production(2) como anon: sem EXECUTE  → sem privilégio
+[OK]    floor_advance_quantity(2) como separa: negado  → 42501 Sem acesso a este app
+[OK]    floor_advance_quantity(2) como producao: permitido  → P0001 Quantidade deve ser maior que zero
+[OK]    floor_advance_quantity(2) como entrega: negado  → 42501 Sem acesso a este app
+[OK]    floor_advance_quantity(2) como multi: permitido  → P0001 Quantidade deve ser maior que zero
+[OK]    floor_advance_quantity(2) como gestor: permitido  → P0001 Quantidade deve ser maior que zero
+[OK]    floor_advance_quantity(2) como owner: permitido  → P0001 Quantidade deve ser maior que zero
+[OK]    floor_advance_quantity(2) como hibrido: permitido  → P0001 Quantidade deve ser maior que zero
+[OK]    floor_advance_quantity(2) como anon: sem EXECUTE  → sem privilégio
+[OK]    floor_assume_execution(2) como separa: negado  → 42501 Sem acesso a este app
+[OK]    floor_assume_execution(2) como producao: permitido  → P0001 Colaborador nao habilitado para producao
+[OK]    floor_assume_execution(2) como entrega: negado  → 42501 Sem acesso a este app
+[OK]    floor_assume_execution(2) como multi: permitido  → P0001 Colaborador nao habilitado para producao
+[OK]    floor_assume_execution(2) como gestor: permitido  → P0001 Colaborador nao habilitado para producao
+[OK]    floor_assume_execution(2) como owner: permitido  → P0001 Colaborador nao habilitado para producao
+[OK]    floor_assume_execution(2) como hibrido: permitido  → P0001 Colaborador nao habilitado para producao
+[OK]    floor_assume_execution(2) como anon: sem EXECUTE  → sem privilégio
+[OK]    floor_complete_execution(1) como separa: negado  → 42501 Sem acesso a este app
+[OK]    floor_complete_execution(1) como producao: permitido  → P0001 Execucao nao encontrada
+[OK]    floor_complete_execution(1) como entrega: negado  → 42501 Sem acesso a este app
+[OK]    floor_complete_execution(1) como multi: permitido  → P0001 Execucao nao encontrada
+[OK]    floor_complete_execution(1) como gestor: permitido  → P0001 Execucao nao encontrada
+[OK]    floor_complete_execution(1) como owner: permitido  → P0001 Execucao nao encontrada
+[OK]    floor_complete_execution(1) como hibrido: permitido  → P0001 Execucao nao encontrada
+[OK]    floor_complete_execution(1) como anon: sem EXECUTE  → sem privilégio
+[OK]    finalize_delivery(11) como separa: negado  → 42501 Sem acesso a este app
+[OK]    finalize_delivery(11) como producao: negado  → 42501 Sem acesso a este app
+[OK]    finalize_delivery(11) como entrega: permitido  → P0001 Informe o nome completo do recebedor
+[OK]    finalize_delivery(11) como multi: permitido  → P0001 Informe o nome completo do recebedor
+[OK]    finalize_delivery(11) como gestor: permitido  → P0001 Informe o nome completo do recebedor
+[OK]    finalize_delivery(11) como owner: permitido  → P0001 Informe o nome completo do recebedor
+[OK]    finalize_delivery(11) como hibrido: permitido  → P0001 Informe o nome completo do recebedor
+[OK]    finalize_delivery(11) como anon: sem EXECUTE  → sem privilégio
+[OK]    reserve_delivery_er(1) como separa: negado  → 42501 Sem acesso a este app
+[OK]    reserve_delivery_er(1) como producao: negado  → 42501 Sem acesso a este app
+[OK]    reserve_delivery_er(1) como entrega: permitido  → P0001 Pedido não encontrado
+[OK]    reserve_delivery_er(1) como multi: permitido  → P0001 Pedido não encontrado
+[OK]    reserve_delivery_er(1) como gestor: permitido  → P0001 Pedido não encontrado
+[OK]    reserve_delivery_er(1) como owner: permitido  → P0001 Pedido não encontrado
+[OK]    reserve_delivery_er(1) como hibrido: permitido  → P0001 Pedido não encontrado
+[OK]    reserve_delivery_er(1) como anon: sem EXECUTE  → sem privilégio
+[OK]    publish_production_route(2) como separa: negado  → 42501 Sem acesso a este app
+[OK]    publish_production_route(2) como producao: negado  → 42501 Sem acesso a este app
+[OK]    publish_production_route(2) como entrega: negado  → 42501 Sem acesso a este app
+[OK]    publish_production_route(2) como multi: negado  → 42501 Sem acesso a este app
+[OK]    publish_production_route(2) como gestor: permitido  → P0001 Informe ao menos uma etapa da rota
+[OK]    publish_production_route(2) como owner: permitido  → P0001 Informe ao menos uma etapa da rota
+[OK]    publish_production_route(2) como hibrido: permitido  → P0001 Informe ao menos uma etapa da rota
+[OK]    publish_production_route(2) como anon: sem EXECUTE  → sem privilégio
+[OK]    adjust_stock(3) como separa: negado  → 42501 Sem acesso a este app
+[OK]    adjust_stock(3) como producao: negado  → 42501 Sem acesso a este app
+[OK]    adjust_stock(3) como entrega: negado  → 42501 Sem acesso a este app
+[OK]    adjust_stock(3) como multi: negado  → 42501 Sem acesso a este app
+[OK]    adjust_stock(3) como gestor: permitido  → P0001 Estoque contado deve ser zero ou maior
+[OK]    adjust_stock(3) como owner: permitido  → P0001 Estoque contado deve ser zero ou maior
+[OK]    adjust_stock(3) como hibrido: permitido  → P0001 Estoque contado deve ser zero ou maior
+[OK]    adjust_stock(3) como anon: sem EXECUTE  → sem privilégio
+[OK]    create_stock_entry(3) como separa: negado  → 42501 Sem acesso a este app
+[OK]    create_stock_entry(3) como producao: negado  → 42501 Sem acesso a este app
+[OK]    create_stock_entry(3) como entrega: negado  → 42501 Sem acesso a este app
+[OK]    create_stock_entry(3) como multi: negado  → 42501 Sem acesso a este app
+[OK]    create_stock_entry(3) como gestor: permitido  → P0001 Quantidade deve ser maior que zero
+[OK]    create_stock_entry(3) como owner: permitido  → P0001 Quantidade deve ser maior que zero
+[OK]    create_stock_entry(3) como hibrido: permitido  → P0001 Quantidade deve ser maior que zero
+[OK]    create_stock_entry(3) como anon: sem EXECUTE  → sem privilégio
+[OK]    confirm_raw_material_entry(1) como separa: negado  → 42501 Sem acesso a este app
+[OK]    confirm_raw_material_entry(1) como producao: negado  → 42501 Sem acesso a este app
+[OK]    confirm_raw_material_entry(1) como entrega: negado  → 42501 Sem acesso a este app
+[OK]    confirm_raw_material_entry(1) como multi: negado  → 42501 Sem acesso a este app
+[OK]    confirm_raw_material_entry(1) como gestor: permitido  → P0001 Entrada não encontrada
+[OK]    confirm_raw_material_entry(1) como owner: permitido  → P0001 Entrada não encontrada
+[OK]    confirm_raw_material_entry(1) como hibrido: permitido  → P0001 Entrada não encontrada
+[OK]    confirm_raw_material_entry(1) como anon: sem EXECUTE  → sem privilégio
+[OK]    reverse_raw_material_entry(2) como separa: negado  → 42501 Sem acesso a este app
+[OK]    reverse_raw_material_entry(2) como producao: negado  → 42501 Sem acesso a este app
+[OK]    reverse_raw_material_entry(2) como entrega: negado  → 42501 Sem acesso a este app
+[OK]    reverse_raw_material_entry(2) como multi: negado  → 42501 Sem acesso a este app
+[OK]    reverse_raw_material_entry(2) como gestor: permitido  → P0001 Motivo do estorno é obrigatório
+[OK]    reverse_raw_material_entry(2) como owner: permitido  → P0001 Motivo do estorno é obrigatório
+[OK]    reverse_raw_material_entry(2) como hibrido: permitido  → P0001 Motivo do estorno é obrigatório
+[OK]    reverse_raw_material_entry(2) como anon: sem EXECUTE  → sem privilégio
+[OK]    update_order_items(3) como separa: negado  → 42501 Sem acesso a este app
+[OK]    update_order_items(3) como producao: negado  → 42501 Sem acesso a este app
+[OK]    update_order_items(3) como entrega: negado  → 42501 Sem acesso a este app
+[OK]    update_order_items(3) como multi: negado  → 42501 Sem acesso a este app
+[OK]    update_order_items(3) como gestor: permitido  → P0001 Carrinho vazio
+[OK]    update_order_items(3) como owner: permitido  → P0001 Carrinho vazio
+[OK]    update_order_items(3) como hibrido: permitido  → P0001 Carrinho vazio
+[OK]    update_order_items(3) como anon: sem EXECUTE  → sem privilégio
+[OK]    operator_list_production_employees(0) como separa: negado  → 42501 Sem acesso a este app
+[OK]    operator_list_production_employees(0) como producao: permitido  → executou
+[OK]    operator_list_production_employees(0) como entrega: negado  → 42501 Sem acesso a este app
+[OK]    operator_list_production_employees(0) como multi: permitido  → executou
+[OK]    operator_list_production_employees(0) como gestor: permitido  → executou
+[OK]    operator_list_production_employees(0) como owner: permitido  → executou
+[OK]    operator_list_production_employees(0) como hibrido: permitido  → executou
+[OK]    operator_list_production_employees(0) como anon: sem EXECUTE  → sem privilégio
+[OK]    operator_confirmed_billing_order_ids(1) como separa: negado  → 42501 Sem acesso a este app
+[OK]    operator_confirmed_billing_order_ids(1) como producao: negado  → 42501 Sem acesso a este app
+[OK]    operator_confirmed_billing_order_ids(1) como entrega: permitido  → executou
+[OK]    operator_confirmed_billing_order_ids(1) como multi: permitido  → executou
+[OK]    operator_confirmed_billing_order_ids(1) como gestor: permitido  → executou
+[OK]    operator_confirmed_billing_order_ids(1) como owner: permitido  → executou
+[OK]    operator_confirmed_billing_order_ids(1) como hibrido: permitido  → executou
+[OK]    operator_confirmed_billing_order_ids(1) como anon: sem EXECUTE  → sem privilégio
+
+# LEITURA MÍNIMA e PERFIL
+[OK]    producao: operator_list_production_employees devolve só identificação  → id,code,name,status,can_operate_production,photo_url,unit_id
+[OK]    entrega: operator_confirmed_billing_order_ids devolve só ids confirmados (e billings direto é negado)  → 1 id(s)
+[OK]    perfil separa: apps={separa_confere} admin=false  → separa_confere admin=false
+[OK]    perfil producao: apps={producao} admin=false  → producao admin=false
+[OK]    perfil entrega: apps={entrega} admin=false  → entrega admin=false
+[OK]    perfil multi: apps={producao,entrega} admin=false  → producao,entrega admin=false
+[OK]    perfil hibrido: apps={separa_confere,producao,entrega} admin=true  → separa_confere,producao,entrega admin=true
+[OK]    perfil gestor: apps={separa_confere,producao,entrega} admin=true  → separa_confere,producao,entrega admin=true
+[OK]    perfil owner: apps={separa_confere,producao,entrega} admin=true  → separa_confere,producao,entrega admin=true
+[OK]    perfil outra: apps={producao} admin=false  → producao admin=false
+[OK]    perfil LEGADO (clientes antigos): separa continua restrito
+[OK]    perfil LEGADO: Proprietário continua sem restrição
+
+# OUTRA EMPRESA
+[OK]    usuário restrito da empresa B não vê nada da empresa A
+[OK]    usuário da empresa B só lista colaboradores da própria empresa  → 1 linha(s)
+
+# ANON depois da migration
+[OK]    nenhuma das RPCs alvo é executável por anon
+[OK]    create_order (catálogo público) continua executável por anon
+
+# CONVIVÊNCIA: patch de Storage multiempresa aplicado depois desta migration
+[OK]    patch de Storage aplica sem erro depois da migration
+[OK]    storage: entrega lê comprovante de entrega da própria empresa  → 1
+[OK]    storage: multi lê comprovante de entrega da própria empresa  → 1
+[OK]    storage: owner lê comprovante de entrega da própria empresa  → 1
+[OK]    storage: gestor lê comprovante de entrega da própria empresa  → 1
+[OK]    storage: operador de Entrega grava assinatura da própria empresa
+[OK]    storage: separa (confinado) NÃO lê documentos de colaborador  → 0
+[OK]    storage: producao (confinado) NÃO lê documentos de colaborador  → 0
+[OK]    storage: entrega (confinado) NÃO lê documentos de colaborador  → 0
+[OK]    storage: multi (confinado) NÃO lê documentos de colaborador  → 0
+[OK]    storage: Proprietário lê documentos de colaborador
+[OK]    storage: híbrido (producao.operar + admin.acessar) lê documentos como administrador
+[OK]    storage: usuário da empresa B não lê nada da empresa A
+       informativo: operador do Separa/Produziu lê comprovantes da própria empresa? SIM (política do patch é só por empresa; ver README)
+
+RESULTADO: 0 falhas
