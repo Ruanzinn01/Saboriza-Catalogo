@@ -27,3 +27,22 @@ O pagamento de banco de horas deixa de criar linha em `expenses` e passa a compo
 - Repetição com a mesma chave não cria segunda linha.
 - Dois vínculos no mês recusam nas três.
 - Reversão do patch devolve os corpos originais (hash).
+
+## Exemplo antes/depois: pagamento de 2h30 de banco de horas (PROPOSTA, sem mudança de comportamento autorizada)
+
+Premissas: colaborador com hora normal de R$ 20,00 e adicional de 50%. 150 min pagos = R$ 75,00 (2,5 h x 20 x 1,5).
+
+| Momento | Hoje (código atual) | Proposta (um único fato financeiro) |
+|---|---|---|
+| Onde nasce | `oris360_resolver_banco_horas(..., 'PAGO')` insere uma linha em `expenses` (natureza SALARIO, status ABERTO, competência = mês corrente) e uma saída `PAGO` no banco de horas ligada por `expense_id` | O mesmo comando cria um item de obrigação salarial `HORA_EXTRA_PAGA` em `salary_obligations`, ligado à saída `PAGO` do banco de horas e ao vínculo do período. Não cria linha em `expenses` |
+| Competência | mês corrente na hora do clique (não do trabalho) | mês das horas aprovadas no Espelho (fato de origem); o mês do clique deixa de decidir |
+| Vencimento | não existe: a despesa não tem vencimento próprio | `due_date` explícito do item (regra da folha); pode diferir da competência |
+| Despesas | aparece como despesa avulsa ABERTA, e a folha pode contar o mesmo salário de outro jeito | aparece dentro da obrigação do colaborador na competência, via `getAllExpenses()`, sem segunda linha. KPI só muda de lugar se o cliente autorizar |
+| Caixa | só quando alguém marca a despesa como paga | só no pagamento (`paid_at`), nunca na criação, no vencimento ou no agendamento |
+| Autorização | `timesheet.apuracao.manage` para resolver; pagamento depois, em Despesas | resolver o banco exige `timesheet.apuracao.manage`; pagar exige `despesas.manage`. Passos separados, ambos auditados |
+| Estorno | não há estorno automático; cancelar a despesa deixa a saída `PAGO` no banco | estorno cria evento inverso: item vira ESTORNADO, o saldo de horas volta por lançamento compensatório (histórico imutável), caixa só recua se já tinha sido pago |
+| Duplicidade | nada impede pagar as mesmas horas por outra porta | chave de idempotência por (colaborador, competência, origem) |
+
+Estados: competência (a que mês pertence) → vencimento (quando deve ser pago) → agendamento (data programada, opcional) → pagamento (quando o dinheiro saiu). Cada um é um campo e um evento próprio.
+
+Esta seção é proposta para decisão do cliente. Nada foi implementado nem aplicado; Despesas e KPIs seguem como estão.
