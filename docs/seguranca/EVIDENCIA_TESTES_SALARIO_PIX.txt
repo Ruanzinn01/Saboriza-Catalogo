@@ -1,0 +1,103 @@
+# Reconstruindo o banco a partir de supabase/migrations
+[OK]    185 migrações reaplicadas sem falha
+
+# 1. ESTADO ATUAL (equivalente a produção): o que um membro SEM papel de RH consegue hoje
+[OK]    membro comum LÊ salário e Pix de todos os colaboradores da empresa  → 2 linhas
+[OK]    membro comum ALTERA salário direto na tabela
+[OK]    membro comum ALTERA a chave Pix direto na tabela
+[OK]    membro comum GRAVA histórico salarial direto na tabela
+[OK]    membro comum LÊ o histórico salarial  → 3 linhas
+[OK]    membro comum consulta salário vigente pela RPC resolve_salary_base
+[OK]    membro comum altera salário pela RPC update_employee_salary
+[OK]    membro comum EXCLUI colaborador (e o histórico salarial em cascata) pela API
+[OK]    controle: isolamento entre empresas na tabela employees funciona
+[OK]    controle: operador restrito não enxerga employees (política restritiva)
+[OK]    anon tem privilégio de tabela em salary_history (a RLS é a única barreira)  → a leitura anon é barrada antes da RLS: permission denied for function is_active_company_member
+[OK]    storage: usuário da EMPRESA B lista documentos de colaborador da EMPRESA A
+[OK]    storage: usuário da EMPRESA B lista comprovantes de entrega da EMPRESA A
+
+# 2. FASE 1 (aditiva): não pode mudar comportamento existente
+[OK]    nenhum grant, política ou corpo de função existente mudou  → funcoes, permissoes
+[OK]    o membro comum continua lendo como antes (fase 1 não restringe)
+[OK]    papéis com despesas.manage receberam as 2 permissões novas; membro comum e operador restrito, nenhuma  → 6/6 e 0
+[OK]    RPC de leitura nega o membro comum  → Sem permissão para consultar a remuneração deste colaborador
+[OK]    RPC de leitura nega o operador restrito
+[OK]    RPC de leitura atende o Proprietário
+[OK]    RPC de leitura não cruza empresas (Proprietário A pedindo colaborador de B)
+[OK]    papel de RH-leitura lê a remuneração
+[OK]    papel de RH-leitura NÃO altera
+[OK]    alteração de salário sem motivo é recusada
+[OK]    papel de RH-gestão altera salário com motivo
+[OK]    a alteração gerou histórico versionado e atualizou o valor vigente
+[OK]    Pix alterado e auditado SEM gravar a chave inteira (máscara + impressão digital)  → auditoria: {"after": {"pix_key": {"mascara": "***.com", "impressao": "83cbc1ab"}}, "before": {"pix_key": {"mascara": "***.com", "impressao": "fd0e5e71"}}, "fields": ["pix_key"], "reason": null} {"after": {"salary_base": 5600, "salary_effective_date": "2026-05-01"}, "before": {"salary_base": 5000, "salary_effective_date": null}, "fields": ["salary_base", "salary_effective_date"], "reason": "Dissídio coletivo 2026"}
+[OK]    auditoria de salário traz antes/depois e o motivo
+[OK]    campo fora da lista de remuneração é recusado
+[OK]    gestor de vendas altera comissão
+[OK]    gestor de vendas NÃO lê salário
+[OK]    gestor de vendas lê só as comissões
+[OK]    gestor de despesas (novo, sem RH) lista a remuneração para gerar a folha
+[OK]    gestor de despesas NÃO altera remuneração
+[OK]    lista em lote nega o membro comum
+
+# 3. FASE 2 (restritiva): proteção pela API e pelos caminhos de escrita
+[OK]    leitura de salario_base pela API: NEGADA ao membro comum  → permission denied for table employees
+[OK]    leitura de pix_key pela API: NEGADA ao membro comum  → permission denied for table employees
+[OK]    leitura de salary_additions: NEGADA
+[OK]    leitura de salary_benefits: NEGADA
+[OK]    leitura de salary_effective_date: NEGADA
+[OK]    leitura de monthly_divisor: NEGADA
+[OK]    leitura de timesheet_overtime_percent: NEGADA
+[OK]    leitura de commission_rate_percent: NEGADA
+[OK]    select * (o que o front antigo faz) agora FALHA — o front novo precisa listar as colunas  → permission denied for table employees
+[OK]    colunas não sensíveis continuam legíveis
+[OK]    nem o Proprietário lê salário direto na tabela (só pela RPC auditável)
+[OK]    o Proprietário lê pela RPC
+[OK]    escrita de salário direto na tabela: NEGADA ao membro comum  → permission denied for table employees
+[OK]    escrita de salário direto na tabela: NEGADA até ao Proprietário (só pela RPC)
+[OK]    escrita de Pix direto na tabela: NEGADA
+[OK]    escrita de comissão direto na tabela: NEGADA
+[OK]    edição de dados não sensíveis continua permitida
+[OK]    INSERT informando salário: NEGADO  → permission denied for table employees
+[OK]    INSERT informando Pix: NEGADO
+[OK]    INSERT sem colunas sensíveis continua permitido
+[OK]    INSERT em outra empresa continua barrado pela RLS
+[OK]    histórico salarial: membro comum não lê nada
+[OK]    histórico salarial: INSERT direto NEGADO
+[OK]    histórico salarial: UPDATE direto NEGADO (até ao Proprietário)
+[OK]    histórico salarial: DELETE direto NEGADO
+[OK]    histórico salarial: papel de RH-leitura lê só a própria empresa
+[OK]    histórico salarial: usuário da empresa B não lê o da empresa A
+[OK]    RPC resolve_salary_base: NEGADA ao membro comum
+[OK]    RPC resolve_salary_base: gestor de despesas continua atendido
+[OK]    RPC update_employee_salary: NEGADA ao membro comum
+[OK]    RPC update_employee_salary: papel de RH-gestão continua atendido (e agora audita)
+[OK]    folha: gestor de despesas ainda gera a obrigação (usa o salário sem ler a coluna)
+[OK]    exclusão de colaborador pela API: NEGADA  → permission denied for table employees
+[OK]    exclusão de colaborador pela API: NEGADA até ao Proprietário
+[OK]    anon: sem privilégio algum em salary_history  → permission denied for table salary_history
+[OK]    anon: sem privilégio em employees
+[OK]    operador restrito continua sem ver employees
+[OK]    service_role (funções de borda) continua lendo — fora do alcance da API pública
+[OK]    pagamento de horas extras segue funcionando (função agora DEFINER, com a checagem de permissão mantida)
+[OK]    pagamento de horas extras segue negado a quem não tem apuração
+[OK]    gatilhos do vínculo continuam funcionando (desligar fecha o período)
+[OK]    trava de regressão: as ÚNICAS colunas sem leitura para authenticated são as 8 sensíveis  → commission_rate_percent,monthly_divisor,pix_key,salary_additions,salary_base,salary_benefits,salary_effective_date,timesheet_overtime_percent
+
+# 4. REVERSÃO
+[OK]    reverter a fase 2 devolve grants, políticas, corpos de função e grants de coluna IDÊNTICOS (hash)
+[OK]    após a reversão da fase 2 o comportamento antigo volta (membro comum lê)
+[OK]    reverter também a fase 1 devolve grants/políticas ao estado pristino; permissões novas removidas  →  0/0
+
+# 5. STORAGE com escopo de empresa (patch separado)
+diagnóstico owner_a: [[{"n":1}],[{"v":false}],{"ok":true,"rows":[{"name":"eeeeeeee-0000-0000-0000-0000000000a1/contrato.pdf"}],"afetadas":0},[{"n":1}]]
+[OK]    empresa B não lista mais nenhum arquivo da empresa A
+[OK]    empresa A continua vendo os próprios arquivos  → 3 arquivo(s)
+[OK]    operador restrito não lê documento de colaborador
+[OK]    operador restrito (Entrega Registra) continua lendo comprovantes da própria empresa
+[OK]    operador restrito continua gravando comprovante da própria empresa
+[OK]    empresa B não grava comprovante em pedido da empresa A  → new row violates row-level security policy for table "objects"
+[OK]    empresa B não grava documento em colaborador da empresa A
+[OK]    empresa A grava documento do próprio colaborador
+[OK]    reverter o storage restaura a política antiga (exposição volta; prova de reversão)
+
+Resultado: TODOS OS TESTES PASSARAM
