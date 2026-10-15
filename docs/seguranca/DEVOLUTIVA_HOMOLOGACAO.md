@@ -79,7 +79,7 @@ Feito no front (não publicado): ajuste de batida interpreta o horário no fuso 
 
 - Outbox é infraestrutura preparada; nenhum módulo está integrado a ela.
 - Liquidações salariais NÃO conectadas ao Asaas.
-- Convergência das 3 portas salariais (`generate_salary_obligation`, `create_expense_launch` com salário, `oris360_resolver_banco_horas('PAGO')`) em um único comando: apenas especificada, não implementada. Critério: as três chamam uma função única que valida vínculo, competência e idempotência.
+- Convergência das 3 portas salariais em um único comando: especificada em `docs/integracoes/CONVERGENCIA_PORTAS_SALARIAIS.md`, não implementada (depende de decisão do cliente sobre o impacto em Despesas).
 - Webhook Asaas: teste unitário do resultado existe (`asaas-webhook-outcome.test.ts`). Teste de integração com falha, repetição e recuperação NÃO executado (precisa de ambiente de homologação com a função publicada).
 
 ## 9. Lacunas (não executado)
@@ -89,5 +89,5 @@ Feito no front (não publicado): ajuste de batida interpreta o horário no fuso 
 3. Testes de navegador e roteiro H01 a H19 (exigem homologação e dispositivo real).
 4. Teste de integração do webhook Asaas.
 5. Convergência das 3 portas salariais.
-6. Verificação em produção de batidas eventualmente perdidas pelo defeito da seção 2.
+6. (verificado, só leitura) Produção tem 0 batidas gravadas e nenhum erro `permission denied for schema private` nos logs das últimas 24h; as funções de borda não estão publicadas, então nada foi perdido. O defeito só apareceria após a publicação.
 7. Confirmação da integração GitHub do Supabase.
