@@ -8200,6 +8200,30 @@ export type Database = {
         Args: { p_financed_part: number; p_order_id: string }
         Returns: Json
       }
+      oris360_credit_authorize: {
+        Args: { p_order_id: string; p_reason: string; p_restrictions: string[]; p_valid_hours?: number }
+        Returns: string
+      }
+      oris360_credit_overview: {
+        Args: { p_customer_id: string; p_financed_part?: number; p_order_id?: string }
+        Returns: Json
+      }
+      oris360_credit_request_release: {
+        Args: { p_order_id: string; p_reason: string }
+        Returns: string
+      }
+      oris360_receivable_pay: {
+        Args: { p_amount: number; p_idempotency_key: string; p_note?: string; p_receivable_id: string }
+        Returns: Json
+      }
+      oris360_receivable_reverse: {
+        Args: { p_idempotency_key: string; p_payment_id: string; p_reason: string }
+        Returns: Json
+      }
+      oris360_set_credit_limit: {
+        Args: { p_customer_id: string; p_new_limit: number; p_reason: string }
+        Returns: Json
+      }
       oris360_fechar_competencia_ponto: {
         Args: { p_competencia: string; p_employee_id: string }
         Returns: Json

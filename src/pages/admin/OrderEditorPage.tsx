@@ -28,6 +28,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import { useCatalogStore } from "@/store/catalog-store";
 import { useOrdersStore } from "@/store/orders-store";
 import { useCustomersStore } from "@/store/customers-store";
+import { OrderCreditBanner } from "@/components/admin/OrderCreditBanner";
 import { useSettingsStore } from "@/store/settings-store";
 import { useVendasStore } from "@/store/vendas-store";
 import { submitOrder, updateOrderItems } from "@/lib/orders-api";
@@ -322,6 +323,8 @@ export function OrderEditorPage() {
       <Link to="/admin/pedidos" className="flex w-fit items-center gap-2 text-sm font-semibold text-ink-700/70 hover:text-ink-900">
         <ArrowLeft size={16} /> Voltar para Pedidos
       </Link>
+
+      {order?.customerId && <OrderCreditBanner orderId={order.id} customerId={order.customerId} total={order.total} status={order.status} />}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>

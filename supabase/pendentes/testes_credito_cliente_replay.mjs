@@ -58,7 +58,7 @@ async function papel(uid, empresa, chave, perms) {
     insert into public.memberships (id, company_id, user_id, status) values ('${mem}','${empresa}','${uid}','ACTIVE');
     insert into public.membership_roles (company_id, membership_id, role_id) values ('${empresa}','${mem}','${role}');`);
 }
-await papel(U.owner, A, "proprietario", ["billing.view_credit_analysis", "billing.invoice_order", "customer_credit.change_permanent_limit"]);
+await papel(U.owner, A, "proprietario", ["billing.view_credit_analysis", "billing.view_receivables", "billing.invoice_order", "billing.settle_receivable", "customer_credit.change_permanent_limit"]);
 await papel(U.vendedor, A, "vendedor", ["billing.view_credit_analysis", "billing.view_receivables", "billing.invoice_order", "billing.request_credit_release"]);
 await papel(U.autorizador, A, "autorizador", ["billing.view_credit_analysis", "billing.authorize_credit_exception"]);
 await papel(U.gerente, A, "gerente", ["billing.view_credit_analysis", "billing.request_credit_release", "billing.authorize_credit_exception"]);
@@ -189,6 +189,54 @@ await db.exec(`update public.orders set total_amount = 900 where id='${pc}'`);
 ok("aumento do total invalida a autorização", (await q(`select status from public.credit_authorizations where order_id='${pc}'`))[0].status === "INVALIDADA");
 r = await confirmar(U.vendedor, pc, 900, "k-pc");
 ok("faturar após mudança material exige nova análise", !r.ok && /credito bloqueado/.test(r.msg), r.msg);
+
+log("\n# 13. Baixa parcial, quitação e estorno (saldo oficial)");
+const c5 = await novoCliente("Cliente 5");
+await como(U.owner, `select public.oris360_set_credit_limit('${c5}', 1000, 'limite inicial')`);
+const p7 = await novoPedido(c5, 600, "CONFIRMED");
+r = await confirmar(U.vendedor, p7, 600, "k-p7");
+ok("pedido faturado para teste de baixas", r.ok, r.msg);
+const rec = (await q(`select id from public.receivables where customer_id='${c5}'`))[0].id;
+r = await como(U.vendedor, `select public.oris360_receivable_pay('${rec}', 100, 'pay-key-0001', 'x')`);
+ok("quem só fatura não baixa recebível", !r.ok, r.msg);
+r = await como(U.owner, `select public.oris360_receivable_pay('${rec}', 250, 'pay-key-0002', 'parcial')`);
+v = r.rows?.[0]?.oris360_receivable_pay;
+ok("pagamento parcial reduz só o saldo baixado (600→350)", r.ok && Number(v.open_receivables) === 350 && Number(v.current_exposure) === 350, r.msg);
+r = await como(U.owner, `select public.oris360_receivable_pay('${rec}', 250, 'pay-key-0002', 'parcial')`);
+ok("repetição da mesma chave não baixa duas vezes", r.ok && Number(r.rows[0].oris360_receivable_pay.open_receivables) === 350);
+r = await como(U.owner, `select public.oris360_receivable_pay('${rec}', 400, 'pay-key-0003', 'maior')`);
+ok("baixa maior que o saldo é recusada", !r.ok, r.msg);
+r = await como(U.owner, `select public.oris360_receivable_pay('${rec}', 350, 'pay-key-0004', 'quita')`);
+ok("quitação zera dívida e marca PAGO", r.ok && Number(r.rows[0].oris360_receivable_pay.open_receivables) === 0 && (await q(`select status from public.receivables where id='${rec}'`))[0].status === "PAGO");
+const pagto = (await q(`select id from public.receivable_payments where idempotency_key='pay-key-0004'`))[0].id;
+r = await como(U.owner, `select public.oris360_receivable_reverse('${pagto}', 'rev-key-0001', 'pagamento devolvido')`);
+ok("estorno recompõe a exposição (0→350) e reabre o título", r.ok && Number(r.rows[0].oris360_receivable_reverse.open_receivables) === 350 && (await q(`select status from public.receivables where id='${rec}'`))[0].status === "ABERTO", r.msg);
+r = await como(U.owner, `select public.oris360_receivable_reverse('${pagto}', 'rev-key-0002', 'segundo estorno')`);
+ok("mesma baixa não pode ser estornada duas vezes", !r.ok, r.msg);
+r = await como(U.owner, `update public.receivables set status='PAGO' where id='${rec}'`);
+ok("UPDATE direto do status do título é recusado", !r.ok, r.msg);
+
+log("\n# 14. Pagamento misto: só a parte financiada gera exposição");
+const c6 = await novoCliente("Cliente 6");
+await como(U.owner, `select public.oris360_set_credit_limit('${c6}', 300, 'limite inicial')`);
+const p8 = await novoPedido(c6, 500, "CONFIRMED");
+const misto = JSON.stringify([
+  { type: "DINHEIRO", amount: 200, generates_credit: false, installments: [] },
+  { type: "BOLETO", amount: 300, generates_credit: true, installments: [{ number: 1, days: 30, due_date: "2026-12-01", amount: 300 }] },
+]);
+r = await como(U.vendedor, `select public.oris360_billing_confirm('${p8}','${misto}'::jsonb,'SEM_DOCUMENTO_FISCAL','k-p8') as id`);
+ok("misto 200 à vista + 300 financiado cabe em limite 300", r.ok, r.msg);
+v = (await ov(U.vendedor, c6)).rows[0].o;
+ok("exposição = só os 300 financiados", Number(v.current_exposure) === 300 && Number(v.available) === 0);
+
+log("\n# 7. Cancelar pedido já faturado não apaga a dívida");
+await setStatus(p8, "CANCELLED");
+v = (await ov(U.vendedor, c6)).rows[0].o;
+ok("dívida permanece após cancelar pedido faturado", Number(v.open_receivables) === 300);
+ok("recebível segue ABERTO (exige fluxo financeiro próprio)", (await q(`select status from public.receivables where customer_id='${c6}'`))[0].status === "ABERTO");
+
+log("\n# Data oficial da empresa");
+ok("vencimento usa o fuso da unidade (company_today)", (await q(`select (private.company_today('${A}') = (now() at time zone (select timezone from public.units where company_id='${A}' limit 1))::date) ok`))[0].ok === true);
 
 log("\n# 17. Sem permissão de consulta não há aprovação implícita");
 ok("overview sem permissão = null (cliente trata como indisponível)", (await ov(U.outra, c3)).rows[0].o === null);

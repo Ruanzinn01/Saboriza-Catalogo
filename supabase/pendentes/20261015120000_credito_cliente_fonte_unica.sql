@@ -49,6 +49,63 @@ revoke insert, update, delete on public.credit_commitments from authenticated;
 -- reserva idempotente: no máximo um compromisso aberto por pedido
 create unique index credit_commitments_one_open_per_order on public.credit_commitments (order_id) where status = 'ABERTO';
 
+-- 1b) Baixas (pagamento parcial, quitação, estorno) e data oficial da empresa ---------------
+
+insert into public.permissions (key, name, description, sensitivity) values
+  ('billing.settle_receivable', 'Baixar e estornar recebível', 'Registrar pagamento parcial/total e estorno em contas a receber', 'CRITICAL')
+on conflict (key) do nothing;
+insert into public.role_permissions (company_id, role_id, permission_key)
+select distinct rp.company_id, rp.role_id, 'billing.settle_receivable'
+from public.role_permissions rp
+where rp.permission_key = 'billing.invoice_order'
+on conflict do nothing;
+
+create table public.receivable_payments (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null,
+  receivable_id uuid not null references public.receivables(id),
+  kind text not null check (kind in ('BAIXA', 'ESTORNO')),
+  amount numeric not null check (amount > 0),
+  reverses_payment_id uuid references public.receivable_payments(id),
+  idempotency_key text not null unique,
+  note text,
+  created_by uuid default auth.uid(),
+  created_at timestamptz not null default now(),
+  check ((kind = 'ESTORNO') = (reverses_payment_id is not null))
+);
+create unique index receivable_payments_one_reversal on public.receivable_payments (reverses_payment_id) where reverses_payment_id is not null;
+create index receivable_payments_receivable_idx on public.receivable_payments (receivable_id);
+alter table public.receivable_payments enable row level security;
+create policy receivable_payments_select on public.receivable_payments for select
+  using (private.has_permission(company_id, 'billing.view_receivables'));
+revoke insert, update, delete on public.receivable_payments from authenticated;
+-- situação do título só muda por RPC (baixa/estorno) ou pelo serviço de borda (service_role)
+revoke update, delete on public.receivables from authenticated;
+
+create or replace function private.company_today(p_company_id uuid)
+returns date
+language sql
+stable
+security definer
+set search_path to ''
+as $$
+  select (now() at time zone coalesce(
+    (select u.timezone from public.units u where u.company_id = p_company_id order by (u.name = 'Matriz') desc, u.created_at limit 1),
+    'America/Belem'))::date
+$$;
+
+create or replace function private.receivable_balance(p_receivable_id uuid)
+returns numeric
+language sql
+stable
+security definer
+set search_path to ''
+as $$
+  select r.amount - coalesce((select sum(case p.kind when 'BAIXA' then p.amount else -p.amount end)
+                              from public.receivable_payments p where p.receivable_id = r.id), 0)
+  from public.receivables r where r.id = p_receivable_id
+$$;
+
 -- 2) Cálculo único ------------------------------------------------------------------------
 
 create or replace function private.compute_credit_snapshot(p_customer_id uuid, p_financed_part numeric, p_order_id uuid)
@@ -59,7 +116,7 @@ security definer
 set search_path to ''
 as $$
 declare
-  v_today date := (now() at time zone 'America/Bahia')::date;
+  v_today date;
   v_limit numeric;
   v_has_policy boolean;
   v_open numeric;
@@ -71,17 +128,23 @@ declare
   v_current numeric;
   v_projected numeric;
 begin
+  v_today := private.company_today((select company_id from public.customers where id = p_customer_id));
   select credit_limit into v_limit from public.customer_credit where customer_id = p_customer_id;
   v_has_policy := found;
   v_limit := coalesce(v_limit, 0);
 
-  select coalesce(sum(amount), 0),
-         coalesce(sum(amount) filter (where due_date < v_today), 0),
-         count(*) filter (where due_date < v_today),
-         coalesce(max(v_today - due_date) filter (where due_date < v_today), 0)
+  select coalesce(sum(b.bal), 0),
+         coalesce(sum(b.bal) filter (where b.due_date < v_today), 0),
+         count(*) filter (where b.due_date < v_today),
+         coalesce(max(v_today - b.due_date) filter (where b.due_date < v_today), 0)
     into v_open, v_overdue, v_overdue_count, v_max_days
-  from public.receivables
-  where customer_id = p_customer_id and status in ('ABERTO', 'VENCIDO');
+  from (
+    select r.due_date, r.amount - coalesce((select sum(case p.kind when 'BAIXA' then p.amount else -p.amount end)
+                                            from public.receivable_payments p where p.receivable_id = r.id), 0) as bal
+    from public.receivables r
+    where r.customer_id = p_customer_id and r.status in ('ABERTO', 'VENCIDO')
+  ) b
+  where b.bal > 0;
 
   select coalesce(sum(amount), 0),
          coalesce(sum(amount) filter (where order_id is not distinct from p_order_id and p_order_id is not null), 0)
@@ -540,6 +603,81 @@ begin
 end;
 $function$;
 
+-- 7b) Baixa e estorno (fonte oficial dos saldos) ---------------------------------------------
+
+create or replace function public.oris360_receivable_pay(p_receivable_id uuid, p_amount numeric, p_idempotency_key text, p_note text default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path to ''
+as $$
+declare
+  v_rec public.receivables;
+  v_balance numeric;
+begin
+  select * into v_rec from public.receivables where id = p_receivable_id;
+  if v_rec.id is null or not private.has_permission(v_rec.company_id, 'billing.settle_receivable') then
+    raise exception 'sem permissao para baixar este recebivel';
+  end if;
+  if p_amount is null or p_amount <= 0 then raise exception 'valor de baixa invalido'; end if;
+  if p_idempotency_key is null or length(trim(p_idempotency_key)) < 8 then raise exception 'chave de idempotencia obrigatoria'; end if;
+
+  perform pg_advisory_xact_lock(hashtextextended(v_rec.customer_id::text, 0));
+
+  if exists (select 1 from public.receivable_payments where idempotency_key = p_idempotency_key) then
+    return public.oris360_credit_overview(v_rec.customer_id, null, 0);
+  end if;
+  if v_rec.status = 'CANCELADO' then raise exception 'recebivel cancelado'; end if;
+  v_balance := private.receivable_balance(p_receivable_id);
+  if p_amount > v_balance then raise exception 'baixa maior que o saldo do titulo'; end if;
+
+  insert into public.receivable_payments (company_id, receivable_id, kind, amount, idempotency_key, note)
+  values (v_rec.company_id, p_receivable_id, 'BAIXA', p_amount, p_idempotency_key, p_note);
+
+  if v_balance - p_amount = 0 then
+    update public.receivables set status = 'PAGO', paid_at = now() where id = p_receivable_id;
+  end if;
+  return public.oris360_credit_overview(v_rec.customer_id, null, 0);
+end;
+$$;
+
+create or replace function public.oris360_receivable_reverse(p_payment_id uuid, p_idempotency_key text, p_reason text)
+returns jsonb
+language plpgsql
+security definer
+set search_path to ''
+as $$
+declare
+  v_pay public.receivable_payments;
+  v_rec public.receivables;
+begin
+  select * into v_pay from public.receivable_payments where id = p_payment_id and kind = 'BAIXA';
+  if v_pay.id is null or not private.has_permission(v_pay.company_id, 'billing.settle_receivable') then
+    raise exception 'sem permissao para estornar esta baixa';
+  end if;
+  if p_reason is null or length(trim(p_reason)) < 5 then raise exception 'motivo obrigatorio'; end if;
+  if p_idempotency_key is null or length(trim(p_idempotency_key)) < 8 then raise exception 'chave de idempotencia obrigatoria'; end if;
+  select * into v_rec from public.receivables where id = v_pay.receivable_id;
+
+  perform pg_advisory_xact_lock(hashtextextended(v_rec.customer_id::text, 0));
+
+  if exists (select 1 from public.receivable_payments where idempotency_key = p_idempotency_key) then
+    return public.oris360_credit_overview(v_rec.customer_id, null, 0);
+  end if;
+  if exists (select 1 from public.receivable_payments where reverses_payment_id = p_payment_id) then
+    raise exception 'baixa ja estornada';
+  end if;
+
+  insert into public.receivable_payments (company_id, receivable_id, kind, amount, reverses_payment_id, idempotency_key, note)
+  values (v_pay.company_id, v_pay.receivable_id, 'ESTORNO', v_pay.amount, p_payment_id, p_idempotency_key, trim(p_reason));
+
+  if v_rec.status = 'PAGO' then
+    update public.receivables set status = 'ABERTO', paid_at = null where id = v_rec.id;
+  end if;
+  return public.oris360_credit_overview(v_rec.customer_id, null, 0);
+end;
+$$;
+
 -- 8) Permissões de execução ---------------------------------------------------------------
 
 revoke all on function public.oris360_credit_overview(uuid, uuid, numeric) from public, anon;
@@ -556,3 +694,9 @@ grant execute on function private.compute_credit_snapshot(uuid, numeric) to auth
 grant execute on function private.credit_blockers(jsonb) to authenticated;
 grant execute on function private.credit_uncovered(uuid, text[]) to authenticated;
 grant execute on function private.convert_credit_commitment(uuid, uuid) to authenticated;
+revoke all on function public.oris360_receivable_pay(uuid, numeric, text, text) from public, anon;
+revoke all on function public.oris360_receivable_reverse(uuid, text, text) from public, anon;
+grant execute on function public.oris360_receivable_pay(uuid, numeric, text, text) to authenticated;
+grant execute on function public.oris360_receivable_reverse(uuid, text, text) to authenticated;
+grant execute on function private.company_today(uuid) to authenticated;
+grant execute on function private.receivable_balance(uuid) to authenticated;
