@@ -439,10 +439,34 @@ ok("exportação não traz banco/Pix", !JSON.stringify(r.j).match(/pix|account|b
 r = await rpc(U.fin_b, "list_suppliers_export", `array['${S1}']::uuid[]`);
 ok("sem fornecedores.exportar: negado", negado(r), r.msg);
 
+log("\n# 10b. Rascunho persistente do formulário");
+r = await rpc(U.gestor_b, "save_supplier_draft", `null, null, 0, ${J({ trade_name: "Rascunho", cnpj: "11", pix_key: "NAO-GUARDAR", bank: "NAO", beneficiary_name: "NAO", account: "NAO" })}`);
+ok("gestor salva rascunho de novo cadastro (versão 1)", r.ok && r.j.version === 1, r.msg);
+const dr = (await q(`select payload::text p from public.supplier_drafts where user_id='${U.gestor_b}'`))[0].p;
+ok("servidor descarta chaves de banco/Pix do rascunho", !/NAO|pix|bank|account|beneficiary/i.test(dr) && /Rascunho/.test(dr), dr);
+r = await rpc(U.gestor_b, "save_supplier_draft", `null, null, 0, ${J({ trade_name: "Aba 2" })}`);
+ok("segunda aba com versão velha => CONFLITO_REVISAO (sem sobrescrita silenciosa)", !r.ok && /CONFLITO_REVISAO/.test(r.msg), r.msg);
+r = await rpc(U.gestor_b, "save_supplier_draft", `null, null, 1, ${J({ trade_name: "Rascunho v2" })}`);
+ok("versão correta atualiza (versão 2)", r.ok && r.j.version === 2);
+r = await rpc(U.gestor_b, "get_supplier_draft", `null, null`);
+ok("recupera o rascunho salvo", r.ok && r.j.payload.trade_name === "Rascunho v2" && r.j.version === 2);
+r = await rpc(U.owner_b, "get_supplier_draft", `null, null`);
+ok("rascunho é por pessoa: outra pessoa da empresa não vê o do gestor", r.ok && r.j === null);
+r = await auth(U.owner_b, "select count(*)::int n from public.supplier_drafts");
+ok("RLS: leitura direta só do próprio rascunho", r.ok && r.rows[0].n === 0);
+r = await rpc(U.gestor_b, "save_supplier_draft", `'${S1}', null, 0, ${J({ trade_name: "Edição" })}`);
+ok("rascunho de edição de fornecedor (alvo separado do novo cadastro)", r.ok && r.j.version === 1, r.msg);
+r = await rpc(U.owner_a, "save_supplier_draft", `'${S1}', null, 0, ${J({ trade_name: "x" })}`);
+ok("A não cria rascunho para fornecedor da B", !r.ok && /não encontrado/.test(r.msg), r.msg);
+r = await rpc(U.fin_b, "save_supplier_draft", `null, null, 0, ${J({ trade_name: "x" })}`);
+ok("sem fornecedores.manage não salva rascunho", negado(r), r.msg);
+await rpc(U.gestor_b, "discard_supplier_draft", `null, null`);
+ok("descartar remove o rascunho", (await rpc(U.gestor_b, "get_supplier_draft", `null, null`)).j === null);
+
 log("\n# 11. GRANT/REVOKE");
-const fns = ["create_supplier(uuid,jsonb)", "update_supplier(uuid,integer,jsonb)", "set_supplier_active(uuid,boolean,integer)", "find_supplier_by_document(text,uuid)", "get_supplier_bank_details(uuid,boolean)", "set_supplier_bank_details(uuid,jsonb)", "verify_supplier_bank_details(uuid)", "register_supplier_file(uuid,uuid,text,text,text,text,bigint,text,text,boolean)", "remove_supplier_file(uuid)", "add_candidate_quote(uuid,jsonb)", "list_suppliers_financial(date,date)", "supplier_financial_summary(uuid,date,date)", "list_suppliers_export(uuid[])", "create_supplier_category(text)", "rename_supplier_category(uuid,text)", "set_supplier_category_active(uuid,boolean)", "ensure_default_supplier_categories()", "convert_candidate_to_supplier(uuid,uuid,jsonb)"];
+const fns = ["create_supplier(uuid,jsonb)", "update_supplier(uuid,integer,jsonb)", "set_supplier_active(uuid,boolean,integer)", "find_supplier_by_document(text,uuid)", "get_supplier_bank_details(uuid,boolean)", "set_supplier_bank_details(uuid,jsonb)", "verify_supplier_bank_details(uuid)", "register_supplier_file(uuid,uuid,text,text,text,text,bigint,text,text,boolean)", "remove_supplier_file(uuid)", "add_candidate_quote(uuid,jsonb)", "list_suppliers_financial(date,date)", "supplier_financial_summary(uuid,date,date)", "list_suppliers_export(uuid[])", "save_supplier_draft(uuid,uuid,integer,jsonb)", "get_supplier_draft(uuid,uuid)", "discard_supplier_draft(uuid,uuid)", "create_supplier_category(text)", "rename_supplier_category(uuid,text)", "set_supplier_category_active(uuid,boolean)", "ensure_default_supplier_categories()", "convert_candidate_to_supplier(uuid,uuid,jsonb)"];
 const priv = await q(`select p.oid::regprocedure::text f, has_function_privilege('anon', p.oid, 'execute') a, has_function_privilege('authenticated', p.oid, 'execute') u, has_function_privilege('public', p.oid, 'execute') pu from pg_proc p where p.oid = any(array[${fns.map((x) => `'public.${x}'::regprocedure`).join(",")}])`);
-ok("18 RPCs existem", priv.length === 18);
+ok("21 RPCs existem", priv.length === 21);
 ok("anon e public sem EXECUTE em todas", priv.every((x) => !x.a && !x.pu));
 ok("authenticated com EXECUTE em todas", priv.every((x) => x.u));
 for (const fn of ["create_supplier", "get_supplier_bank_details", "list_suppliers_financial", "supplier_financial_summary"]) {
@@ -452,7 +476,7 @@ for (const fn of ["create_supplier", "get_supplier_bank_details", "list_supplier
 }
 const priv2 = await q(`select p.oid::regprocedure::text f from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private' and p.proname ~ '^supplier_(clean|validate|mask|changed_fields|create_core|sync_children|emit|tz|company_for)$' and (has_function_privilege('authenticated', p.oid, 'execute') or has_function_privilege('anon', p.oid, 'execute'))`);
 ok("funções internas private.supplier_* sem EXECUTE para authenticated e anon", priv2.length === 0, JSON.stringify(priv2));
-const tg = await q(`select table_name, grantee, privilege_type from information_schema.role_table_grants where table_name in ('suppliers','supplier_contacts','supplier_bank_details','supplier_files','supplier_candidate_quotes','supplier_events') and grantee in ('anon','authenticated')`);
+const tg = await q(`select table_name, grantee, privilege_type from information_schema.role_table_grants where table_name in ('suppliers','supplier_contacts','supplier_bank_details','supplier_files','supplier_candidate_quotes','supplier_events','supplier_drafts') and grantee in ('anon','authenticated')`);
 ok("tabelas: authenticated só SELECT; anon nada", tg.filter((g) => g.grantee === "authenticated").every((g) => g.privilege_type === "SELECT") && tg.filter((g) => g.grantee === "anon").length === 0, JSON.stringify(tg.filter((g) => g.privilege_type !== "SELECT").slice(0, 4)));
 ok("bucket supplier-files é privado", (await q("select public p from storage.buckets where id='supplier-files'"))[0].p === false);
 

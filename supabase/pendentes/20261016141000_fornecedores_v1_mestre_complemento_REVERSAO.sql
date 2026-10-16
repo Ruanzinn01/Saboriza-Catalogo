@@ -22,13 +22,16 @@ drop function if exists public.add_candidate_quote(uuid, jsonb);
 drop function if exists public.list_suppliers_financial(date, date);
 drop function if exists public.supplier_financial_summary(uuid, date, date);
 drop function if exists public.list_suppliers_export(uuid[]);
+drop function if exists public.save_supplier_draft(uuid, uuid, integer, jsonb);
+drop function if exists public.get_supplier_draft(uuid, uuid);
+drop function if exists public.discard_supplier_draft(uuid, uuid);
 
 drop trigger if exists supplier_events_suppliers on public.suppliers;
 drop trigger if exists supplier_events_categories on public.supplier_categories;
 drop trigger if exists supplier_events_links on public.supplier_category_links;
 drop trigger if exists supplier_events_candidates on public.supplier_candidates;
 drop trigger if exists supplier_events_candidate_contacts on public.supplier_candidate_contacts;
-drop table if exists public.supplier_events, public.supplier_candidate_quotes, public.supplier_files, public.supplier_bank_details, public.supplier_contacts;
+drop table if exists public.supplier_drafts, public.supplier_events, public.supplier_candidate_quotes, public.supplier_files, public.supplier_bank_details, public.supplier_contacts;
 drop function if exists private.supplier_trg_suppliers(), private.supplier_trg_categories(), private.supplier_trg_links(), private.supplier_trg_candidates(),
   private.supplier_trg_candidate_contacts(), private.supplier_trg_bank(), private.supplier_trg_files();
 drop function if exists private.supplier_emit(uuid, text, text, uuid, integer, jsonb), private.supplier_changed_fields(jsonb, jsonb, text[]),

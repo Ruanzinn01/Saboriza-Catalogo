@@ -10,7 +10,7 @@
 --   2. Colunas novas em public.suppliers (formulário completo do pacote) + revisão concorrente + documento normalizado.
 --   3. Contatos adicionais, favorecido/banco/Pix (tabela separada, RLS própria), arquivos/fotos, cotações da avaliação.
 --   4. Eventos mínimos (supplier_events): só ids e NOMES de campos alterados, nunca valores. Sem consumidor: "registrado".
---   5. RPCs: create/update/ativar fornecedor, banco, arquivos, cotações, posição financeira, exportação.
+--   5. RPCs: create/update/ativar fornecedor, banco, arquivos, cotações, posição financeira, exportação, rascunho do formulário.
 --   6. MUDANÇA DE COMPORTAMENTO: RLS de suppliers. Antes: qualquer membro ativo lia e gravava direto (inclusive DELETE).
 --      Agora: leitura por permissão (fornecedores.read, despesas.read, operations.factory.*, estoque.movimentar);
 --      escrita SOMENTE pelas RPCs (INSERT/UPDATE/DELETE revogados de authenticated). Sem exclusão: ativo/inativo (D5).
@@ -1244,6 +1244,101 @@ begin
 end;
 $$;
 
+-- 12b. Rascunho persistente do formulário (um por pessoa e por alvo; nunca guarda banco/Pix) -------------------------------
+create table public.supplier_drafts (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null,
+  user_id uuid not null default auth.uid(),
+  supplier_id uuid,
+  candidate_id uuid,
+  payload jsonb not null,
+  version integer not null default 1,
+  updated_at timestamptz not null default now(),
+  foreign key (company_id, supplier_id) references public.suppliers (company_id, id) on delete cascade,
+  foreign key (company_id, candidate_id) references public.supplier_candidates (company_id, id) on delete cascade,
+  check (supplier_id is null or candidate_id is null)
+);
+create unique index supplier_drafts_new_idx on public.supplier_drafts (company_id, user_id) where supplier_id is null and candidate_id is null;
+create unique index supplier_drafts_supplier_idx on public.supplier_drafts (company_id, user_id, supplier_id) where supplier_id is not null;
+create unique index supplier_drafts_candidate_idx on public.supplier_drafts (company_id, user_id, candidate_id) where candidate_id is not null;
+alter table public.supplier_drafts enable row level security;
+create policy supplier_drafts_select on public.supplier_drafts for select to authenticated
+  using (user_id = (select auth.uid()) and (select private.has_permission(company_id, 'fornecedores.manage')));
+revoke all on public.supplier_drafts from anon, authenticated;
+grant select on public.supplier_drafts to authenticated;
+
+-- Versão esperada: duas abas não se sobrescrevem em silêncio (CONFLITO_REVISAO). Chaves de banco/Pix são descartadas no servidor.
+create or replace function public.save_supplier_draft(p_supplier_id uuid, p_candidate_id uuid, p_expected_version integer, p_payload jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path to ''
+as $$
+declare
+  v_company uuid := private.supplier_company_for('fornecedores.manage');
+  v_clean jsonb;
+  d public.supplier_drafts;
+begin
+  if jsonb_typeof(p_payload) <> 'object' or length(p_payload::text) > 100000 then raise exception 'Rascunho inválido ou grande demais'; end if;
+  if p_supplier_id is not null and p_candidate_id is not null then raise exception 'Informe o fornecedor OU a avaliação'; end if;
+  if p_supplier_id is not null and not exists (select 1 from public.suppliers s where s.id = p_supplier_id and s.company_id = v_company) then
+    raise exception 'Fornecedor não encontrado';
+  end if;
+  if p_candidate_id is not null and not exists (select 1 from public.supplier_candidates c where c.id = p_candidate_id and c.company_id = v_company) then
+    raise exception 'Avaliação não encontrada';
+  end if;
+  select coalesce(jsonb_object_agg(e.key, e.value), '{}'::jsonb) into v_clean
+    from jsonb_each(p_payload) e where e.key !~* '(bank|pix|benef|account|branch)';
+  select * into d from public.supplier_drafts
+    where company_id = v_company and user_id = auth.uid()
+      and supplier_id is not distinct from p_supplier_id and candidate_id is not distinct from p_candidate_id for update;
+  if not found then
+    insert into public.supplier_drafts (company_id, supplier_id, candidate_id, payload) values (v_company, p_supplier_id, p_candidate_id, v_clean)
+      returning * into d;
+    return jsonb_build_object('version', d.version);
+  end if;
+  if d.version <> coalesce(p_expected_version, 0) then
+    raise exception 'CONFLITO_REVISAO: o rascunho foi alterado em outra aba (versão atual %)', d.version;
+  end if;
+  update public.supplier_drafts set payload = v_clean, version = version + 1, updated_at = now() where id = d.id returning * into d;
+  return jsonb_build_object('version', d.version);
+end;
+$$;
+
+create or replace function public.get_supplier_draft(p_supplier_id uuid, p_candidate_id uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path to ''
+as $$
+declare
+  v_company uuid := private.supplier_company_for('fornecedores.manage');
+  d public.supplier_drafts;
+begin
+  select * into d from public.supplier_drafts
+    where company_id = v_company and user_id = auth.uid()
+      and supplier_id is not distinct from p_supplier_id and candidate_id is not distinct from p_candidate_id;
+  if not found then return null; end if;
+  return jsonb_build_object('payload', d.payload, 'version', d.version, 'updated_at', d.updated_at);
+end;
+$$;
+
+create or replace function public.discard_supplier_draft(p_supplier_id uuid, p_candidate_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path to ''
+as $$
+declare
+  v_company uuid := private.supplier_company_for('fornecedores.manage');
+begin
+  delete from public.supplier_drafts
+    where company_id = v_company and user_id = auth.uid()
+      and supplier_id is not distinct from p_supplier_id and candidate_id is not distinct from p_candidate_id;
+end;
+$$;
+
 -- 13. GRANT EXECUTE: só authenticated; anon e public fora ------------------------------------------------------------
 do $$
 declare f text;
@@ -1254,7 +1349,7 @@ begin
     'public.set_supplier_bank_details(uuid, jsonb)', 'public.verify_supplier_bank_details(uuid)',
     'public.register_supplier_file(uuid, uuid, text, text, text, text, bigint, text, text, boolean)', 'public.remove_supplier_file(uuid)',
     'public.add_candidate_quote(uuid, jsonb)', 'public.list_suppliers_financial(date, date)',
-    'public.supplier_financial_summary(uuid, date, date)', 'public.list_suppliers_export(uuid[])',
+    'public.supplier_financial_summary(uuid, date, date)', 'public.list_suppliers_export(uuid[])', 'public.save_supplier_draft(uuid, uuid, integer, jsonb)', 'public.get_supplier_draft(uuid, uuid)', 'public.discard_supplier_draft(uuid, uuid)',
     'public.create_supplier_category(text)', 'public.rename_supplier_category(uuid, text)', 'public.set_supplier_category_active(uuid, boolean)',
     'public.ensure_default_supplier_categories()', 'public.convert_candidate_to_supplier(uuid, uuid, jsonb)'
   ] loop
