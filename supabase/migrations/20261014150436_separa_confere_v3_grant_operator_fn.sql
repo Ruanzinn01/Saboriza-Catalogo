@@ -1,4 +1,4 @@
--- Reconstruída do histórico real do banco (supabase_migrations.schema_migrations).
--- versão 20261014150436 · md5 normalizado 16e6e567a1fe9254a7ac9313b94da7ef · 1 instrução(ões)
--- Preserva o SQL exatamente como foi aplicado; não editar. Correções entram em migração nova.
+-- Correção aplicada em produção logo após 20261014150418_separa_confere_v3.
+-- As políticas RESTRICTIVE chamam esta função como o papel `authenticated`; sem EXECUTE toda consulta
+-- às 42 tabelas protegidas falharia com 42501. Conteúdo idêntico ao registrado em schema_migrations.
 grant execute on function private.is_restricted_operator(uuid) to authenticated;
