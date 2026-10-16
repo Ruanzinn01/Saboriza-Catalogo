@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/supabase-untyped", () => ({ supabaseUntyped: { rpc: vi.fn() } }));
+
 import { actorLabel, dateInputToIso, defaultAuditFilters, fillDailySeries, filtersToRpcArgs, totalPages } from "@/lib/auditoria-central";
 
 describe("auditoria-central", () => {

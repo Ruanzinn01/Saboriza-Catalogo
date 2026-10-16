@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/supabase", () => ({ supabase: { rpc: vi.fn() } }));
+
 import { getCreditUsage, parseCreditLimitInput } from "./customer-credit";
 
 describe("getCreditUsage", () => {
