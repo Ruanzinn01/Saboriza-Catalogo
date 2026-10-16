@@ -1,0 +1,8 @@
+# Trilha de banco: LF no repositório e no disco, em qualquer máquina. Os hashes normalizados de
+# supabase/baseline/MANIFESTO_HISTORICO.json ignoram espaços e quebras de linha, mas CRLF/LF misturados
+# geram diffs enormes e atrapalham a revisão. Só escopo do banco e dos docs; o restante segue a configuração local.
+supabase/migrations/** text eol=lf
+supabase/baseline/** text eol=lf
+supabase/pendentes/** text eol=lf
+supabase/functions/** text eol=lf
+docs/** text eol=lf

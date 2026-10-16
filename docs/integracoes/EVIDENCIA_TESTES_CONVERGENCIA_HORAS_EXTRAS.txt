@@ -1,0 +1,66 @@
+# Reconstruindo o banco a partir de supabase/migrations
+[OK]    trilha reaplicada sem falha
+
+# 1. ANTES (código atual): A paga 150 min (2h30 x R$ 20,00 x 1,5 = R$ 75,00)
+[OK]    pagamento cria a saída PAGO no banco de horas
+[OK]    e cria UMA linha em expenses (natureza SALARIO, ABERTO) de R$ 75,00 no mês corrente  → {"id":"3eb9958e-f2e4-4e3d-8b2f-af7365e1a98b","a":"75.00","status":"ABERTO","c":"2026-10-01","d":null}
+KPIs de A com a despesa ABERTA: {"a_pagar":4475,"saidas_total":0,"saidas_operacionais":0,"dre":{}}
+[OK]    a pagar de A = 4.400 (folha) + 75 (despesa)  → 4475
+KPIs de A depois de pagar tudo: {"a_pagar":0,"saidas_total":4475,"saidas_operacionais":4475,"dre":{"2026-09":4400,"2026-10":75}}
+
+# 2. APLICA A MIGRAÇÃO e confere que nada de A mudou
+[OK]    sem itens, os KPIs de A (já com a despesa antiga) são IDÊNTICOS após a migração  → {"a_pagar":0,"saidas_total":4475,"saidas_operacionais":4475,"dre":{"2026-09":4400,"2026-10":75}}
+[OK]    linha antiga de expenses continua intacta (não há reescrita de histórico)
+
+# 3. DEPOIS (código novo): B, mesmo cenário
+[OK]    pagamento cria a saída PAGO no banco de horas
+[OK]    NÃO cria linha em expenses
+[OK]    cria 1 item HORA_EXTRA_PAGA de R$ 75,00 na competência de origem (2026-09), ligado à saída PAGO  → {"kind":"HORA_EXTRA_PAGA","c":"2026-09-01","minutes":150,"a":"75.00","status":"ATIVO"}
+[OK]    a obrigação mostra adicionais 75 e líquido 4.475 (base 4.400 preservada)  → {"b":"4400","ad":"75.00","n":"4475.00"}
+KPIs de B com o item aberto: {"a_pagar":4475,"saidas_total":0,"saidas_operacionais":0,"dre":{}}
+[OK]    a pagar de B = 4.475, igual ao de A no mesmo estágio  → 4475 vs 4475
+KPIs de B depois de pagar tudo: {"a_pagar":0,"saidas_total":4475,"saidas_operacionais":4475,"dre":{"2026-09":4475}}
+
+# 4. COMPARAÇÃO DOS KPIs (A = antes, B = depois), mesmos fatos
+[OK]    a pagar: igual nos dois estágios
+[OK]    saídas de caixa do mês: iguais (4.475) — o caixa só se move no pagamento  → 4475 vs 4475
+[OK]    DRE, total geral de despesas operacionais: igual (4.475)  → 4475 vs 4475
+MUDANÇA DE LUGAR NO DRE (única diferença): antes {"2026-09":4400,"2026-10":75}; depois {"2026-09":4475}
+[OK]    DRE: antes, as horas extras iam para o mês do VENCIMENTO da despesa; depois, para o mês da COMPETÊNCIA de origem (2026-09)
+
+# 5. Regras do comando novo
+[OK]    repetir o pagamento das mesmas horas é recusado (saldo esgotado, nada duplica)  → SALDO_INSUFICIENTE: o banco de horas tem 0 minuto(s) e foram pedidos 1
+[OK]    a mesma saída do banco não gera um segundo item na mesma competência (índice único)  → duplicate key value violates unique constraint "salary_obligation_items_time_bank_entry_id_competence_key"
+[OK]    quem não tem apuração é negado
+[OK]    usuário de outra empresa é negado
+[OK]    leitura dos itens: quem tem despesas.read vê só os da própria empresa (1)  → 1
+[OK]    leitura dos itens: empresa A não vê os da B
+[OK]    escrita direta nos itens: NEGADA até ao Proprietário  → permission denied for table salary_obligation_items
+[OK]    exclusão direta nos itens: NEGADA
+[OK]    inserção direta nos itens: NEGADA
+[OK]    pagar horas de duas competências sem a folha de agosto gerada é recusado, e nada é gravado  → OBRIGACAO_INEXISTENTE: gere a folha de 08/2026 do colaborador (com vencimento) antes de pagar horas extras dessa competência
+[OK]    FIFO: 100 min = 60 de agosto (R$ 30,00) + 40 de setembro (R$ 20,00), total R$ 50,00  → [{"c":"2026-08-01","minutes":60,"a":"30.00"},{"c":"2026-09-01","minutes":40,"a":"20.00"}]
+[OK]    a saída PAGO guarda o total (50,00) e nenhuma despesa nasce
+[OK]    compensar (sem dinheiro) segue funcionando e não cria item
+[OK]    sem obrigação da competência (inclusive quando a folha não pode ser formada), o pagamento é recusado  → OBRIGACAO_INEXISTENTE: gere a folha de 09/2026 do colaborador (com vencimento) antes de pagar horas extras dessa competência
+
+# 6. Estorno (evento inverso)
+[OK]    estorno exige também despesas.manage  → Sem permissão para estornar pagamento de horas extras
+[OK]    estorno exige motivo
+[OK]    estorno marca os itens como ESTORNADO (nada é apagado), guarda o motivo e zera os adicionais da obrigação  → [{"a":"0.00","n":"4400.00"},{"a":"0.00","n":"4400.00"}]
+[OK]    as 100 horas voltam ao banco por crédito compensatório (histórico imutável)  → 0 -> 100
+[OK]    estornar de novo é idempotente (nada muda)
+[OK]    estorno bloqueado quando a folha já foi paga além do valor sem as horas (estorne antes os vales)  → ESTORNO_BLOQUEADO: a folha de 09/2026 já foi paga além do valor sem estas horas; estorne antes os vales pagos
+[OK]    pagamento legado (feito pela despesa) não é estornado por aqui  → ESTORNO_LEGADO: este pagamento foi lançado em Despesas antes da convergência; estorne por lá
+
+# 7. REVERSÃO (sem itens) devolve funções e totais ao estado anterior
+[OK]    reversão com itens existentes é BLOQUEADA (não destrói histórico)  → REVERSAO_BLOQUEADA: existem itens de horas extras na obrigação; estorne-os (reverse_overtime_payment) e decida o destino dos dados antes de reverter
+[OK]    [sem fase 2 de salário] a migração se aplica
+[OK]    [sem fase 2 de salário] reversão devolve o corpo da função e de salary_balances IDÊNTICOS (hash)
+[OK]    [sem fase 2 de salário] reversão devolve os grants de tabela idênticos e remove a tabela
+[OK]    [com fase 2 de salário] a migração se aplica
+[OK]    [com fase 2 de salário] o pagamento funciona com a função DEFINER (employees sem privilégio de coluna salarial)
+[OK]    [com fase 2 de salário] reversão devolve o corpo da função e de salary_balances IDÊNTICOS (hash)
+[OK]    [com fase 2 de salário] reversão devolve os grants de tabela idênticos e remove a tabela
+
+Resultado: TODOS OS TESTES PASSARAM

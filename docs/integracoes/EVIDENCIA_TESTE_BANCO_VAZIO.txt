@@ -1,0 +1,9 @@
+[OK]    o stub de teste realmente não contém os dois usuários fixos
+[OK]    sem preparo: a trilha para na 20260928152708 (FK de memberships.user_id)  → insert or update on table "memberships" violates foreign key constraint "memberships_user_id_fkey"
+[OK]    preparo é idempotente (2 execuções, 2 usuários)
+[OK]    com preparo: os 186 arquivos da trilha reaplicam sem falha
+[OK]    as duas memberships do seed existem e apontam para os placeholders  → 2
+[OK]    catálogo igual ao replay padrão (129 tabelas, 330 políticas)  → {"t":129,"p":330}
+[OK]    placeholders sem e-mail real  → placeholder-trilha-1@invalid
+
+Resultado: TODOS OS TESTES PASSARAM

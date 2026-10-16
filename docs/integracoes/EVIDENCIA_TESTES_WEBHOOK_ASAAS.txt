@@ -1,0 +1,61 @@
+# Reconstruindo o banco a partir de supabase/migrations
+[OK]    trilha reaplicada sem falha
+
+# 1. Baixa normal (PAYMENT_RECEIVED)
+[OK]    ATUAL: o recebível é baixado (PAGO)
+[OK]    ATUAL (defeito 1): a cobrança NÃO é atualizada porque 'PAGO' viola o CHECK de charges.status  → {"status":"EMITIDA","technical_state":"AGUARDANDO_EVENTO"}
+[OK]    NOVO: recebível PAGO e cobrança PAGA/SINCRONIZADO  → {"status":"PAGA","technical_state":"SINCRONIZADO"}
+
+# 2. Entrega duplicada do mesmo evento
+[OK]    ATUAL: devolve duplicate e não refaz a baixa
+[OK]    NOVO: devolve duplicate, 1 evento gravado, paid_at preservado
+
+# 3. PAYMENT_CONFIRMED depois de PAYMENT_RECEIVED (ids diferentes)
+[OK]    ATUAL (defeito 3): paid_at é sobrescrito pelo segundo evento
+[OK]    NOVO: paid_at do primeiro pagamento é mantido
+
+# 4. PAYMENT_OVERDUE fora de ordem, depois do pagamento
+[OK]    ATUAL (defeito 4): o recebível PAGO é rebaixado para VENCIDO
+[OK]    NOVO: o recebível PAGO permanece PAGO
+[OK]    ATUAL: recebível CANCELADO é reaberto como PAGO por um evento tardio
+[OK]    NOVO: recebível CANCELADO não é revivido
+
+# 5. Autenticação e isolamento entre empresas
+[OK]    token errado: ATUAL devolve 401 e NOVO devolve TOKEN_INVALIDO
+[OK]    token errado: nenhum evento gravado e nenhum efeito
+[OK]    token de OUTRA empresa com o id desta: recusado, sem efeito
+[OK]    token vazio: recusado
+[OK]    defeito 5: event_id já usado por OUTRA empresa é recusado explicitamente, sem tocar nenhum dos dois
+[OK]    cobrança de outra empresa com o mesmo payment_id não é afetada (escopo por empresa)
+
+# 6. Ambiente inativo (Produção desligada recebendo evento)
+[OK]    evento fica registrado com o motivo IGNORADO e NADA muda na cobrança nem no recebível  → {"event_id":"evt_inativo","proc":true,"err":"IGNORADO: ambiente PRODUCAO nao esta ativo nesta empresa"}
+
+# 7. Falha no meio da aplicação e recuperação por reenvio
+[OK]    ATUAL (defeito 2): com a baixa falhando, o evento é marcado como PROCESSADO e fica perdido  → {"event_id":"evt_L3_1","proc":true,"err":null}
+[OK]    NOVO: devolve ok=false/retry (a borda responde 500 e o Asaas reenvia)  → {"ok":false,"error":"FALHA_APLICACAO","retry":true}
+[OK]    NOVO: evento fica PENDENTE com o erro, e a subtransação desfez a cobrança (sem efeito parcial)  → {"event_id":"evt_R3_1","proc":false,"err":"falha injetada no teste"}
+[OK]    NOVO: o reenvio do MESMO evento aplica o efeito uma única vez e limpa o erro  → {"event_id":"evt_R3_1","proc":true,"err":null}
+[OK]    NOVO: um terceiro envio vira duplicate
+
+# 8. Outros casos
+[OK]    cobrança inexistente: evento processado com process_error legível (sem retry infinito do Asaas)
+[OK]    evento sem payment.id: erro explícito em vez de silêncio
+[OK]    PAYMENT_REFUNDED marca a cobrança para RECONCILIAR (decisão humana) sem mexer no recebível
+[OK]    evento sem regra de negócio (PAYMENT_CREATED) é registrado e processado sem efeito
+[OK]    nota AUTORIZADA não é rebaixada por um INVOICE_ERROR atrasado; número do RPS gravado  → {"status":"AUTORIZADA","number":"123"}
+[OK]    cancelamento de nota autorizada é aceito
+[OK]    autorização atrasada não reabre nota CANCELADA
+[OK]    nota inexistente: process_error legível
+
+# 9. Privilégios
+[OK]    anon NÃO executa
+[OK]    authenticated NÃO executa
+[OK]    service_role executa
+[OK]    authenticated lê eventos (política existente); a função não abriu nada novo
+
+# 10. Reversão
+[OK]    reversão remove a função
+[OK]    após a reversão TODAS as assinaturas do schema voltam ao hash anterior (funções, grants, políticas, gatilhos)
+
+Resultado: TODOS OS TESTES PASSARAM

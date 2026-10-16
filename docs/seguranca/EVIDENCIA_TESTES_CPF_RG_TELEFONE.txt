@@ -1,0 +1,71 @@
+# Reconstruindo o banco a partir de supabase/migrations
+[OK]    trilha reaplicada sem falha
+
+# 1. ESTADO ATUAL (equivalente a produção): o que um membro SEM papel de RH consegue hoje
+[OK]    membro comum LÊ CPF, RG e telefone de todos os colaboradores da empresa  → 2 linhas
+[OK]    membro comum ALTERA CPF e telefone direto na tabela
+
+# 2. FASE 1 (aditiva): não pode mudar comportamento existente
+[OK]    nenhum grant, política ou grant de coluna existente mudou
+[OK]    o membro comum continua lendo como antes (fase 1 não restringe)
+[OK]    Proprietários (47 permissões, incluem despesas.manage) receberam as 2 permissões; membro comum e operador restrito, nenhuma
+[OK]    leitura por RPC: nega o membro comum  → Sem permissão para consultar CPF, RG e telefone deste colaborador
+[OK]    leitura por RPC: nega o operador restrito
+[OK]    leitura por RPC: nega quem só tem despesas.read
+[OK]    leitura por RPC: atende o Proprietário
+[OK]    leitura por RPC: não cruza empresas
+[OK]    papel só de leitura de documentos lê
+[OK]    papel de RH-remuneração criado DEPOIS da aplicação não herda a leitura de documentos
+[OK]    papel só de leitura NÃO altera
+[OK]    lista em lote nega o membro comum
+[OK]    lista em lote devolve só a empresa do usuário  → 2
+[OK]    CPF inválido é recusado  → CPF_INVALIDO: informe um CPF válido
+[OK]    CPF de outro colaborador da mesma empresa é recusado (duplicidade)  → CPF_DUPLICADO: já existe colaborador com este CPF nesta empresa
+[OK]    telefone curto demais é recusado
+[OK]    campo fora da lista (salário) é recusado por esta função
+[OK]    alteração vazia é recusada
+[OK]    papel da empresa A não altera colaborador da empresa B
+[OK]    gestão de documentos altera; CPF vem normalizado só com dígitos e telefone aparado  → {"cpf":"39053344705","phone":"71 98888-7777","rg":"9988776"}
+[OK]    auditoria: só máscara + impressão curta, nunca o valor inteiro  → {"after": {"rg": {"mascara": "***76", "impressao": "40d0668c"}, "cpf": {"mascara": "***05", "impressao": "8bbb54e8"}, "phone": {"mascara": "***77", "impressao":
+[OK]    auditoria registra campos alterados e motivo
+[OK]    regravar o mesmo valor não gera auditoria nova
+[OK]    valor vazio limpa o campo (null)
+
+# 3. FASE 2 (restritiva)
+[OK]    leitura de cpf: NEGADA ao membro comum  → permission denied for table employees
+[OK]    leitura de rg: NEGADA ao membro comum  → permission denied for table employees
+[OK]    leitura de rg_issuer: NEGADA ao membro comum  → permission denied for table employees
+[OK]    leitura de phone: NEGADA ao membro comum  → permission denied for table employees
+[OK]    leitura de emergency_phone: NEGADA ao membro comum  → permission denied for table employees
+[OK]    nem o Proprietário lê CPF direto na tabela (só pela RPC)
+[OK]    select * (front antigo) agora FALHA — o front novo precisa listar colunas
+[OK]    colunas não sensíveis continuam legíveis
+[OK]    filtrar por CPF na API (inferência por where) também é NEGADO  → permission denied for table employees
+[OK]    escrita de CPF direto: NEGADA
+[OK]    escrita de telefone direto: NEGADA até ao Proprietário
+[OK]    edição de dados não sensíveis continua permitida
+[OK]    INSERT informando CPF: NEGADO
+[OK]    INSERT informando telefone: NEGADO
+[OK]    INSERT sem colunas sensíveis continua permitido
+[OK]    fluxo de cadastro em dois passos: INSERT sem documentos + gravação pela função
+[OK]    a função continua lendo todos os campos após a fase 2  → 3
+[OK]    anon: sem privilégio
+[OK]    operador restrito continua sem ver employees
+[OK]    service_role (funções de borda) continua lendo
+[OK]    regressão: salário segue negado na tabela (fase 2 de salário intacta)
+[OK]    regressão: RPC de remuneração segue atendendo
+[OK]    regressão: Espelho de ponto (DEFINER, usa CPF mascarado) não quebra por permissão de coluna  → Sem revisão para esta competência
+[OK]    trava de regressão: as ÚNICAS colunas sem leitura para authenticated são as 8 de salário/Pix + as 5 de documentos/telefone  → commission_rate_percent,cpf,emergency_phone,monthly_divisor,phone,pix_key,rg,rg_issuer,salary_additions,salary_base,salary_benefits,salary_effective_date,timesheet_overtime_percent
+
+# 4. REVERSÃO
+[OK]    reverter a fase 2 devolve grants, políticas, funções e grants de coluna IDÊNTICOS (hash)
+[OK]    após a reversão da fase 2 o comportamento antigo volta (membro comum lê CPF)
+[OK]    reverter também a fase 1 volta ao estado anterior; permissões novas removidas  →  0/0
+[OK]    reversão da fase 1 devolve o catálogo de funções ao hash anterior
+[OK]    nenhuma função de CPF sobrou
+
+# 5. GUARDA DE PRÉ-REQUISITO (banco sem a fase 2 de salário)
+[OK]    fase 2 de CPF se recusa a rodar sem a fase 2 de salário (evita revoke sem efeito)  → PRE_REQUISITO: aplique seguranca_salario_pix_2_restritiva.sql antes (employees ainda tem privilégio de tabela para authenticated)
+[OK]    e nada mudou: o comportamento antigo segue intacto
+
+Resultado: TODOS OS TESTES PASSARAM
