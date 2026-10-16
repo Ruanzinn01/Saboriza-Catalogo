@@ -25,3 +25,8 @@ Branch de trabalho: `trabalho/ondas-chief-of-staff` (local, a partir de `trabalh
 - Migration 20260928152708: PREPARADA (script de preparo de banco vazio, 7 OK).
 - LF/CRLF: RESOLVIDA (`.gitattributes`, 184 de 185 hashes batem).
 - Estado: nada aplicado em produção; nada enviado ao remoto.
+
+## Onda 3 — Produto (parcial, 2026-10-16)
+- Fornecedores V1: categorias e possíveis fornecedores PREPARADAS (migration `20261016100000`, 102 asserções OK em PGlite, não aplicada). Comprado/pago/aberto, cotações, Pix, ativo/inativo: BLOQUEADAS POR DECISÃO. RLS atual de `suppliers` libera qualquer membro ativo (D12).
+- Clientes: painel de crédito na ficha com wrapper tipado (RESOLVIDA). Lista com filtros/paginação, cadastro PF/PJ, inativar: NÃO INICIADA (dependem de CL1/CL2). Concorrência real do crédito: NÃO PROVADA (MCP serializa; precisa de conexão direta).
+- `npm test`: 113 passando; `tsc --noEmit` limpo.
