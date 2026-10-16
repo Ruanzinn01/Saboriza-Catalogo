@@ -1,0 +1,1672 @@
+{
+  "gerado_em": "2026-10-15",
+  "fonte": "supabase_migrations.schema_migrations do projeto saboriza",
+  "total": 185,
+  "migracoes": [
+    {
+      "version": "20260909232045",
+      "name": "001_initial_schema",
+      "md5_normalizado": "ee2132cf43d83a2d01a067d88b898ef3",
+      "bytes": 3866,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260909232056",
+      "name": "002_seed_categories",
+      "md5_normalizado": "095a69aec74cb87a16340e0519d1cb55",
+      "bytes": 850,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260909232115",
+      "name": "003_seed_products",
+      "md5_normalizado": "70f5d224032187ab2841235378f8ff37",
+      "bytes": 4231,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260909232125",
+      "name": "004_rls_policies",
+      "md5_normalizado": "42504a71d14f737e8cf9f662533ebbde",
+      "bytes": 2592,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260909232137",
+      "name": "005_create_order_rpc",
+      "md5_normalizado": "4f296a440a5c96edfbeee2c1ae8c17cc",
+      "bytes": 2296,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260909232153",
+      "name": "006_fix_search_path",
+      "md5_normalizado": "17dd5982cbc5d2779d9a816df8ced8b1",
+      "bytes": 171,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260909232627",
+      "name": "007_create_order_rpc_return_items",
+      "md5_normalizado": "0b4e81bc8cd5e3ee3a391be3351566b4",
+      "bytes": 2555,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910001917",
+      "name": "008_create_settings",
+      "md5_normalizado": "7684d74dd5edeff4962cb288c8420fa9",
+      "bytes": 934,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910014541",
+      "name": "009_add_b2b_fields",
+      "md5_normalizado": "3f817c05534e731ff86e704ec53909ca",
+      "bytes": 696,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910014607",
+      "name": "010_create_order_rpc_b2b_fields",
+      "md5_normalizado": "d11df8f4ae455b335208fef06d61a9ea",
+      "bytes": 3138,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910014639",
+      "name": "011_drop_old_create_order_overload",
+      "md5_normalizado": "e85342f1a12c6adb97ddacdb8ff85483",
+      "bytes": 69,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910015719",
+      "name": "012_settings_public_select",
+      "md5_normalizado": "70f9665e4adc0f650241deaebbe112de",
+      "bytes": 92,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910114510",
+      "name": "013_settings_ie_hero_image",
+      "md5_normalizado": "72e9ee90426d09e6977220d99ff71353",
+      "bytes": 125,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910114558",
+      "name": "014_create_coupons",
+      "md5_normalizado": "30e19588549f6bf918f3e79c0690a508",
+      "bytes": 1105,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910114605",
+      "name": "015_orders_coupon_snapshot",
+      "md5_normalizado": "3509f0ddeebeeb10d1dad0f32652ab91",
+      "bytes": 315,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910114627",
+      "name": "016_create_order_rpc_coupon",
+      "md5_normalizado": "afdbab621985f615fca2112b68d4e508",
+      "bytes": 4169,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910114644",
+      "name": "017_drop_create_order_13arg_overload",
+      "md5_normalizado": "8e29bf0781367b86757bf0190a698e9a",
+      "bytes": 123,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910123914",
+      "name": "018_recategorize_catalog",
+      "md5_normalizado": "61e1fed0c6d3e7902c638187b48a9afe",
+      "bytes": 1885,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910134643",
+      "name": "019_create_customers",
+      "md5_normalizado": "d7e9830b161d89b06d8580c8ff97f386",
+      "bytes": 693,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910134648",
+      "name": "020_customers_rls",
+      "md5_normalizado": "6464ce338cc7a1b0c0f102407d7901b8",
+      "bytes": 492,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910134653",
+      "name": "021_orders_customer_id",
+      "md5_normalizado": "ec0f973eb33e82cbb262bbe289014e83",
+      "bytes": 179,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910134709",
+      "name": "022_create_order_rpc_customer_id",
+      "md5_normalizado": "1763aba1795268fb0a0382c05d8fad0b",
+      "bytes": 4289,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910134747",
+      "name": "023_drop_create_order_14arg_overload",
+      "md5_normalizado": "50a6c8073996013f5f509a19d811cb52",
+      "bytes": 372,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910171156",
+      "name": "024_create_order_rpc_company_match",
+      "md5_normalizado": "5f723db445019a397176c2d26596766c",
+      "bytes": 5881,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910171910",
+      "name": "025_orders_admin_delete",
+      "md5_normalizado": "0639c5fa924245d431f49e21c0bcf031",
+      "bytes": 94,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260910172219",
+      "name": "026_order_number_no_gaps",
+      "md5_normalizado": "9d5943030d947e63117151fd9219ff25",
+      "bytes": 6113,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260911023040",
+      "name": "027_update_order_items_rpc",
+      "md5_normalizado": "68673d238f3d8aa016230c7ee8fdb942",
+      "bytes": 3165,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260914123222",
+      "name": "add_suppliers_table_and_product_link",
+      "md5_normalizado": "c0f329702cfadd202cec0b7867e4932c",
+      "bytes": 1300,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260915233229",
+      "name": "028_fase0_fundacao_fiscal_schema",
+      "md5_normalizado": "7ab5c7dbbf325aad221989a418fcaa6e",
+      "bytes": 1972,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260915233608",
+      "name": "029_seed_ibge_cities_01",
+      "md5_normalizado": "d8c322697243c4eb6b1629d02c8ff43f",
+      "bytes": 38497,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260915233906",
+      "name": "029_seed_ibge_cities_02",
+      "md5_normalizado": "18fdd7020af4107cf8ed298cb37ce862",
+      "bytes": 38794,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260915234237",
+      "name": "029_seed_ibge_cities_03",
+      "md5_normalizado": "4cbe5fff145520a9d96ed273525ad50d",
+      "bytes": 36578,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260915234555",
+      "name": "029_seed_ibge_cities_04",
+      "md5_normalizado": "8ca1296ec3e567c29fb1a9677c7dff5b",
+      "bytes": 41795,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260915234850",
+      "name": "029_seed_ibge_cities_05",
+      "md5_normalizado": "e23059ff8a1399cffe50f2d8b1e8f6f6",
+      "bytes": 38756,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260916034534",
+      "name": "029_seed_ibge_cities_06",
+      "md5_normalizado": "ac1f310075d96b0d6b17140a53c48cb5",
+      "bytes": 40904,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260916035057",
+      "name": "029_seed_ibge_cities_07",
+      "md5_normalizado": "43a01ce97777e88b65edc7e6e16951f5",
+      "bytes": 40253,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260917120239",
+      "name": "030_fase1_base_insumos_schema",
+      "md5_normalizado": "9f050e40e1af6282c10fe6eb1aa68ee4",
+      "bytes": 7837,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260917120334",
+      "name": "031_restrict_raw_material_rpc_to_authenticated",
+      "md5_normalizado": "1b6178234b63d7db92c3481a164aeaeb",
+      "bytes": 351,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260917141436",
+      "name": "032_fase2_producao_schema",
+      "md5_normalizado": "2ec9ed33dfbc0309c45835361e30f33a",
+      "bytes": 5217,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260918192504",
+      "name": "add_product_code_and_unit_weight",
+      "md5_normalizado": "9ea3b30dc13a16ccffb7e4042b404285",
+      "bytes": 1721,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260918223014",
+      "name": "phase3_stock_movements_foundation",
+      "md5_normalizado": "c194421aa1207241ece4b7a26ed9444a",
+      "bytes": 5779,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260918224058",
+      "name": "fix_stock_rpc_anon_access",
+      "md5_normalizado": "bee6f5d6c5b576628b60ea7d6f0ca355",
+      "bytes": 511,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260918224115",
+      "name": "fix_set_product_code_search_path",
+      "md5_normalizado": "ba568fabc2c42232c46ebb02081ddc1c",
+      "bytes": 285,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260919003718",
+      "name": "phase3_order_completed_stock_deduction",
+      "md5_normalizado": "b78d2bd9f3b30885e112eba26706816a",
+      "bytes": 1522,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260919003912",
+      "name": "fix_order_completed_stock_clamp",
+      "md5_normalizado": "86af89061fe07b7d0ce7eed93a94f82a",
+      "bytes": 1660,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260919004226",
+      "name": "lock_down_order_completed_trigger_fn",
+      "md5_normalizado": "41ea27594b62c99d8d53353ab95a73b6",
+      "bytes": 223,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260921150602",
+      "name": "raw_materials_replenishment_fields",
+      "md5_normalizado": "0e140ec3013b078195950127f51d21dc",
+      "bytes": 837,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260921161110",
+      "name": "products_profitability_and_fiscal_fields",
+      "md5_normalizado": "b684d89cd09fd21c327a4ffee0b0e7c8",
+      "bytes": 338,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260921184148",
+      "name": "raw_material_categories",
+      "md5_normalizado": "fabb891ad9c164496835ce73d3645b7e",
+      "bytes": 1109,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260921184713",
+      "name": "products_max_stock",
+      "md5_normalizado": "cd83f41652be425178776d312c42eff6",
+      "bytes": 115,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260921192313",
+      "name": "rename_raw_material_category_fn",
+      "md5_normalizado": "931b0f1b1e824310dea47122c9082848",
+      "bytes": 923,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260922195533",
+      "name": "separa_confere_schema",
+      "md5_normalizado": "024c234d7e8a8477de9aab8a34c52f9e",
+      "bytes": 2112,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260922195546",
+      "name": "fix_separation_trigger_search_path",
+      "md5_normalizado": "5974da56986bfa29f5e04ed84be0d351",
+      "bytes": 74,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260922220930",
+      "name": "order_items_admin_update_policy",
+      "md5_normalizado": "408c79d7123407a196f0198b9e24e89d",
+      "bytes": 128,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260922224829",
+      "name": "separa_confere_server_timestamps",
+      "md5_normalizado": "0b6b60a6cc6100639a87f9e8f0743bdd",
+      "bytes": 1583,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260923112238",
+      "name": "add_finalizado_order_status",
+      "md5_normalizado": "0ab149d8fc693f9eaada4fd3fbe1532a",
+      "bytes": 54,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260923171210",
+      "name": "carrega_entrega_schema",
+      "md5_normalizado": "3539febf0ddc4fd15059a938da027062",
+      "bytes": 2455,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260923175114",
+      "name": "add_loaded_at_order_items",
+      "md5_normalizado": "07cd8580f78850574b42960d42b49c60",
+      "bytes": 550,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260923194740",
+      "name": "delivery_receipts_registro_entrega",
+      "md5_normalizado": "72f841a408c692f25cad7de37be95d98",
+      "bytes": 11082,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260928152708",
+      "name": "phase3_wave1_saas_foundation",
+      "md5_normalizado": "800badb23926f236ee791ee83f3a4c8f",
+      "bytes": 26702,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260928152940",
+      "name": "phase3_wave2_company_scope_fase0_4",
+      "md5_normalizado": "624dc98c1c2db2e0d8edb747a507b5d6",
+      "bytes": 19939,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260928153223",
+      "name": "phase3_wave1b_business_group",
+      "md5_normalizado": "be1b5e227148e267d0d9453ea7be6940",
+      "bytes": 12734,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260928191949",
+      "name": "phase3_wave2b_unit_scope_physical_facts",
+      "md5_normalizado": "ccebc6b0fa7384c83748d6da1477be53",
+      "bytes": 2935,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260928201113",
+      "name": "phase3_wave1c_remove_onboarding_percentual",
+      "md5_normalizado": "6641960796b573c7932a0fc21629a1bf",
+      "bytes": 1173,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260928201809",
+      "name": "phase3_wave3_company_scope_comercial",
+      "md5_normalizado": "1056a9f368a05b0ded1eedb8a0e55554",
+      "bytes": 14288,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260928203214",
+      "name": "phase3_wave4_separation_stock_timing_and_jobs",
+      "md5_normalizado": "ebdab94c480e32b109fec90c7c16b8eb",
+      "bytes": 10947,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260928203439",
+      "name": "phase3_wave4b_fix_separation_stock_company_unit",
+      "md5_normalizado": "ee31d141ab1be0648b4099e667b47810",
+      "bytes": 3364,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260928205313",
+      "name": "phase3_wave5_employees_core",
+      "md5_normalizado": "ebed769681056e6a753e2a24320744ed",
+      "bytes": 7324,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260928210030",
+      "name": "phase3_wave5b_employees_company_default",
+      "md5_normalizado": "ea453a70b754e0a42c64cace32948993",
+      "bytes": 94,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260928214654",
+      "name": "phase3_wave6_employees_full_v4",
+      "md5_normalizado": "c966bb0604abe39f9942fbb395e8bcf7",
+      "bytes": 5407,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260928215247",
+      "name": "phase3_wave6b_employee_documents_company_default",
+      "md5_normalizado": "1ca04eb1bb4cc67a10e8b0097e6cd4fd",
+      "bytes": 103,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260928215639",
+      "name": "phase3_wave7_produziu_registra_v3",
+      "md5_normalizado": "30f1b90614e153a25a9cab994043e504",
+      "bytes": 10873,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260928215742",
+      "name": "phase3_wave7b_urgent_diary_company_defaults",
+      "md5_normalizado": "ab6b5704ce1f06d7b37316edae12c73a",
+      "bytes": 517,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260928215820",
+      "name": "phase3_hotfix_missing_company_id_defaults",
+      "md5_normalizado": "5ff6cff6a4df253b2697e32b04559843",
+      "bytes": 1018,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260929132310",
+      "name": "oris360_wave8_ponto_oris_foundation",
+      "md5_normalizado": "07d3252b6514c9936aa20c64d663e803",
+      "bytes": 11238,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260929154412",
+      "name": "oris360_wave9_iam_member_listing",
+      "md5_normalizado": "13d4d402f2d907366923ee0438294c8e",
+      "bytes": 1806,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260929154449",
+      "name": "oris360_wave9b_iam_accept_invite",
+      "md5_normalizado": "ffac00bbb80dd41beaf4fa77e50ad950",
+      "bytes": 350,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260929154925",
+      "name": "oris360_wave9c_restrict_accept_invite",
+      "md5_normalizado": "e7b0e0c282d767e8d376f5d16df76fc6",
+      "bytes": 217,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260929160817",
+      "name": "oris360_wave8_3_apuracao_engine",
+      "md5_normalizado": "a29228c8049742735ae834863e20d49f",
+      "bytes": 5057,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260929171930",
+      "name": "oris360_wave5_finance_core_faturar_v5",
+      "md5_normalizado": "a7efbe7bc3a29dc6bce57c95e95544fe",
+      "bytes": 16546,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260929172812",
+      "name": "oris360_wave7_aportes_despesas_receitas_patrimonio",
+      "md5_normalizado": "5a64d766b884fd049d5d1c3a0d5926c5",
+      "bytes": 22283,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260929173713",
+      "name": "oris360_wave5b_billing_engine",
+      "md5_normalizado": "a5b5937dfbd595b21b7e6512034a2586",
+      "bytes": 7134,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260929181706",
+      "name": "oris360_wave8_4b_drop_old_apurar_mes",
+      "md5_normalizado": "cd47c1a56d31c6d8716e326805c7564c",
+      "bytes": 62,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260929181730",
+      "name": "oris360_wave8_4_jornada_estruturada_e_classificacao",
+      "md5_normalizado": "079f3821ef54c0c358b854a390bfc229",
+      "bytes": 5415,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260929183423",
+      "name": "oris360_wave8_5_banco_de_horas",
+      "md5_normalizado": "42056cd0b1679d86facca8737e1d3a1e",
+      "bytes": 5516,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930122833",
+      "name": "oris360_wave8_dre_gerencial_view",
+      "md5_normalizado": "6e2efce7c6c8680eebff8f52e51e80c7",
+      "bytes": 2892,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930123815",
+      "name": "oris360_wave8_dre_fix_permission_and_rpc",
+      "md5_normalizado": "bb25a534668841ddc8e5ccce529c22e0",
+      "bytes": 3716,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930123953",
+      "name": "oris360_wave8_grant_dre_read_to_owner_roles",
+      "md5_normalizado": "4fe8deed30794054f7ad26be9e354d9d",
+      "bytes": 240,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930124350",
+      "name": "oris360_wave8_fechamento_mensal_schema",
+      "md5_normalizado": "5f733e2331fd1b8a3fd62b3bcec8eb41",
+      "bytes": 8647,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930134809",
+      "name": "platform_admin_base",
+      "md5_normalizado": "083dfed95fed29419e66283c03699295",
+      "bytes": 2815,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930140550",
+      "name": "platform_admin_company_actions",
+      "md5_normalizado": "1c0525441e66399cf1817f6240cd3653",
+      "bytes": 1500,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930165717",
+      "name": "fix_create_platform_company_segment",
+      "md5_normalizado": "f86529cd7f03449ef29cb09c5f54b868",
+      "bytes": 916,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930165727",
+      "name": "drop_old_create_platform_company_overload",
+      "md5_normalizado": "bb55fb7c7c8db6ed230a65a62e5daf4c",
+      "bytes": 73,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930180458",
+      "name": "onda9_grant_permissions_fix",
+      "md5_normalizado": "2824c4bcd75318af6e1300c32e6f70f4",
+      "bytes": 267,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930180542",
+      "name": "onda9_forca_vendas_comissoes_tarefas",
+      "md5_normalizado": "76bdf150ad66cc7f467fa5a69ddfd4b5",
+      "bytes": 7132,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930184501",
+      "name": "onda10_pulso_painel_proprietario",
+      "md5_normalizado": "6663bb7fd00d901bacfd2e7c3d0446a5",
+      "bytes": 4911,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930184524",
+      "name": "onda10_saas_admin_entitlements",
+      "md5_normalizado": "5192701067930f5e22b9b8963914ab2a",
+      "bytes": 1347,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930184539",
+      "name": "onda10_fix_entitlement_source",
+      "md5_normalizado": "aaa03d30bdb5cc528e85ec58fe577daa",
+      "bytes": 648,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930184628",
+      "name": "onda_producao_floor_v10_mvp_e_produziu_registra_v4_r2",
+      "md5_normalizado": "05a9fa8a75cb22b994218bdbc7f00fb1",
+      "bytes": 14009,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930184746",
+      "name": "revoga_anon_das_rpcs_do_bloco_producao",
+      "md5_normalizado": "9dbe639758eee8dee49563c1f537d15a",
+      "bytes": 453,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930185955",
+      "name": "torna_parametros_opcionais_create_production_release",
+      "md5_normalizado": "b4724e865545f0b3237981cb0fc4df00",
+      "bytes": 1737,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930215740",
+      "name": "rotas_producao_v4_e_planos_producao_v3",
+      "md5_normalizado": "d5fd46408c8ab6a2a534be97dedd9a3e",
+      "bytes": 7874,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930215750",
+      "name": "remove_overload_antigo_create_production_release",
+      "md5_normalizado": "c837c65604230df0fd76d9395da3d6fd",
+      "bytes": 96,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930220614",
+      "name": "revoga_public_das_rpcs_do_bloco_producao",
+      "md5_normalizado": "8a5157de57c94143beaafe4fce8769d4",
+      "bytes": 1136,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930225055",
+      "name": "fix_coluna_is_active_em_create_production_release",
+      "md5_normalizado": "f49c6bb2d80dbfd3cfe42c0c3281072d",
+      "bytes": 2977,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930231942",
+      "name": "integracoes_financeiras_asaas_e_fiscal_fase5_fase6",
+      "md5_normalizado": "85751e6a7f857393439a07bbe98e59d9",
+      "bytes": 7044,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20260930232008",
+      "name": "revoga_anon_integracoes_financeiras",
+      "md5_normalizado": "31a3bfcb7332017beafb64b10ca44344",
+      "bytes": 189,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001001326",
+      "name": "revoga_anon_de_rpcs_sensiveis_legadas",
+      "md5_normalizado": "860bc340cfee3fed9d093721d7ca2da7",
+      "bytes": 323,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001092235",
+      "name": "financeiro_geral_permission_seed",
+      "md5_normalizado": "f8b55c8d19852a781c1230fc4a66de0a",
+      "bytes": 486,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001092310",
+      "name": "financeiro_geral_summary_rpc",
+      "md5_normalizado": "b316c660d8f7000bc284c9467df3f6fa",
+      "bytes": 4310,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001092334",
+      "name": "owner_panel_a_pagar_partial_fix",
+      "md5_normalizado": "7c97eba97b4391dff2c55a5d3fc543f8",
+      "bytes": 2259,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001104522",
+      "name": "billing_confirm_updates_order_status",
+      "md5_normalizado": "a1f327bd79e66f671c7e135e7fa10171",
+      "bytes": 4037,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001120342",
+      "name": "asaas_integration_layer",
+      "md5_normalizado": "331579f123bbd6d7ff2877d88fc42518",
+      "bytes": 1641,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001120355",
+      "name": "save_integration_credential_webhook_token",
+      "md5_normalizado": "eaf8d9a639639e3ef956677bd5a7678b",
+      "bytes": 2329,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001120513",
+      "name": "read_vault_secret_service_role_only",
+      "md5_normalizado": "fab458897ae6f42b0153c938bcca6d01",
+      "bytes": 409,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001121004",
+      "name": "billing_confirm_respects_asaas_flag",
+      "md5_normalizado": "1eabfe27942f8103ab20147e8b0e9f13",
+      "bytes": 4110,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001124838",
+      "name": "confirm_production_release_participants",
+      "md5_normalizado": "267611eb243da480d0cdc65c51cf2a27",
+      "bytes": 5881,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001145055",
+      "name": "revert_production_participants_rateio",
+      "md5_normalizado": "12a4c1a713ba4e63841112bdd2c3e21e",
+      "bytes": 4297,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001145111",
+      "name": "production_release_soft_route_pendency",
+      "md5_normalizado": "2b0aeca42af6a92c92510de905af850b",
+      "bytes": 3305,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001182921",
+      "name": "monitoramento_de_erros_client_side",
+      "md5_normalizado": "32197ceb78ba0310d8a8df2e45034321",
+      "bytes": 2379,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001182946",
+      "name": "permissao_propria_pra_erros_do_sistema",
+      "md5_normalizado": "9dd615d254a5220a14a54dc592ea2537",
+      "bytes": 1412,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001183328",
+      "name": "platform_bootstrap_company_owner",
+      "md5_normalizado": "437228dfafc9aa500cd2afec69d7f798",
+      "bytes": 1821,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001183719",
+      "name": "rate_limit_pin_terminais",
+      "md5_normalizado": "5fc911681321504cad88dd6c1bcab425",
+      "bytes": 1714,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001203003",
+      "name": "multi_tenant_slug_and_scoped_order",
+      "md5_normalizado": "abec0a2ec3a0505521001d14cd6b1e3e",
+      "bytes": 9067,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001203055",
+      "name": "drop_legacy_create_order_overload",
+      "md5_normalizado": "92362277419b4a9e0e1d7b784af8dc4b",
+      "bytes": 135,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001203543",
+      "name": "reserve_slugs_create_platform_company",
+      "md5_normalizado": "55cb1239cfd73a94c42855d687ab4238",
+      "bytes": 1609,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001204618",
+      "name": "companies_single_default_constraint",
+      "md5_normalizado": "e9ddc0eb0689ff93dc8153b2b8857940",
+      "bytes": 112,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261001210056",
+      "name": "add_settings_logo_url",
+      "md5_normalizado": "7df24e57dc3c7cbf1e9e6d120d9749aa",
+      "bytes": 228,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002124807",
+      "name": "grant_anon_select_companies",
+      "md5_normalizado": "1a91245a4004a7209d139b5c3e06a246",
+      "bytes": 41,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002125351",
+      "name": "fix_get_dre_monthly_ambiguous_month",
+      "md5_normalizado": "515bf212fc033715d8fb2a99a03bb4fc",
+      "bytes": 3170,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002132149",
+      "name": "despesas_salary_history_versionado",
+      "md5_normalizado": "5c126bd07d535bb0f23bbc700ec3d2ce",
+      "bytes": 3238,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002132209",
+      "name": "despesas_expande_modelo_dominio_v2",
+      "md5_normalizado": "d1194958e07731332d7ca056fd085aff",
+      "bytes": 2171,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002132220",
+      "name": "despesas_investment_formation_ledger",
+      "md5_normalizado": "6e9cca8292e34e9ee0b18943ca0de040",
+      "bytes": 1909,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002132241",
+      "name": "despesas_fechamento_imutavel_e_auditoria",
+      "md5_normalizado": "ebdb9ed74b9c1af45dcd0d5ceecc0696",
+      "bytes": 5573,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002132253",
+      "name": "despesas_fechamento_automatico_cron",
+      "md5_normalizado": "5f8f828839e2fd19d03d2f5c0f240f70",
+      "bytes": 2089,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002132440",
+      "name": "despesas_fix_isolamento_multiempresa_rpcs",
+      "md5_normalizado": "502766198764cf9995d0979330823ea6",
+      "bytes": 3707,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002132528",
+      "name": "despesas_fix_revoke_public_grant_anon",
+      "md5_normalizado": "606d4d7e8f6e83ca4543f819b57184a4",
+      "bytes": 1180,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002132615",
+      "name": "despesas_create_asset_investment_rpc",
+      "md5_normalizado": "26c30c9a18c76efbde3ef6d911c963b3",
+      "bytes": 2337,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002133832",
+      "name": "financeiro_geral_amplia_periodo_composicao_resultado",
+      "md5_normalizado": "297d109f03f8739bbe0aaf24578998e5",
+      "bytes": 7018,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002133846",
+      "name": "financeiro_geral_drop_overload_antigo",
+      "md5_normalizado": "7c1d58963da456fb0f6f2cea31076c14",
+      "bytes": 66,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002134612",
+      "name": "fix_revoke_anon_financeiro_geral_dre",
+      "md5_normalizado": "c4c1cd3770e5f116bc6159b8774d7901",
+      "bytes": 325,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002134646",
+      "name": "fix_revoke_anon_explicito_financeiro_dre",
+      "md5_normalizado": "4705ae74d6d52253521d11efc7c4f6c7",
+      "bytes": 336,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002134707",
+      "name": "fix_revoke_anon_create_asset_investment",
+      "md5_normalizado": "b6a6b97b91642c0990c19cd05c5d7c85",
+      "bytes": 244,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002140205",
+      "name": "patrimonio_apropriacao_saldo_formacao",
+      "md5_normalizado": "5858240aea7e04298e7743f90377f3a9",
+      "bytes": 3005,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002140308",
+      "name": "despesas_campos_busca_favorecido_documento",
+      "md5_normalizado": "625d4bf9a90bd205ce2f05c205a828ea",
+      "bytes": 582,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002140551",
+      "name": "central_pdfs_relatorios_generated_report",
+      "md5_normalizado": "6cc6a09ece952270901bef897bc7ec4b",
+      "bytes": 1360,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002170918",
+      "name": "fase5_fix_fiscal_company_id_e_boleto_url",
+      "md5_normalizado": "fedf73405488527fed90ccc9041a1041",
+      "bytes": 4995,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002171157",
+      "name": "fiscal_documents_adiciona_status_cancelada",
+      "md5_normalizado": "7d7f08299c03790294e776955c63ab2e",
+      "bytes": 264,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002185639",
+      "name": "compras_despesas_v3_categorias_catalogo_recorrencia",
+      "md5_normalizado": "4c26135b7c0a085e1ab015d153f83a8c",
+      "bytes": 4786,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002185659",
+      "name": "compras_despesas_v3_launches_items_installments",
+      "md5_normalizado": "65a0a34a66adf8f507a5512199275351",
+      "bytes": 4835,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261002185905",
+      "name": "compras_despesas_v3_create_expense_launch_rpc",
+      "md5_normalizado": "c75446d9f847f93cb25f07d8ca277dd4",
+      "bytes": 13150,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261004034719",
+      "name": "realtime_publication_operacional",
+      "md5_normalizado": "4975a334456958f7e00427f4de5c23fb",
+      "bytes": 572,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261006202300",
+      "name": "central_integracoes",
+      "md5_normalizado": "62272f54b68ae16d78d076c1aae76a96",
+      "bytes": 12675,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261007144623",
+      "name": "revoke_public_truncate",
+      "md5_normalizado": "3feadfdb5cb1572504e0f38061da79af",
+      "bytes": 166,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261008121633",
+      "name": "base_nfe_produto",
+      "md5_normalizado": "5a6acd8379a6c6f162cb3b97973f2d88",
+      "bytes": 8420,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261008122253",
+      "name": "base_webhook_events_rpc",
+      "md5_normalizado": "a88559055fa0951551c38759422a12c4",
+      "bytes": 1459,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261008122314",
+      "name": "drop_old_list_integration_events_overload",
+      "md5_normalizado": "3b7c14eb5ba57131264917bf1fadb6b0",
+      "bytes": 70,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261008140211",
+      "name": "fix_record_audit_event_actor_type_case",
+      "md5_normalizado": "11bf4fb10f0ac99d65d88cd2a137b38d",
+      "bytes": 478,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261008140213",
+      "name": "add_active_flag_to_expense_categories",
+      "md5_normalizado": "6aeec780522f3d228ae2c155b3960c45",
+      "bytes": 86,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261008185110",
+      "name": "drop_legacy_confirm_production_release_overload",
+      "md5_normalizado": "37e7a3ba1dd376a4b493fb049f113e69",
+      "bytes": 81,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261008215058",
+      "name": "expense_catalog_items_active_and_unique",
+      "md5_normalizado": "bffd21e9375c7bc0ba926e37b80891f0",
+      "bytes": 595,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261009034523",
+      "name": "expense_subcategory_and_item_description",
+      "md5_normalizado": "679d230e7b5587f879cb7a94e749bf28",
+      "bytes": 13244,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261009181836",
+      "name": "salary_obligations_due_date_and_stop_expense_duplication",
+      "md5_normalizado": "0c63612ea8fccfcb9b42ce9abbe1fe6d",
+      "bytes": 13958,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261009184049",
+      "name": "expenses_installment_identification_and_payment_method",
+      "md5_normalizado": "fb0cff132acc29f77f6c689362cd6f7e",
+      "bytes": 14418,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261013185605",
+      "name": "separa_confere_inventario",
+      "md5_normalizado": "ccc37f0ded8f1d5fda3a83f0e5b4c165",
+      "bytes": 26579,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261013233320",
+      "name": "estoque_onda1_razao_posicao_ajuste",
+      "md5_normalizado": "5bfb4286cc3a9c0d3b3b237ff875a12f",
+      "bytes": 12479,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014000531",
+      "name": "estoque_onda2_compras",
+      "md5_normalizado": "26c662f90fe8f800275d21cbf4f708b2",
+      "bytes": 38716,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014001140",
+      "name": "products_target_margin_optional",
+      "md5_normalizado": "3a136077e856da11281ed47425aa784b",
+      "bytes": 122,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014015217",
+      "name": "estoque_onda3_cobertura_politicas",
+      "md5_normalizado": "1de7f6f1b2e235920157376d91c5dd66",
+      "bytes": 11911,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014020434",
+      "name": "estoque_onda4a_retornos_perdas",
+      "md5_normalizado": "b54aff4c05e8cb76de32cf312c7e16e6",
+      "bytes": 16678,
+      "instrucoes": 1,
+      "origem": "repositorio_diferente_do_aplicado",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014020529",
+      "name": "estoque_onda4a_retorno_somente_quando_volta",
+      "md5_normalizado": "b921c8204b02b392862ad857ed983496",
+      "bytes": 1365,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014021021",
+      "name": "estoque_onda4b_lotes_validade",
+      "md5_normalizado": "722a79e7be13590e73f41d3aef003abe",
+      "bytes": 7254,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014022143",
+      "name": "estoque_onda5_fechamento_saldo_inicial",
+      "md5_normalizado": "ea7994d6c90a36aa57c829889b275cfd",
+      "bytes": 19234,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014023835",
+      "name": "stock_ledger_initial_balance_label",
+      "md5_normalizado": "db7f84d46563ad5e7603018d961d27a9",
+      "bytes": 3431,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014033522",
+      "name": "estoque_endurecimento_correcao_compra",
+      "md5_normalizado": "bafb3b5d22fd150975c92e52b97afe57",
+      "bytes": 18407,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014033650",
+      "name": "compra_abatimento_todas_despesas_abertas",
+      "md5_normalizado": "c8a8621dbee1e675f175a912b0c68763",
+      "bytes": 12537,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014150319",
+      "name": "colaboradores_v41_vencimento_salarial",
+      "md5_normalizado": "5032e8c6f0b1419e52ce5035f7af0100",
+      "bytes": 9949,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014150418",
+      "name": "separa_confere_v3",
+      "md5_normalizado": "d4de60ebafebe12bfe151c5d86c91374",
+      "bytes": 14089,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014150436",
+      "name": "separa_confere_v3_grant_operator_fn",
+      "md5_normalizado": "16e6e567a1fe9254a7ac9313b94da7ef",
+      "bytes": 80,
+      "instrucoes": 1,
+      "origem": "reconstruida_do_banco",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014164335",
+      "name": "folha_nos_totais_financeiros",
+      "md5_normalizado": "e0cc761a76c0a9c7d4b6a86d5548571f",
+      "bytes": 13438,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014164932",
+      "name": "integracoes_pacote0_eventos",
+      "md5_normalizado": "956df0e685cdcf9db206d657dcfed939",
+      "bytes": 5636,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014173037",
+      "name": "etapa1_historico_de_contratacao",
+      "md5_normalizado": "e4c1297d74e1aebde1d8a49b68bd7c9e",
+      "bytes": 19428,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014173502",
+      "name": "etapa2_revisao_ponto_espelho",
+      "md5_normalizado": "6943e5015f4da3f5d9c7ad83cc44a023",
+      "bytes": 37247,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014173931",
+      "name": "etapa5_worker_outbox",
+      "md5_normalizado": "5367f605e68e1f18429d0e5173a9d696",
+      "bytes": 15075,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    },
+    {
+      "version": "20261014174752",
+      "name": "etapa2_guarda_saldo_banco_horas",
+      "md5_normalizado": "616fb924955721820f88d3ae4211f27f",
+      "bytes": 2287,
+      "instrucoes": 1,
+      "origem": "repositorio_identico",
+      "integridade_do_export": true
+    }
+  ]
+}
