@@ -30,3 +30,16 @@ Branch de trabalho: `trabalho/ondas-chief-of-staff` (local, a partir de `trabalh
 - Fornecedores V1: categorias e possíveis fornecedores PREPARADAS (migration `20261016100000`, 102 asserções OK em PGlite, não aplicada). Comprado/pago/aberto, cotações, Pix, ativo/inativo: BLOQUEADAS POR DECISÃO. RLS atual de `suppliers` libera qualquer membro ativo (D12).
 - Clientes: painel de crédito na ficha com wrapper tipado (RESOLVIDA). Lista com filtros/paginação, cadastro PF/PJ, inativar: NÃO INICIADA (dependem de CL1/CL2). Concorrência real do crédito: NÃO PROVADA (MCP serializa; precisa de conexão direta).
 - `npm test`: 113 passando; `tsc --noEmit` limpo.
+
+## Onda 3 — Financeiro e etapas (2026-10-16)
+- Levantamento: `docs/levantamento/ETAPAS_LACUNAS.md` (Financeiro, etapas 5, 7 a 10, inventário do operador restrito: existe).
+- RPCs financeiras atômicas (pagar/receber/estornar/aporte): PREPARADA (55 OK em PGlite, não aplicada, front não trocado).
+- Central de Auditoria somente leitura: PREPARADA (`/admin/auditoria`, 3 RPCs de leitura, não aplicada, tela não verificada em navegador).
+- DRE por competência/CMV, caixa, setor/rateio, anexos, recorrência: BLOQUEADAS POR DECISÃO (DP-FIN-*).
+- Missões/Roteiros, Central de Apuração, consumidores da outbox, participações do chão de fábrica: NÃO INICIADAS (ver levantamento).
+- Uso duplo de item, FEFO na separação, Central de PDFs, correção de compras com rateio: fora do escopo, apenas registrados.
+
+## Onda 4 — Consolidação
+- Mapa de branches e ordem de merge proposta em `docs/homologacao/ORDEM_DE_MERGE.md`. Merge de teste com `trabalho/homologacao-rebase`: 6 conflitos, todos de Separa Confere V3; `tsc`, `npm test` (130 com env) e `npm run build` ok na branch descartável `teste/combinacao-ondas`.
+- Testes de crédito e auditoria isolados do cliente Supabase (CI sem variáveis): 17 arquivos, 124 testes passam sem `.env.local`.
+- Nenhum merge em branch existente, nenhum push.
