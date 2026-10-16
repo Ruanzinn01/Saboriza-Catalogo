@@ -12,8 +12,9 @@ export interface Customer {
   cep: string;
   city: string;
   state: string;
+  registrationStatus: "ATIVO" | "INATIVO";
   createdAt: string;
   updatedAt: string;
 }
 
-export type CustomerInput = Omit<Customer, "id" | "createdAt" | "updatedAt">;
+export type CustomerInput = Omit<Customer, "id" | "createdAt" | "updatedAt" | "registrationStatus">;

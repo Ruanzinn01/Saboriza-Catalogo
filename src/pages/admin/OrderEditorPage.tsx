@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -66,6 +66,8 @@ export function OrderEditorPage() {
   const { orderId } = useParams();
   const isEditing = orderId !== undefined;
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const preselectedCustomerId = searchParams.get("cliente");
 
   const products = useCatalogStore((state) => state.products);
 
@@ -112,6 +114,13 @@ export function OrderEditorPage() {
     if (sellers.length === 0) fetchSellers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (isEditing || !preselectedCustomerId || selectedCustomer) return;
+    const match = registeredCustomers.find((customer) => customer.id === preselectedCustomerId && customer.registrationStatus !== "INATIVO");
+    if (match) setSelectedCustomer(match);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditing, preselectedCustomerId, registeredCustomers]);
 
   useEffect(() => {
     if (!isEditing || !order || hydrated) return;

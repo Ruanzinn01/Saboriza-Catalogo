@@ -31,7 +31,8 @@ interface CustomerPickerProps {
 }
 
 export function CustomerPicker({ selectedCustomer, onSelect, onClear }: CustomerPickerProps) {
-  const customers = useCustomersStore((state) => state.customers);
+  const allCustomers = useCustomersStore((state) => state.customers);
+  const customers = useMemo(() => allCustomers.filter((customer) => customer.registrationStatus !== "INATIVO"), [allCustomers]);
   const fetchCustomers = useCustomersStore((state) => state.fetchCustomers);
   const createCustomer = useCustomersStore((state) => state.createCustomer);
   const [search, setSearch] = useState("");

@@ -18,6 +18,7 @@ export function customerFromRow(row: CustomerRow): Customer {
     cep: row.cep,
     city: row.city,
     state: row.state,
+    registrationStatus: (row as { registration_status?: string }).registration_status === "INATIVO" ? "INATIVO" : "ATIVO",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
