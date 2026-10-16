@@ -1143,7 +1143,7 @@ begin
     raise exception 'Fornecedor não encontrado';
   end if;
   with l as (
-    select x.id, x.status, x.document_ref, x.total_amount, x.document_issue_date, x.competence, coalesce(x.document_issue_date, x.competence) as day, x.payment_condition
+    select x.id, x.kind, x.status, x.document_ref, x.total_amount, x.document_issue_date, x.competence, coalesce(x.document_issue_date, x.competence) as day, x.payment_condition
     from public.expense_launches x where x.company_id = v_company and x.supplier_id = p_supplier_id
   ), lc as (select * from l where status = 'ABERTO'),
   ex as (
@@ -1206,6 +1206,7 @@ begin
       'contracted_avg_days', (select case when sum(amount) > 0 then round(sum(amount * (due_date - issue_day)) / sum(amount))::int end
           from ex where issue_day between v_from and v_to and due_date is not null),
       'effective_avg_days', (select case when sum(coalesce(paid_amount, amount)) > 0 then round(sum(coalesce(paid_amount, amount) * (paid_day - issue_day)) / sum(coalesce(paid_amount, amount)))::int end from settled)),
+    'by_kind', coalesce((select jsonb_object_agg(k.kind, k.cents) from (select kind, round(sum(total_amount) * 100)::bigint as cents from buy_period group by kind) k), '{}'::jsonb),
     'monthly', coalesce((select jsonb_agg(jsonb_build_object('month', m.ym,
         'purchased_cents', round(coalesce((select sum(total_amount) from lc where to_char(day, 'YYYY-MM') = m.ym), 0) * 100)::bigint,
         'paid_cents', round(coalesce((select sum(coalesce(paid_amount, amount)) from paid_ev where to_char(paid_day, 'YYYY-MM') = m.ym), 0) * 100)::bigint) order by m.ym)

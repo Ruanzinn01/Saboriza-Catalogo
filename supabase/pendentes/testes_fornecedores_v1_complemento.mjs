@@ -416,6 +416,7 @@ ok("ranking: S1 em 2º (S2 comprou mais: 5000)", f.purchased.rank === 2 && f.pur
 ok("itens: Farinha agregada por unidade (30 kg, R$ 11,00) em 1º", f.items[0].name === "Farinha" && Number(f.items[0].quantity) === 30 && f.items[0].value_cents === 110000);
 ok("prazos: contratado e efetivo calculados (ponderados por valor)", Number.isInteger(f.terms.contracted_avg_days) && Number.isInteger(f.terms.effective_avg_days), JSON.stringify(f.terms));
 ok("série mensal presente com meses sem movimento = 0 real", Array.isArray(f.monthly) && f.monthly.length >= 2);
+ok("classificação por natureza do lançamento (kind) soma o comprado do período", f.by_kind.expense === 180000, JSON.stringify(f.by_kind));
 ok("indisponíveis declarados (adiantamentos, estornos, juros, devolução, cancelamento), nunca zero falso", ["credits_advances", "reversals", "returns"].every((k) => f.unavailable.includes(k)));
 r = await rpc(U.fin_b, "supplier_financial_summary", `'${S1}', '${hoje}'::date - 30, '${hoje}'::date`);
 ok("filtro de período: comprado só do período (600+... emissões <=30d), aberto continua posição atual", r.ok && r.j.purchased.total_cents === 60000 && r.j.open.total_cents === 110000 && r.j.purchased.all_time_cents === 180000, JSON.stringify(r.j?.purchased));
