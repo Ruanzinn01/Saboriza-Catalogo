@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import { Plus, Search } from "lucide-react";
 import { AdminState } from "@/components/admin/AdminState";
 import { Pagination } from "@/components/admin/Pagination";
+import { SupplierCandidateReferences } from "@/components/admin/fornecedores/SupplierCandidateReferences";
 import { SupplierCategoryPicker } from "@/components/admin/fornecedores/SupplierCategoryPicker";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { daysSince, parseProductLabels, SUPPLIER_PAGE_SIZES } from "@/lib/supplier-search";
 import { useSupplierCandidatesStore } from "@/store/supplier-candidates-store";
 import { useSupplierCategoriesStore } from "@/store/supplier-categories-store";
+import { useSupplierPermissionsStore } from "@/store/supplier-permissions-store";
 import { CANDIDATE_STAGE_LABELS, type CandidateContact, type CandidateInput, type CandidateStage, type SupplierCandidate } from "@/types/supplier";
 
 type EditableStage = Exclude<CandidateStage, "CADASTRADO">;
@@ -105,6 +107,14 @@ export function SupplierCandidatesTab() {
   const [contactFor, setContactFor] = useState<SupplierCandidate | null>(null);
   const [contactForm, setContactForm] = useState({ note: "", contactedOn: "", nextContactOn: "", stage: "" });
   const [history, setHistory] = useState<CandidateContact[]>([]);
+  const [referencesFor, setReferencesFor] = useState<SupplierCandidate | null>(null);
+  const permissions = useSupplierPermissionsStore((state) => state.permissions);
+  const loadPermissions = useSupplierPermissionsStore((state) => state.load);
+  const permissionsStatus = useSupplierPermissionsStore((state) => state.status);
+
+  useEffect(() => {
+    if (permissionsStatus === "idle") void loadPermissions();
+  }, [permissionsStatus, loadPermissions]);
 
   useEffect(() => {
     if (categoriesStatus === "idle") void fetchCategories();
@@ -217,9 +227,11 @@ export function SupplierCandidatesTab() {
             </option>
           ))}
         </select>
-        <Button type="button" onClick={() => openForm("new")} className="w-full lg:w-auto">
-          <Plus size={18} /> Registrar possibilidade
-        </Button>
+        {permissions["fornecedores.manage"] && (
+          <Button type="button" onClick={() => openForm("new")} className="w-full lg:w-auto">
+            <Plus size={18} /> Registrar possibilidade
+          </Button>
+        )}
       </div>
 
       {editing && (
@@ -274,6 +286,8 @@ export function SupplierCandidatesTab() {
           </div>
         </form>
       )}
+
+      {referencesFor && <SupplierCandidateReferences candidate={referencesFor} onClose={() => setReferencesFor(null)} />}
 
       {contactFor && (
         <form onSubmit={handleContact} className="flex flex-col gap-4 rounded-3xl border border-forest-950/10 bg-white p-4 sm:p-6">
@@ -377,6 +391,9 @@ export function SupplierCandidatesTab() {
                       </Button>
                       <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => void openContact(candidate)}>
                         Registrar contato
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => setReferencesFor(candidate)}>
+                        Cotações e arquivos
                       </Button>
                       <Link to={`/admin/fornecedores/novo?candidato=${candidate.id}`}>
                         <Button type="button" variant="secondary" size="sm" className="min-h-11">

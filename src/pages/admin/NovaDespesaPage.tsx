@@ -75,7 +75,7 @@ export function NovaDespesaPage() {
   // Rascunho da sessão: sair para cadastrar fornecedor/insumo e voltar não pode perder o lançamento.
   const [draft] = useState(loadDraft);
   const [kind, setKind] = useState<LaunchKind>(draft?.kind ?? "stock");
-  const [supplierId, setSupplierId] = useState(draft?.supplierId ?? "");
+  const [supplierId, setSupplierId] = useState(draft?.supplierId || routeParams.get("fornecedor") || "");
   const [partnerId, setPartnerId] = useState(draft?.partnerId ?? "");
   const [competence, setCompetence] = useState(draft?.competence ?? month());
   const [documentRef, setDocumentRef] = useState(draft?.documentRef ?? "");
@@ -331,7 +331,9 @@ export function NovaDespesaPage() {
   const fetchSupplierOptions = useCallback(
     async (query: string): Promise<ComboboxOption[]> => {
       const text = query.trim().toLowerCase();
+      // Só fornecedores formais ativos (inativo preserva histórico, mas não entra em novo lançamento).
       return suppliers
+        .filter((s) => s.active)
         .filter((s) => !text || [s.name, s.companyName, s.tradeName, s.cnpj, s.phone].some((field) => (field || "").toLowerCase().includes(text)))
         .slice(0, 20)
         .map((s) => ({ value: s.id, label: s.tradeName || s.companyName, sublabel: [s.name, s.cnpj].filter(Boolean).join(" · ") || undefined }));
