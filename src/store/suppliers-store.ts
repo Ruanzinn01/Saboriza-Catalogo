@@ -1,38 +1,33 @@
 import { create } from "zustand";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
 import { resolveCurrentCompanyId } from "@/lib/current-company";
-import { supplierFromRow } from "@/lib/mappers/supplier-mapper";
+import { supplierFromRow, type SupplierRow } from "@/lib/mappers/supplier-mapper";
+import { callRpc, friendlyRpcError, selectFrom } from "@/lib/supplier-rpc";
+import { toSupplierPayload } from "@/lib/supplier-form";
 import type { Supplier, SupplierInput } from "@/types/supplier";
 
-function toRow(input: SupplierInput) {
-  return {
-    name: input.name,
-    company_name: input.companyName,
-    phone: input.phone,
-    trade_name: input.tradeName,
-    cnpj: input.cnpj,
-    ie: input.ie,
-    email: input.email,
-    address: input.address,
-    neighborhood: input.neighborhood,
-    cep: input.cep,
-    city: input.city,
-    state: input.state,
-  };
+export type SaveResult = { id: string; revision: number } | { duplicateOf: string } | { conflict: true } | null;
+
+function sortByName(items: Supplier[]) {
+  return [...items].sort((a, b) => (a.tradeName || a.companyName).localeCompare(b.tradeName || b.companyName, "pt-BR"));
+}
+
+function parseDuplicate(message: string): string | null {
+  return /DUPLICADO:([0-9a-f-]{36})/i.exec(message)?.[1] ?? null;
 }
 
 interface SuppliersState {
   suppliers: Supplier[];
   status: "idle" | "loading" | "ready" | "error";
   fetchSuppliers: () => Promise<void>;
-  createSupplier: (input: SupplierInput) => Promise<Supplier | null>;
-  updateSupplier: (id: string, input: SupplierInput) => Promise<boolean>;
-  deleteSupplier: (id: string) => Promise<{ ok: boolean; blocked: boolean }>;
-  findDuplicate: (input: SupplierInput, excludeId?: string) => Supplier | null;
+  // categoryIds vai junto no mesmo comando (criação atômica); commandId é gerado por intenção e reaproveitado no retry.
+  createSupplier: (input: SupplierInput, categoryIds: string[], commandId: string) => Promise<SaveResult>;
+  updateSupplier: (id: string, expectedRevision: number, input: SupplierInput, categoryDelta: { add: string[]; remove: string[] }) => Promise<SaveResult>;
+  setActive: (id: string, active: boolean, expectedRevision: number) => Promise<boolean>;
+  findByDocument: (document: string, excludeId?: string) => Promise<{ id: string; trade_name: string; company_name: string; active: boolean } | null>;
 }
 
-export const useSuppliersStore = create<SuppliersState>()((set, get) => ({
+export const useSuppliersStore = create<SuppliersState>()((set) => ({
   suppliers: [],
   status: "idle",
 
@@ -43,91 +38,69 @@ export const useSuppliersStore = create<SuppliersState>()((set, get) => ({
       set({ status: "error" });
       return;
     }
-    const { data, error } = await supabase.from("suppliers").select("*").eq("company_id", companyId).order("name", { ascending: true });
-
+    const { data, error } = await selectFrom("suppliers", "*").eq("company_id", companyId).order("name", { ascending: true });
     if (error) {
       toast.error("Não foi possível carregar os fornecedores");
       set({ status: "error" });
       return;
     }
-
-    set({ suppliers: data.map(supplierFromRow), status: "ready" });
+    set({ suppliers: sortByName(((data as SupplierRow[]) ?? []).map(supplierFromRow)), status: "ready" });
   },
 
-  findDuplicate: (input, excludeId) => {
-    const cnpj = input.cnpj.trim();
-    const phone = input.phone.trim();
-    return (
-      get().suppliers.find((supplier) => {
-        if (supplier.id === excludeId) return false;
-        if (cnpj) return supplier.cnpj.trim() === cnpj;
-        return supplier.phone.trim() === phone;
-      }) ?? null
-    );
-  },
-
-  createSupplier: async (input) => {
-    const companyId = await resolveCurrentCompanyId();
-    if (!companyId) {
-      toast.error("Não foi possível identificar a empresa");
-      return null;
-    }
-    const { data, error } = await supabase
-      .from("suppliers")
-      .insert({ ...toRow(input), company_id: companyId })
-      .select("*")
-      .single();
-
+  createSupplier: async (input, categoryIds, commandId) => {
+    const { data, error } = await callRpc<{ id: string; revision: number }>("create_supplier", {
+      p_command_id: commandId,
+      p_payload: { ...toSupplierPayload(input), category_ids: categoryIds },
+    });
     if (error || !data) {
-      toast.error("Não foi possível cadastrar o fornecedor");
+      const duplicate = parseDuplicate(error ?? "");
+      if (duplicate) return { duplicateOf: duplicate };
+      toast.error(friendlyRpcError(error ?? "", "Não foi possível cadastrar o fornecedor"));
       return null;
     }
-
-    const supplier = supplierFromRow(data);
-    set((state) => ({ suppliers: [...state.suppliers, supplier].sort((a, b) => a.name.localeCompare(b.name)) }));
     toast.success("Fornecedor cadastrado");
-    return supplier;
+    return { id: data.id, revision: data.revision };
   },
 
-  updateSupplier: async (id, input) => {
-    const { data, error } = await supabase.from("suppliers").update(toRow(input)).eq("id", id).select("*").single();
-
+  updateSupplier: async (id, expectedRevision, input, categoryDelta) => {
+    const { data, error } = await callRpc<{ id: string; revision: number }>("update_supplier", {
+      p_id: id,
+      p_expected_revision: expectedRevision,
+      p_payload: { ...toSupplierPayload(input), category_add: categoryDelta.add, category_remove: categoryDelta.remove },
+    });
     if (error || !data) {
-      toast.error("Não foi possível atualizar o fornecedor");
+      if ((error ?? "").startsWith("CONFLITO_REVISAO")) return { conflict: true };
+      const duplicate = parseDuplicate(error ?? "");
+      if (duplicate) return { duplicateOf: duplicate };
+      toast.error(friendlyRpcError(error ?? "", "Não foi possível atualizar o fornecedor"));
+      return null;
+    }
+    toast.success("Fornecedor atualizado");
+    return { id: data.id, revision: data.revision };
+  },
+
+  setActive: async (id, active, expectedRevision) => {
+    const { data, error } = await callRpc<{ id: string; revision: number; active: boolean }>("set_supplier_active", {
+      p_id: id,
+      p_active: active,
+      p_expected_revision: expectedRevision,
+    });
+    if (error || !data) {
+      toast.error(friendlyRpcError(error ?? "", "Não foi possível alterar a situação do cadastro"));
       return false;
     }
-
-    const supplier = supplierFromRow(data);
     set((state) => ({
-      suppliers: state.suppliers.map((item) => (item.id === id ? supplier : item)).sort((a, b) => a.name.localeCompare(b.name)),
+      suppliers: state.suppliers.map((item) => (item.id === id ? { ...item, active: data.active, revision: data.revision } : item)),
     }));
-    toast.success("Fornecedor atualizado");
+    toast.success(active ? "Cadastro reativado" : "Cadastro inativado; histórico e vínculos preservados");
     return true;
   },
 
-  deleteSupplier: async (id) => {
-    const { count, error: countError } = await supabase
-      .from("products")
-      .select("id", { count: "exact", head: true })
-      .eq("supplier_id", id);
-
-    if (countError) {
-      toast.error("Não foi possível verificar os produtos do fornecedor");
-      return { ok: false, blocked: false };
-    }
-
-    if ((count ?? 0) > 0) {
-      return { ok: false, blocked: true };
-    }
-
-    const { error } = await supabase.from("suppliers").delete().eq("id", id);
-    if (error) {
-      toast.error("Não foi possível excluir o fornecedor");
-      return { ok: false, blocked: false };
-    }
-
-    set((state) => ({ suppliers: state.suppliers.filter((item) => item.id !== id) }));
-    toast.success("Fornecedor excluído");
-    return { ok: true, blocked: false };
+  findByDocument: async (document, excludeId) => {
+    const { data } = await callRpc<{ id: string; trade_name: string; company_name: string; active: boolean } | null>("find_supplier_by_document", {
+      p_document: document,
+      p_exclude: excludeId ?? null,
+    });
+    return data ?? null;
   },
 }));

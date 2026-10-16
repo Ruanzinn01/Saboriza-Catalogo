@@ -24,10 +24,14 @@ export function hasValidDocumentFormat(value: string): boolean {
   return /^[0-9A-Z]{12}\d{2}$/.test(doc);
 }
 
+export type SupplierStatusFilter = "all" | "active" | "inactive";
+
 export interface SupplierFilters {
   query: string;
   categoryIds: string[];
   city: string;
+  buyer?: string;
+  status?: SupplierStatusFilter;
 }
 
 export function supplierMatches(
@@ -38,12 +42,15 @@ export function supplierMatches(
 ): boolean {
   if (filters.categoryIds.length > 0 && !filters.categoryIds.some((id) => categoryIdsOfSupplier.includes(id))) return false;
   if (filters.city && normalizeSearchText(supplier.city) !== normalizeSearchText(filters.city)) return false;
+  if (filters.buyer && normalizeSearchText(supplier.buyerName) !== normalizeSearchText(filters.buyer)) return false;
+  if (filters.status === "active" && !supplier.active) return false;
+  if (filters.status === "inactive" && supplier.active) return false;
 
   const query = normalizeSearchText(filters.query);
   if (!query) return true;
   const queryDoc = normalizeDocument(filters.query);
   const categoryNames = categoryIdsOfSupplier.map((id) => categoriesById.get(id)?.name ?? "");
-  const haystack = [supplier.name, supplier.companyName, supplier.tradeName, supplier.phone, supplier.email, supplier.city, ...categoryNames]
+  const haystack = [supplier.name, supplier.companyName, supplier.tradeName, supplier.phone, supplier.email, supplier.city, supplier.buyerName, ...categoryNames]
     .map(normalizeSearchText)
     .join(" ");
   if (haystack.includes(query)) return true;
@@ -57,6 +64,25 @@ export function filterSuppliers(
   filters: SupplierFilters
 ): Supplier[] {
   return suppliers.filter((supplier) => supplierMatches(supplier, linksBySupplier.get(supplier.id) ?? [], categoriesById, filters));
+}
+
+export type SupplierSort = "name" | "value" | "debt";
+
+// Ordenação por compras/saldo usa a posição financeira do servidor; sem ela cai para o nome (nunca inventa valor).
+export function sortSuppliers<T extends { id: string; tradeName: string; companyName: string }>(
+  items: T[],
+  sort: SupplierSort,
+  metric: (id: string) => { value: number; debt: number } | undefined
+): T[] {
+  const label = (item: T) => item.tradeName || item.companyName;
+  const byName = (a: T, b: T) => label(a).localeCompare(label(b), "pt-BR");
+  return [...items].sort((a, b) => {
+    if (sort === "name") return byName(a, b);
+    const ma = metric(a.id);
+    const mb = metric(b.id);
+    const key = sort === "value" ? "value" : "debt";
+    return (mb?.[key] ?? 0) - (ma?.[key] ?? 0) || byName(a, b);
+  });
 }
 
 export function paginate<T>(items: T[], page: number, pageSize: number): { rows: T[]; page: number; totalPages: number } {

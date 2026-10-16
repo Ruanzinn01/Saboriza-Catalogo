@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { supplierFromRow } from "@/lib/mappers/supplier-mapper";
 import type { Supplier, SupplierCategory } from "@/types/supplier";
 import {
   daysSince,
@@ -13,21 +14,23 @@ import {
 
 function supplier(id: string, overrides: Partial<Supplier> = {}): Supplier {
   return {
-    id,
-    name: "Contato",
-    companyName: "Empresa " + id,
-    phone: "7199999",
-    tradeName: "",
-    cnpj: "",
-    ie: "",
-    email: "",
-    address: "",
-    neighborhood: "",
-    cep: "",
-    city: "Salvador",
-    state: "BA",
-    createdAt: "",
-    updatedAt: "",
+    ...supplierFromRow({
+      id,
+      name: "Contato",
+      company_name: "Empresa " + id,
+      phone: "7199999",
+      trade_name: "",
+      cnpj: "",
+      ie: "",
+      email: "",
+      address: "",
+      neighborhood: "",
+      cep: "",
+      city: "Salvador",
+      state: "BA",
+      created_at: "",
+      updated_at: "",
+    }),
     ...overrides,
   };
 }

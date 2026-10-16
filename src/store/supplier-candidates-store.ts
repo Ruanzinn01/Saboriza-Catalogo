@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import { resolveCurrentCompanyId } from "@/lib/current-company";
 import { callRpc, friendlyRpcError, selectFrom } from "@/lib/supplier-rpc";
+import { toSupplierPayload } from "@/lib/supplier-form";
 import type { CandidateContact, CandidateInput, CandidateStage, SupplierCandidate, SupplierInput } from "@/types/supplier";
 
 interface CandidateRow {
@@ -81,21 +82,7 @@ export function candidatePayload(input: CandidateInput) {
 }
 
 export function supplierPayload(input: SupplierInput, categoryIds: string[]) {
-  return {
-    name: input.name,
-    company_name: input.companyName,
-    phone: input.phone,
-    trade_name: input.tradeName,
-    cnpj: input.cnpj,
-    ie: input.ie,
-    email: input.email,
-    address: input.address,
-    neighborhood: input.neighborhood,
-    cep: input.cep,
-    city: input.city,
-    state: input.state,
-    category_ids: categoryIds,
-  };
+  return { ...toSupplierPayload(input), category_ids: categoryIds };
 }
 
 export interface CandidateSearch {
