@@ -27,3 +27,20 @@ Recomendação: manter por ora; revisar com o mapa de permissões do operador an
 ## DP-SAL-1 — Fase 2 de salário/Pix muda a regra de update_employee_salary
 Pergunta: confirma que, na fase 2, quem tem só despesas.manage (papel criado depois da fase 1) perde o direito de alterar salário?
 Recomendação: sim (é o objetivo), e aplicar só depois do front publicado (ver docs/seguranca/SALARIO_PIX_FASE2_CONDICAO.md).
+## Fornecedores V1 (etapa 6)
+
+Cada item: pergunta objetiva e recomendação. Nenhum foi decidido pelo agente.
+
+## Fornecedores V1 (2026-10-16)
+
+- **D1 · Permissões.** Criar chaves próprias (`fornecedores.read`, `fornecedores.manage`, `fornecedores.categorias.manage`, `fornecedores.banco.read`...) ou manter `despesas.read/manage`? Recomendação: criar chaves próprias numa migration de permissões separada e trocar nas RPCs; até lá a migration usa `despesas.*`.
+- **D2 · Campos obrigatórios e duplicidade.** Manter nome do contato, razão e telefone obrigatórios (NOT NULL hoje) ou relaxar para fantasia OU razão? Telefone igual deve bloquear, avisar ou ignorar? Recomendação: obrigar só fantasia ou razão; telefone apenas aviso; documento normalizado bloqueia com opção de vincular.
+- **D3 · Mapa categoria financeira → categoria de fornecedor.** Categorias de despesa hoje são texto denormalizado pela RPC `create_expense_launch`, sem ID. Criar catálogo de categorias financeiras com ID antes do mapa? Recomendação: sim, em onda própria de Despesas; só depois a tabela de mapa por empresa.
+- **D5 · Excluir fornecedor.** Manter exclusão (com bloqueio) ou trocar por inativar? Recomendação: inativar, e excluir só sem nenhuma referência (compras, produtos, códigos, créditos).
+- **D6 · CNPJ alfanumérico.** Implementar o cálculo oficial de dígitos alfanuméricos? Hoje só se confere o formato. Recomendação: confirmar a regra oficial vigente e então estender `src/lib/cnpj.ts` com testes.
+- **D8 · Arquivos, catálogos e cotações da avaliação.** Qual bucket, política de acesso, limite de tamanho e retenção? Recomendação: bucket privado por empresa com URL assinada de curta duração; só depois a tela de cotações.
+- **D9 · Banco/Pix do favorecido.** Criptografia em repouso, permissão própria e fluxo de verificação. Recomendação: tabela separada, sem retorno em listagens, leitura só por RPC com permissão dedicada e auditoria antes/depois.
+- **D10 · Fatos financeiros na ficha/lista.** Qual tabela/RPC é a fonte oficial de "compra confirmada", parcelas e baixas (expense_launches, obligations)? Data-base de compra: confirmação ou emissão? Recomendação: uma RPC de leitura agregada por fornecedor, no servidor, após decidir a data-base.
+- **D11 · Colunas novas em `suppliers`.** Autorizar `active`, `revision`, PF/PJ, comprador, condições, operação, lat/lon e contatos adicionais (migration aditiva sobre tabela existente)? Recomendação: sim, em migration própria depois de homologar esta.
+- **D12 · Rastreio da tabela `suppliers`.** A migration `add_suppliers_table_and_product_link` não está neste branch e a RLS de `suppliers` não foi lida. Recomendação: conferir contra a trilha reconstruída (commit 63aafb0) antes de aplicar qualquer coisa nova.
+- **D13 · Categorias iniciais.** Carregar as 8 por botão em Configurações (como está) ou semear automaticamente ao criar a empresa? Recomendação: manter o botão.

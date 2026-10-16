@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { useSuppliersStore } from "@/store/suppliers-store";
 import { useCatalogStore } from "@/store/catalog-store";
+import { useSupplierCategoriesStore } from "@/store/supplier-categories-store";
 import { AdminState } from "@/components/admin/AdminState";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Button } from "@/components/ui/Button";
@@ -21,13 +22,26 @@ export function SupplierDetailPage() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleteBlocked, setDeleteBlocked] = useState(false);
 
+  const categories = useSupplierCategoriesStore((state) => state.categories);
+  const linksBySupplier = useSupplierCategoriesStore((state) => state.linksBySupplier);
+  const categoriesStatus = useSupplierCategoriesStore((state) => state.status);
+  const fetchCategories = useSupplierCategoriesStore((state) => state.fetchAll);
+
   useEffect(() => {
     if (suppliers.length === 0) fetchSuppliers();
     if (products.length === 0) fetchCatalog();
+    if (categoriesStatus === "idle") void fetchCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const supplier = suppliers.find((item) => item.id === supplierId);
+  const supplierCategoryNames = useMemo(
+    () =>
+      (linksBySupplier.get(supplierId ?? "") ?? [])
+        .map((id) => categories.find((category) => category.id === id)?.name)
+        .filter((name): name is string => Boolean(name)),
+    [linksBySupplier, categories, supplierId]
+  );
   const supplierProducts = useMemo(
     () => products.filter((product) => product.supplierId === supplierId).sort((a, b) => a.name.localeCompare(b.name, "pt-BR")),
     [products, supplierId]
@@ -96,6 +110,10 @@ export function SupplierDetailPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="flex flex-col gap-2 rounded-3xl border border-forest-950/10 bg-white p-6">
           <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-muted">Dados do fornecedor</p>
+          <p className="text-sm text-ink-700/70">
+            Categorias:{" "}
+            <span className="font-semibold text-ink-900">{supplierCategoryNames.length > 0 ? supplierCategoryNames.join(" · ") : "Sem categoria"}</span>
+          </p>
           <p className="text-sm text-ink-700/70">Telefone: <span className="font-semibold text-ink-900">{supplier.phone}</span></p>
           <p className="text-sm text-ink-700/70">E-mail: <span className="font-semibold text-ink-900">{supplier.email || "-----"}</span></p>
           <p className="text-sm text-ink-700/70">Nome fantasia: <span className="font-semibold text-ink-900">{supplier.tradeName || "-----"}</span></p>

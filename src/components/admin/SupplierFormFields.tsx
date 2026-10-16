@@ -3,7 +3,7 @@ import type { SupplierInput } from "@/types/supplier";
 
 interface SupplierFormFieldsProps {
   form: SupplierInput;
-  errors: Partial<Record<"name" | "companyName" | "phone", string>>;
+  errors: Partial<Record<"name" | "companyName" | "phone" | "cnpj", string>>;
   onChange: <K extends keyof SupplierInput>(key: K, value: SupplierInput[K]) => void;
 }
 
@@ -26,7 +26,7 @@ export function SupplierFormFields({ form, errors, onChange }: SupplierFormField
       />
       <Input label="Nome fantasia" value={form.tradeName} onChange={(e) => onChange("tradeName", e.target.value)} />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Input label="CNPJ" value={form.cnpj} onChange={(e) => onChange("cnpj", e.target.value)} />
+        <Input label="CPF/CNPJ" value={form.cnpj} onChange={(e) => onChange("cnpj", e.target.value)} error={errors.cnpj} />
         <Input label="Inscrição estadual" value={form.ie} onChange={(e) => onChange("ie", e.target.value)} />
       </div>
 
