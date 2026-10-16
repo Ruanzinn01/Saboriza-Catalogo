@@ -43,3 +43,12 @@ Cada item: pergunta objetiva e recomendação. Nenhum foi decidido pelo agente.
 - **D11 · Colunas novas em `suppliers`.** Autorizar `active`, `revision`, PF/PJ, comprador, condições, operação, lat/lon e contatos adicionais (migration aditiva sobre tabela existente)? Recomendação: sim, em migration própria depois de homologar esta.
 - **D12 · Rastreio da tabela `suppliers`.** A migration `add_suppliers_table_and_product_link` não está neste branch e a RLS de `suppliers` não foi lida. Recomendação: conferir contra a trilha reconstruída (commit 63aafb0) antes de aplicar qualquer coisa nova.
 - **D13 · Categorias iniciais.** Carregar as 8 por botão em Configurações (como está) ou semear automaticamente ao criar a empresa? Recomendação: manter o botão.
+
+## Clientes etapa 4 (2026-10-16)
+
+- **CL1 · Colunas novas em `customers`** (PF/PJ, ativo/inativo, revisão, IBGE, lat/lon, vendedor/promotor, segmento, origem, limite proposto, prazo/forma preferenciais). Autorizar migration aditiva própria? Recomendação: sim, depois de aplicar a migration de crédito em homologação.
+- **CL2 · Situação financeira na lista.** Não há RPC em lote (a ficha chama `oris360_credit_overview` por cliente). Criar RPC agregada por empresa (inadimplência/limite) ou aceitar uma coluna só na ficha? Recomendação: RPC agregada paginada no servidor; sem N chamadas do navegador.
+- **CL3 · Histórico de pagamentos/títulos na ficha.** O PRD pede pontualidade, parcelas e títulos abertos, mas não há RPC de leitura de `receivable_payments` por cliente. Recomendação: RPC de leitura própria (permissão `billing.view_receivables`); baixa/estorno (`billing.settle_receivable`) fica fora da ficha, como diz o PRD (§6).
+- **CL4 · Excluir cliente.** O PRD manda propor inativação quando há fatos vinculados. Trocar Excluir por Inativar? Recomendação: sim, após CL1 (campo de situação).
+- **CL5 · Quem enxerga crédito.** `billing.view_credit_analysis` hoje. Vendedor/promotor no escopo atribuído precisam de escopo por carteira? Recomendação: manter a permissão atual até existir vínculo vendedor/promotor (CL1).
+- **CL6 · Prospecção, tarefas/roteiros, visitas, mídia, importar/exportar.** Dependem de Tarefas/Missões e mídia oficial; não implementados. Recomendação: ondas próprias depois de CL1.

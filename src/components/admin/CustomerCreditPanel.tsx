@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { rpcUntyped } from "@/lib/supabase-rpc";
+import { CREDIT_BLOCKER_LABEL, fetchCreditOverview, getCreditUsage, parseCreditLimitInput, setCustomerCreditLimit } from "@/lib/customer-credit";
 import { formatCurrency } from "@/lib/currency";
 import { Button } from "@/components/ui/Button";
 import type { CreditSnapshot } from "@/store/faturar-store";
-
-const BLOCKER_LABEL = { OVERDUE: "Títulos vencidos", OVER_LIMIT: "Limite excedido" } as const;
 
 function Metric({ label, value, tone }: { label: string; value: string; tone?: "bad" }) {
   return (
@@ -25,13 +23,13 @@ export function CustomerCreditPanel({ customerId }: { customerId: string }) {
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
-    const { data, error } = await rpcUntyped("oris360_credit_overview", { p_customer_id: customerId });
-    if (error || !data) {
+    const result = await fetchCreditOverview(customerId);
+    if (result.state === "unavailable") {
       setOverview(null);
       setState("unavailable");
       return;
     }
-    setOverview(data as CreditSnapshot);
+    setOverview(result.overview);
     setState("ready");
   }, [customerId]);
 
@@ -41,20 +39,16 @@ export function CustomerCreditPanel({ customerId }: { customerId: string }) {
   }, [load]);
 
   const save = async () => {
-    const value = Number(newLimit.replace(",", "."));
-    if (!Number.isFinite(value) || value < 0) {
+    const value = parseCreditLimitInput(newLimit);
+    if (value === null) {
       toast.error("Informe um limite válido");
       return;
     }
     setSaving(true);
-    const { error } = await rpcUntyped("oris360_set_credit_limit", {
-      p_customer_id: customerId,
-      p_new_limit: value,
-      p_reason: reason.trim(),
-    });
+    const { error } = await setCustomerCreditLimit(customerId, value, reason.trim());
     setSaving(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(error);
       return;
     }
     toast.success("Limite atualizado");
@@ -74,6 +68,7 @@ export function CustomerCreditPanel({ customerId }: { customerId: string }) {
   }
 
   const blockers = overview.blockers ?? [];
+  const usage = getCreditUsage(overview);
 
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-forest-950/10 bg-white p-4">
@@ -99,8 +94,25 @@ export function CustomerCreditPanel({ customerId }: { customerId: string }) {
           tone={overview.overdue_amount > 0 ? "bad" : undefined}
         />
         <Metric label="Maior atraso" value={`${overview.max_overdue_days ?? 0} dia(s)`} />
-        <Metric label="Situação" value={blockers.length ? blockers.map((b) => BLOCKER_LABEL[b]).join(" + ") : "Regular"} tone={blockers.length ? "bad" : undefined} />
+        <Metric label="Situação" value={blockers.length ? blockers.map((b) => CREDIT_BLOCKER_LABEL[b]).join(" + ") : "Regular"} tone={blockers.length ? "bad" : undefined} />
       </div>
+      {usage.usedPercent !== null && (
+        <div>
+          <div
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={usage.barPercent}
+            aria-label="Proporção do limite utilizada"
+            className="h-2 w-full overflow-hidden rounded-full bg-forest-950/10"
+          >
+            <div className={`h-full ${usage.excess > 0 ? "bg-red-600" : "bg-forest-700"}`} style={{ width: `${usage.barPercent}%` }} />
+          </div>
+          <p className="mt-1 text-xs text-ink-muted">
+            {usage.usedPercent}% do limite utilizado{usage.excess > 0 ? ` · excesso de ${formatCurrency(usage.excess)}` : ""}
+          </p>
+        </div>
+      )}
       {!overview.has_policy && (
         <p className="text-xs text-ink-muted">Cliente sem política de crédito cadastrada: limite 0 e pedidos não reservam crédito.</p>
       )}
