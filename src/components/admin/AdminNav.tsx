@@ -23,6 +23,7 @@ import {
   ReceiptText,
   Wallet,
   Settings,
+  ShieldCheck,
   TrendingUp,
   Truck,
   UserCheck,
@@ -132,6 +133,7 @@ export const STANDALONE_NAV_ITEMS: NavItem[] = [
 
 export const SETTINGS_ITEM: NavItem = { to: "/admin/configuracoes", label: "Configurações", icon: Settings };
 export const TEAM_ITEM: NavItem = { to: "/admin/usuarios", label: "Usuários", icon: UsersRound };
+export const AUDIT_ITEM: NavItem = { to: "/admin/auditoria", label: "Auditoria", icon: ShieldCheck };
 export const ERRORS_ITEM: NavItem = { to: "/admin/erros-sistema", label: "Erros do Sistema", icon: AlertTriangle };
 
 export function isNavItemActive(pathname: string, item: NavItem): boolean {
@@ -352,6 +354,7 @@ export function AdminNav({ variant, onNavigate }: AdminNavProps) {
       <div className={cn("mt-1 flex flex-col gap-1 border-t pt-2", styles.divider)}>
         {STANDALONE_NAV_ITEMS.map(renderItem)}
         {renderItem(TEAM_ITEM)}
+        {renderItem(AUDIT_ITEM)}
         {renderItem(ERRORS_ITEM)}
         {renderItem(SETTINGS_ITEM)}
       </div>

@@ -40,6 +40,7 @@ const RotasProducaoPage = lazy(() => import("@/pages/admin/RotasProducaoPage").t
 const PlanosProducaoPage = lazy(() => import("@/pages/admin/PlanosProducaoPage").then((m) => ({ default: m.PlanosProducaoPage })));
 const CentralProducaoPage = lazy(() => import("@/pages/admin/CentralProducaoPage").then((m) => ({ default: m.CentralProducaoPage })));
 const IntegracoesFinanceirasPage = lazy(() => import("@/pages/admin/IntegracoesFinanceirasPage").then((m) => ({ default: m.IntegracoesFinanceirasPage })));
+const AuditoriaPage = lazy(() => import("@/pages/admin/AuditoriaPage").then((m) => ({ default: m.AuditoriaPage })));
 const ErrosSistemaPage = lazy(() => import("@/pages/admin/ErrosSistemaPage").then((m) => ({ default: m.ErrosSistemaPage })));
 const ProductionPanelPage = lazy(() => import("@/pages/admin/ProductionPanelPage").then((m) => ({ default: m.ProductionPanelPage })));
 const EstoquePage = lazy(() => import("@/pages/admin/EstoquePage").then((m) => ({ default: m.EstoquePage })));
@@ -201,7 +202,8 @@ export function App() {
               <Route path="dre" element={<DREPage />} />
               <Route path="fechamento" element={<FechamentoPage />} />
               <Route path="integracoes" element={<IntegracoesFinanceirasPage />} />
-              <Route path="erros-sistema" element={<ErrosSistemaPage />} />
+              <Route path="auditoria" element={<AuditoriaPage />} />
+              <Route path="erros-sistema"element={<ErrosSistemaPage />} />
               <Route path="vendas" element={<ForcaDeVendasPage />} />
               <Route path="tarefas" element={<TarefasPage />} />
               <Route path="pulso" element={<PulsoPage />} />
