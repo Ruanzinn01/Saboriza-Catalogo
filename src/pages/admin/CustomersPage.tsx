@@ -102,7 +102,7 @@ export function CustomersPage() {
     restoredRef.current = true;
     try {
       const saved = sessionStorage.getItem(scrollKey(paramsKey));
-      if (saved) window.requestAnimationFrame(() => window.scrollTo(0, Number(saved)));
+      if (saved) window.requestAnimationFrame(() => document.getElementById("conteudo")?.scrollTo(0, Number(saved)));
     } catch {
       // sessionStorage indisponível: a lista só não recupera a rolagem
     }
@@ -110,7 +110,7 @@ export function CustomersPage() {
 
   function rememberScroll() {
     try {
-      sessionStorage.setItem(scrollKey(paramsKey), String(window.scrollY));
+      sessionStorage.setItem(scrollKey(paramsKey), String(document.getElementById("conteudo")?.scrollTop ?? 0));
     } catch {
       // sem sessionStorage a rolagem não é preservada
     }
@@ -361,7 +361,7 @@ export function CustomersPage() {
         </aside>
       </div>
 
-      <Link to="/admin/clientes/novo" className="fixed bottom-4 right-4 z-30 sm:hidden" aria-label="Cadastrar cliente">
+      <Link to="/admin/clientes/novo" className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 z-20 sm:hidden" aria-label="Cadastrar cliente">
         <Button size="lg" className="shadow-lg"><Plus size={18} /> Cadastrar</Button>
       </Link>
     </div>
