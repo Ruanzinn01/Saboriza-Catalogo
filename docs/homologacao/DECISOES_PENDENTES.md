@@ -27,7 +27,6 @@ Recomendação: manter por ora; revisar com o mapa de permissões do operador an
 ## DP-SAL-1 — Fase 2 de salário/Pix muda a regra de update_employee_salary
 Pergunta: confirma que, na fase 2, quem tem só despesas.manage (papel criado depois da fase 1) perde o direito de alterar salário?
 Recomendação: sim (é o objetivo), e aplicar só depois do front publicado (ver docs/seguranca/SALARIO_PIX_FASE2_CONDICAO.md).
-## Fornecedores V1 (etapa 6)
 
 Cada item: pergunta objetiva e recomendação. Nenhum foi decidido pelo agente.
 
