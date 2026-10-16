@@ -272,6 +272,14 @@ ok("pedido cancelado sai da compra líquida", Number(S.total) === 1300 && S.coun
 S = (await como(U.vendedor, `select public.oris360_customer_commercial_summary('${cSem}','six') as r`)).rows[0].r;
 ok("cliente sem compra: total 0, sem última compra (não inventa data), sem produtos", Number(S.total) === 0 && S.last_billed_purchase === null && S.products_total === 0);
 
+log("\n# Capacidades");
+let cap = (await como(U.vendedor, `select public.oris360_customer_capabilities('${A}') as r`)).rows[0].r;
+ok("vendedor: membro, sem proposta de crédito nem leitura de títulos", cap.member && !cap.can_propose_credit && !cap.can_view_receivables && cap.can_view_credit);
+cap = (await como(U.gestor, `select public.oris360_customer_capabilities('${A}') as r`)).rows[0].r;
+ok("gestor: proposta e títulos", cap.can_propose_credit && cap.can_view_receivables);
+cap = (await como(U.outra, `select public.oris360_customer_capabilities('${A}') as r`)).rows[0].r;
+ok("outra empresa não é membro de A e não lê títulos de A", cap.member === false && !cap.can_view_receivables);
+
 log("\n# Mídia");
 const med = async (uid, cli, cat, prim, path) => como(uid, `insert into public.customer_media (customer_id, category, primary_front, storage_path, mime_type, size_bytes, caption) values ('${cli}','${cat}',${prim},'${path}','image/jpeg',1000,'x') returning id`);
 r = await med(U.gestor, id1, "FACHADA", true, `${id1}/a.jpg`);
@@ -295,7 +303,7 @@ ok("bucket customer-media é privado, 8 MB, só imagens", (await q(`select publi
 
 log("\n# Grants e anon");
 for (const fn of ["oris360_customer_save(uuid,uuid,uuid,integer,jsonb)", "oris360_customer_set_status(uuid,uuid,text,text,integer)", "oris360_customers_list(uuid,text,text,text,text,uuid,uuid,text,text,text,text,integer,integer)",
-  "oris360_customer_receivables(uuid,integer)", "oris360_customer_commercial_summary(uuid,text,integer,integer)", "oris360_customer_media_set_primary(uuid)"]) {
+  "oris360_customer_receivables(uuid,integer)", "oris360_customer_commercial_summary(uuid,text,integer,integer)", "oris360_customer_media_set_primary(uuid)", "oris360_customer_capabilities(uuid)"]) {
   const g = (await q(`select has_function_privilege('anon','public.${fn}','execute') a, has_function_privilege('authenticated','public.${fn}','execute') u`))[0];
   ok(`${fn.split("(")[0]}: authenticated sim, anon não`, g.u === true && g.a === false);
 }

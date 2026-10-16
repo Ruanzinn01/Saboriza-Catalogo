@@ -824,6 +824,23 @@ begin
 end;
 $$;
 
+-- 8b) Capacidades do usuário na empresa (só booleanos do próprio usuário; a decisão real continua no servidor)
+
+create or replace function public.oris360_customer_capabilities(p_company_id uuid)
+returns jsonb
+language sql
+stable
+security definer
+set search_path to ''
+as $$
+  select jsonb_build_object(
+    'member', private.is_active_company_member(p_company_id) and not private.is_restricted_operator(p_company_id),
+    'can_propose_credit', private.has_permission(p_company_id, 'customer_credit.change_permanent_limit'),
+    'can_manage_limit', private.has_permission(p_company_id, 'customer_credit.change_permanent_limit'),
+    'can_view_receivables', private.has_permission(p_company_id, 'billing.view_receivables'),
+    'can_view_credit', private.has_permission(p_company_id, 'billing.view_credit_analysis'))
+$$;
+
 -- 9) Permissões de execução -----------------------------------------------------------------------------
 
 revoke all on function public.oris360_customer_media_set_primary(uuid) from public, anon;
@@ -832,9 +849,11 @@ revoke all on function public.oris360_customer_set_status(uuid, uuid, text, text
 revoke all on function public.oris360_customers_list(uuid, text, text, text, text, uuid, uuid, text, text, text, text, integer, integer) from public, anon;
 revoke all on function public.oris360_customer_receivables(uuid, integer) from public, anon;
 revoke all on function public.oris360_customer_commercial_summary(uuid, text, integer, integer) from public, anon;
+revoke all on function public.oris360_customer_capabilities(uuid) from public, anon;
 grant execute on function public.oris360_customer_media_set_primary(uuid) to authenticated;
 grant execute on function public.oris360_customer_save(uuid, uuid, uuid, integer, jsonb) to authenticated;
 grant execute on function public.oris360_customer_set_status(uuid, uuid, text, text, integer) to authenticated;
 grant execute on function public.oris360_customers_list(uuid, text, text, text, text, uuid, uuid, text, text, text, text, integer, integer) to authenticated;
 grant execute on function public.oris360_customer_receivables(uuid, integer) to authenticated;
 grant execute on function public.oris360_customer_commercial_summary(uuid, text, integer, integer) to authenticated;
+grant execute on function public.oris360_customer_capabilities(uuid) to authenticated;

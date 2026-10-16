@@ -3,6 +3,7 @@
 -- comandos. Arquivos já enviados ao bucket customer-media NÃO são apagados por este script (exportar antes se preciso).
 -- Só rodar com ordem direta e depois de copiar os dados novos.
 
+drop function if exists public.oris360_customer_capabilities(uuid);
 drop function if exists public.oris360_customer_commercial_summary(uuid, text, integer, integer);
 drop function if exists private.customer_sales(uuid);
 drop function if exists public.oris360_customer_receivables(uuid, integer);
