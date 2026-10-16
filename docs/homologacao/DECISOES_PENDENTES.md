@@ -10,3 +10,4 @@ Cada item: pergunta, recomendação, estado.
 6. Roles que recebem `producao.operar`, `entrega.operar`, `admin.acessar`; separador conta inventário?
 7. Manter ou desligar cron jobs da homologação; recursos pagos.
 8. Testes em aparelho real (roteiro será preparado).
+9. Teste de navegador (H01–H19, seção 7): BLOQUEADO nesta sessão (sem Claude in Chrome nem navegador embutido; o embutido não abre localhost do shell). Recomendação: abrir uma sessão com Claude in Chrome habilitado e rodar `npm run dev` com `.env.local` da homologação. Substituto parcial em andamento: teste por API real.
