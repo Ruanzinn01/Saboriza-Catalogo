@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ImageOff } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
@@ -11,7 +11,7 @@ interface SeparationItemSheetProps {
   onClose: () => void;
   onConfirm: (itemId: string) => Promise<void>;
   onRequestAdjustment: (itemId: string, message: string) => Promise<void>;
-  onReportShortage: (itemId: string, separatedUnits: number, reason: string) => Promise<boolean>;
+  onReportShortage: (itemId: string, separatedUnits: number, reason: string, commandId: string) => Promise<boolean>;
 }
 
 export function SeparationItemSheet({ item, readOnly, onClose, onConfirm, onRequestAdjustment, onReportShortage }: SeparationItemSheetProps) {
@@ -20,8 +20,10 @@ export function SeparationItemSheet({ item, readOnly, onClose, onConfirm, onRequ
   const [shortageOpen, setShortageOpen] = useState(false);
   const [separatedInput, setSeparatedInput] = useState("");
   const [saving, setSaving] = useState(false);
+  const shortageCommandId = useRef<string>(crypto.randomUUID());
 
   useEffect(() => {
+    shortageCommandId.current = crypto.randomUUID();
     setAdjustmentOpen(false);
     setShortageOpen(false);
     setSeparatedInput("");
@@ -53,7 +55,7 @@ export function SeparationItemSheet({ item, readOnly, onClose, onConfirm, onRequ
   async function handleShortage() {
     if (!item || !shortageValid || separatedUnits === null) return;
     setSaving(true);
-    const ok = await onReportShortage(item.id, separatedUnits, message.trim());
+    const ok = await onReportShortage(item.id, separatedUnits, message.trim(), shortageCommandId.current);
     setSaving(false);
     if (ok) onClose();
   }

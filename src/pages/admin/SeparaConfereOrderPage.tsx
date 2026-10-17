@@ -176,7 +176,7 @@ export function SeparaConfereOrderPage() {
         onClose={() => setSelectedItem(null)}
         onConfirm={(itemId) => confirmItem(order.id, itemId)}
         onRequestAdjustment={(itemId, message) => requestAdjustment(order.id, itemId, message)}
-        onReportShortage={(itemId, separatedUnits, reason) => reportShortage(order.id, itemId, separatedUnits, reason)}
+        onReportShortage={(itemId, separatedUnits, reason, commandId) => reportShortage(order.id, itemId, separatedUnits, reason, commandId)}
       />
 
       <BarcodeScannerModal open={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleScan} />
